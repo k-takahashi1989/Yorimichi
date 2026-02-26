@@ -1,4 +1,4 @@
-package com.ktakahashi.shoppingreminder
+package com.ktakahashi.yorimichi
 
 import android.content.BroadcastReceiver
 import android.content.Context

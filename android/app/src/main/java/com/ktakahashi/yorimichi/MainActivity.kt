@@ -1,4 +1,4 @@
-package com.ktakahashi.shoppingreminder
+package com.ktakahashi.yorimichi
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
