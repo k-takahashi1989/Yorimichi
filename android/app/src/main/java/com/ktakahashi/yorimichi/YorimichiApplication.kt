@@ -1,4 +1,4 @@
-package com.ktakahashi.shoppingreminder
+package com.ktakahashi.yorimichi
 
 import android.app.Application
 import com.facebook.react.PackageList
