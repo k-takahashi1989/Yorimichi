@@ -163,6 +163,14 @@ const en: Translation = {
       step1: '🔔 Tap the bell to toggle location notifications on / off',
     },
   },
+  geofence: {
+    taskDesc: 'Notifies you when approaching registered locations',
+  },
+
+  memoDetailExtra: {
+    monitoringStopped: '⚠️ Reminders are stopped. Start them in Settings.',
+  },
+
   notification: {
     arrivalTitle: '📍 Approaching {{label}}',
     arrivalBody: '"{{title}}" checklist ({{count}} items) — tap to review',

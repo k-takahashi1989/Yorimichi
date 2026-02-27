@@ -20,6 +20,7 @@ import {
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AdBanner from '../components/AdBanner';
+import DeviceInfo from 'react-native-device-info';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { changeAndPersistLanguage } from '../i18n';
@@ -264,7 +265,7 @@ export default function SettingsScreen(): React.JSX.Element {
           style={styles.slider}
           minimumValue={50}
           maximumValue={maxRadius}
-          step={50}
+          step={10}
           value={defaultRadius}
           onValueChange={setDisplayRadius}
           onSlidingComplete={setDefaultRadius}
@@ -314,7 +315,7 @@ export default function SettingsScreen(): React.JSX.Element {
       {/* アプリ情報 */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('settings.appInfo.title')}</Text>
-        <Text style={styles.infoText}>{t('settings.appInfo.version', { version: '1.0.4' })}</Text>
+        <Text style={styles.infoText}>{t('settings.appInfo.version', { version: DeviceInfo.getVersion() })}</Text>
         <Text style={styles.infoText}>{t('settings.appInfo.name')}</Text>
         <TouchableOpacity
           style={styles.privacyPolicyRow}

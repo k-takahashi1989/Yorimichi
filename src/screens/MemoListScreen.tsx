@@ -77,6 +77,12 @@ export default function MemoListScreen(): React.JSX.Element {
       </TouchableOpacity>
     );
   }, [navigation, handleDelete, t]);
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <Text style={styles.headerTitle}>{t('memoList.headerTitle')}</Text>
+        <TouchableOpacity
           style={styles.addBtn}
           onPress={() => navigation.navigate('MemoEdit', {})}>
           <Icon name="add" size={28} color="#fff" />

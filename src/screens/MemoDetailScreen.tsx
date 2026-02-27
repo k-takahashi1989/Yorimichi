@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import BackgroundService from 'react-native-background-actions';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
@@ -40,6 +41,15 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
+  const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
+
+  // フォアグラウンド復帰時に監視状態を再チェック
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIsMonitoring(BackgroundService.isRunning());
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!memo) {
     return (
@@ -124,7 +134,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
             <Icon
               name={memo.notificationEnabled ? 'notifications' : 'notifications-off'}
               size={22}
-              color={memo.notificationEnabled ? '#4CAF50' : '#9E9E9E'}
+              color={
+                !memo.notificationEnabled ? '#9E9E9E'
+                : isMonitoring ? '#4CAF50'
+                : '#FF9800'
+              }
             />
           </TouchableOpacity>
         </View>
@@ -135,6 +149,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
           <Icon name="edit" size={22} color="#757575" />
         </TouchableOpacity>
       </View>
+
+      {/* 監視停止警告 */}
+      {memo.notificationEnabled && !isMonitoring && (
+        <Text style={styles.monitoringWarning}>{t('memoDetailExtra.monitoringStopped')}</Text>
+      )}
 
       {/* 場所セクション */}
       <View style={styles.section}>
@@ -239,6 +258,12 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: 'bold', color: '#212121', flex: 1, marginRight: 8 },
   headerIcon: { marginLeft: 8 },
   pencilBtn: { marginLeft: 16 },
+  monitoringWarning: {
+    fontSize: 12,
+    color: '#FF9800',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
   section: {
     backgroundColor: '#fff',
     borderRadius: 12,
