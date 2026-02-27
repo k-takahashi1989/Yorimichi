@@ -54,7 +54,11 @@ function loadInsideCache(): void {
     if (!raw) return;
     const arr: string[] = JSON.parse(raw);
     arr.forEach(id => insideGeofences.add(id));
-  } catch {}
+  } catch (e) {
+    // キャッシュが破損している場合はリセット（次回進入時に再通知される）
+    __DEV__ && console.warn('[Geofence] InsideCache corrupted, resetting:', e);
+    storage.delete(INSIDE_CACHE_KEY);
+  }
 }
 
 function saveInsideCache(): void {
@@ -83,6 +87,7 @@ async function checkGeofences(
         cacheChanged = true;
         await showArrivalNotification({
           memoId: memo.id,
+          locationId: location.id,
           memoTitle: memo.title,
           locationLabel: location.label,
           itemCount: memo.items.filter(it => !it.isChecked).length,

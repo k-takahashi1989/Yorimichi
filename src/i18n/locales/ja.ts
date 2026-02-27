@@ -6,6 +6,7 @@ const ja = {
     confirm: '確定',
     error: 'エラー',
     radiusM: '{{radius}}m',
+    undo: '元に戻す',
   },
 
   // ── MemoListScreen ────────────────────────────────────────
@@ -53,6 +54,7 @@ const ja = {
     deleteLocMessage: '「{{label}}」を削除しますか？',
     uncheckTitle: 'チェックを外しますか？',
     uncheckMessage: '購入日時の記録もクリアされます。',
+    uncheckDone: 'チェックを外しました',
   },
 
   // ── LocationPickerScreen ──────────────────────────────────
@@ -166,6 +168,12 @@ const ja = {
     memoDetail: {
       step1: '🔔 ベルマークで通知の ON / OFF を切り替えられます',
     },
+  },
+  // ── 通知文言 ────────────────────────────────────────────
+  notification: {
+    arrivalTitle: '📍 {{label}} に近づいています',
+    arrivalBody: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう',
+    arrivalBodyBig: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう\n\nタップしてメモを開く',
   },
 } as const;
 

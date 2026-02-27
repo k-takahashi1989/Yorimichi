@@ -39,7 +39,7 @@ export default function MemoListScreen(): React.JSX.Element {
     [deleteMemo, t],
   );
 
-  const renderItem = ({ item }: { item: Memo }) => {
+  const renderItem = useCallback(({ item }: { item: Memo }) => {
     const unchecked = item.items.filter(i => !i.isChecked).length;
     const total = item.items.length;
 
@@ -76,13 +76,7 @@ export default function MemoListScreen(): React.JSX.Element {
         </View>
       </TouchableOpacity>
     );
-  };
-
-  return (
-    <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={styles.headerTitle}>{t('memoList.headerTitle')}</Text>
-        <TouchableOpacity
+  }, [navigation, handleDelete, t]);
           style={styles.addBtn}
           onPress={() => navigation.navigate('MemoEdit', {})}>
           <Icon name="add" size={28} color="#fff" />

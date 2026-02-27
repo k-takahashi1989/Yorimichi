@@ -7,6 +7,7 @@ const en: Translation = {
     confirm: 'Confirm',
     error: 'Error',
     radiusM: '{{radius}}m',
+    undo: 'Undo',
   },
 
   memoList: {
@@ -51,6 +52,7 @@ const en: Translation = {
     deleteLocMessage: 'Delete "{{label}}"?',
     uncheckTitle: 'Uncheck item?',
     uncheckMessage: 'The recorded purchase date will also be cleared.',
+    uncheckDone: 'Item unchecked',
   },
 
   locationPicker: {
@@ -160,6 +162,11 @@ const en: Translation = {
     memoDetail: {
       step1: '🔔 Tap the bell to toggle location notifications on / off',
     },
+  },
+  notification: {
+    arrivalTitle: '📍 Approaching {{label}}',
+    arrivalBody: '"{{title}}" checklist ({{count}} items) — tap to review',
+    arrivalBodyBig: '"{{title}}" checklist ({{count}} items)\n\nTap to open the memo',
   },
 };
 

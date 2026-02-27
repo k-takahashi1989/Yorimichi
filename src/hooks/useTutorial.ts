@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { InteractionManager } from 'react-native';
 import { useSettingsStore } from '../store/memoStore';
 import { TargetLayout } from '../components/TutorialTooltip';
 
@@ -17,6 +18,7 @@ export function useTutorial(key: string, totalSteps: number, refs: AnyRef[], del
   const [step, setStep] = useState(0);
   const [targetLayout, setTargetLayout] = useState<TargetLayout | null>(null);
   const mounted = useRef(true);
+  const measureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isActive = !seenTutorials.includes(key);
 
@@ -26,15 +28,21 @@ export function useTutorial(key: string, totalSteps: number, refs: AnyRef[], del
     const ref = refs[step];
     if (!ref?.current) return;
 
-    const timer = setTimeout(() => {
-      ref.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
-        if (mounted.current) {
-          setTargetLayout({ x, y, width, height });
-        }
-      });
-    }, delay);
+    // アニメーション完了待機後に測定する（setTimeout固定遅延より信頼性が高い）
+    const task = InteractionManager.runAfterInteractions(() => {
+      measureTimerRef.current = setTimeout(() => {
+        ref.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
+          if (mounted.current) {
+            setTargetLayout({ x, y, width, height });
+          }
+        });
+      }, delay);
+    });
 
-    return () => clearTimeout(timer);
+    return () => {
+      task.cancel();
+      if (measureTimerRef.current) clearTimeout(measureTimerRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, isActive]);
 
