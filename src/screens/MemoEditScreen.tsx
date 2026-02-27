@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
@@ -50,6 +49,8 @@ export default function MemoEditScreen(): React.JSX.Element {
 
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  /** handleDone 実行中フラグ。onBlur の handleSaveTitle との二重保存を防ぐ */
+  const isSavingRef = useRef(false);
   const [title, setTitle] = useState(existingMemo?.title ?? '');
   const [newItemName, setNewItemName] = useState('');
   const [savedMemoId, setSavedMemoId] = useState<string | undefined>(memoId);
@@ -98,6 +99,7 @@ export default function MemoEditScreen(): React.JSX.Element {
   }, [navigation, memoId, title, currentItems.length, t]);
 
   const handleSaveTitle = useCallback(() => {
+    if (isSavingRef.current) return; // handleDone が先に確定した場合はスキップ
     if (!title.trim()) {
       Alert.alert(t('memoEdit.errorTitle'), t('memoEdit.errorEmptyTitle'));
       return;
@@ -134,8 +136,7 @@ export default function MemoEditScreen(): React.JSX.Element {
         style={styles.itemInput}
         value={item.name}
         onChangeText={text => updateItem(savedMemoId!, item.id, { name: text })}
-        multiline={false}
-      />
+        multiline={false}        maxLength={50}      />
       <TouchableOpacity
         onPress={() => deleteItem(savedMemoId!, item.id)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -145,8 +146,10 @@ export default function MemoEditScreen(): React.JSX.Element {
   );
 
   const handleDone = () => {
+    isSavingRef.current = true;
     if (!title.trim()) {
       Alert.alert(t('memoEdit.errorTitle'), t('memoEdit.errorEmptyTitle'));
+      isSavingRef.current = false;
       return;
     }
     if (newItemName.trim()) {
@@ -211,14 +214,7 @@ export default function MemoEditScreen(): React.JSX.Element {
         {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
         <View ref={addRowRef} collapsable={false}>
           <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
-          {currentItems.length > 0 && (
-            <FlatList
-              data={currentItems}
-              keyExtractor={i => i.id}
-              renderItem={renderItem}
-              scrollEnabled={false}
-            />
-          )}
+          {currentItems.map(item => renderItem({ item }))}
 
           {/* アイテム入力 */}
           <View style={styles.addRow}>
@@ -231,6 +227,7 @@ export default function MemoEditScreen(): React.JSX.Element {
             onSubmitEditing={handleAddItem}
             returnKeyType="done"
             blurOnSubmit={false}
+            maxLength={50}
             onFocus={() => {
               // キーボードが開ききってから末尾にスクロール
               setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 400);

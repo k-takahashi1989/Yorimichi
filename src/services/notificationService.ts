@@ -3,6 +3,7 @@ import notifee, {
   AndroidStyle,
   EventType,
 } from '@notifee/react-native';
+import i18n from '../i18n';
 
 const CHANNEL_ID = 'shopping-reminder';
 
@@ -24,16 +25,17 @@ export async function createNotificationChannel(): Promise<void> {
  */
 export async function showArrivalNotification(params: {
   memoId: string;
+  locationId: string;
   memoTitle: string;
   locationLabel: string;
   itemCount: number;
 }): Promise<void> {
-  const { memoId, memoTitle, locationLabel, itemCount } = params;
+  const { memoId, locationId, memoTitle, locationLabel, itemCount } = params;
 
   await notifee.displayNotification({
-    id: `arrival-${memoId}`,
-    title: `📍 ${locationLabel} に近づいています`,
-    body: `「${memoTitle}」のチェックリスト (${itemCount}点) を確認しましょう`,
+    id: `arrival-${memoId}-${locationId}`,
+    title: i18n.t('notification.arrivalTitle', { label: locationLabel }),
+    body: i18n.t('notification.arrivalBody', { title: memoTitle, count: itemCount }),
     // data はトップレベルに置く (notifee 仕様)
     data: { memoId },
     android: {
@@ -41,7 +43,7 @@ export async function showArrivalNotification(params: {
       importance: AndroidImportance.HIGH,
       style: {
         type: AndroidStyle.BIGTEXT,
-        text: `「${memoTitle}」のチェックリスト (${itemCount}点) を確認しましょう\n\nタップしてメモを開く`,
+        text: i18n.t('notification.arrivalBodyBig', { title: memoTitle, count: itemCount }),
       },
       pressAction: {
         id: 'open_memo',

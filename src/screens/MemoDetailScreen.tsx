@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AdBanner from '../components/AdBanner';
+import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
 import { useTranslation } from 'react-i18next';
 import { useMemoStore } from '../store/memoStore';
@@ -26,14 +28,18 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const route = useRoute<Route>();
   const { memoId } = route.params;
 
-  const memo = useMemoStore(s => s.getMemoById(memoId));
+  const memo = useMemoStore(useShallow(s => s.memos.find(m => m.id === memoId)));
   const toggleItem = useMemoStore(s => s.toggleItem);
+  const updateItem = useMemoStore(s => s.updateItem);
   const updateMemo = useMemoStore(s => s.updateMemo);
   const deleteLocation = useMemoStore(s => s.deleteLocation);
 
   const bellRef = useRef<View>(null);
   const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
     useTutorial('memoDetail', 1, [bellRef], 800);
+
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
 
   if (!memo) {
     return (
@@ -59,19 +65,21 @@ export default function MemoDetailScreen(): React.JSX.Element {
   };
 
   const handleToggleItem = useCallback((item: ShoppingItem) => {
+    toggleItem(memoId, item.id);
     if (item.isChecked) {
-      Alert.alert(
-        t('memoDetail.uncheckTitle'),
-        t('memoDetail.uncheckMessage'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('common.confirm'), onPress: () => toggleItem(memoId, item.id) },
-        ],
-      );
-    } else {
-      toggleItem(memoId, item.id);
+      // チェック解除時: 即座に実行して Snackbar で元に戻せる
+      setUndoTarget(item);
+      setSnackbarVisible(true);
     }
-  }, [memoId, t, toggleItem]);
+  }, [memoId, toggleItem]);
+
+  const handleUndo = useCallback(() => {
+    if (!undoTarget) return;
+    // 元のチェック状態と checkedAt を復元
+    updateItem(memoId, undoTarget.id, { isChecked: true, checkedAt: undoTarget.checkedAt });
+    setSnackbarVisible(false);
+    setUndoTarget(null);
+  }, [memoId, undoTarget, updateItem]);
 
   const renderShoppingItem = (item: ShoppingItem) => {
     const dateStr =
@@ -157,7 +165,16 @@ export default function MemoDetailScreen(): React.JSX.Element {
                 ) : null}
                 <Text style={styles.locChipRadius}>{t('memoDetail.radiusLabel', { radius: loc.radius })}</Text>
               </View>
-              <TouchableOpacity onPress={() => handleDeleteLocation(loc)}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('LocationPicker', { memoId, existingLocationId: loc.id })}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.locChipAction}>
+                <Icon name="edit" size={18} color="#4CAF50" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteLocation(loc)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.locChipAction}>
                 <Icon name="close" size={18} color="#9E9E9E" />
               </TouchableOpacity>
             </View>
@@ -192,6 +209,16 @@ export default function MemoDetailScreen(): React.JSX.Element {
         skipLabel={t('tutorial.skip')}
         onNext={tutAdvance}
         onSkip={tutSkip}
+      />
+      <Snackbar
+        visible={snackbarVisible}
+        message={t('memoDetail.uncheckDone')}
+        actionLabel={t('common.undo')}
+        onAction={handleUndo}
+        onDismiss={() => {
+          setSnackbarVisible(false);
+          setUndoTarget(null);
+        }}
       />
     </View>
   );
@@ -241,6 +268,7 @@ const styles = StyleSheet.create({
   locChipLabel: { fontSize: 14, fontWeight: '600', color: '#2E7D32' },
   locChipAddress: { fontSize: 12, color: '#616161', marginTop: 2 },
   locChipRadius: { fontSize: 12, color: '#4CAF50', marginTop: 2 },
+  locChipAction: { marginLeft: 8 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
