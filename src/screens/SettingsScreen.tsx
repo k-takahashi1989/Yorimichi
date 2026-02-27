@@ -8,6 +8,7 @@ import {
   Platform,
   PermissionsAndroid,
   ScrollView,
+  Linking,
 } from 'react-native';
 import {
   check,
@@ -313,8 +314,15 @@ export default function SettingsScreen(): React.JSX.Element {
       {/* アプリ情報 */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('settings.appInfo.title')}</Text>
-        <Text style={styles.infoText}>{t('settings.appInfo.version', { version: '1.0.0' })}</Text>
+        <Text style={styles.infoText}>{t('settings.appInfo.version', { version: '1.0.4' })}</Text>
         <Text style={styles.infoText}>{t('settings.appInfo.name')}</Text>
+        <TouchableOpacity
+          style={styles.privacyPolicyRow}
+          onPress={() => Linking.openURL('https://k-takahashi1989.github.io/Yorimichi/privacy.html')}>
+          <Icon name="privacy-tip" size={16} color="#4CAF50" />
+          <Text style={styles.privacyPolicyText}>{t('settings.appInfo.privacyPolicy')}</Text>
+          <Icon name="open-in-new" size={14} color="#9E9E9E" />
+        </TouchableOpacity>
       </View>
       <AdBanner />
     </ScrollView>
@@ -407,6 +415,16 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
   },
   infoText: { fontSize: 13, color: '#757575', marginBottom: 4 },
+  privacyPolicyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F5',
+  },
+  privacyPolicyText: { flex: 1, fontSize: 13, color: '#4CAF50', fontWeight: '600' },
   langRow: {
     flexDirection: 'row',
     gap: 10,
