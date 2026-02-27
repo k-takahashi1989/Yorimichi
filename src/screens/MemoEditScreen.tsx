@@ -10,10 +10,6 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from 'react-native-draggable-flatlist';
 import {
   useNavigation,
   useRoute,
@@ -134,27 +130,45 @@ export default function MemoEditScreen(): React.JSX.Element {
     setNewItemName('');
   }, [newItemName, savedMemoId, title, addMemo, addItem]);
 
-  const renderItem = useCallback(({ item, drag, isActive }: RenderItemParams<ShoppingItem>) => (
-    <ScaleDecorator>
-      <View style={[styles.itemRow, isActive && styles.itemRowActive]}>
-        <TouchableOpacity onLongPress={drag} delayLongPress={150}>
-          <Icon name="drag-handle" size={20} color="#BDBDBD" />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.itemInput}
-          value={item.name}
-          onChangeText={text => updateItem(savedMemoId!, item.id, { name: text })}
-          multiline={false}
-          maxLength={50}
-        />
+  const handleMoveItem = useCallback((index: number, direction: 'up' | 'down') => {
+    if (!savedMemoId) return;
+    const newItems = [...currentItems];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+    reorderItems(savedMemoId, newItems);
+  }, [savedMemoId, currentItems, reorderItems]);
+
+  const renderItem = useCallback((item: ShoppingItem, index: number) => (
+    <View key={item.id} style={styles.itemRow}>
+      <View style={styles.reorderButtons}>
         <TouchableOpacity
-          onPress={() => deleteItem(savedMemoId!, item.id)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Icon name="close" size={20} color="#EF5350" />
+          onPress={() => handleMoveItem(index, 'up')}
+          disabled={index === 0}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+          <Icon name="keyboard-arrow-up" size={18} color={index === 0 ? '#E0E0E0' : '#BDBDBD'} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleMoveItem(index, 'down')}
+          disabled={index === currentItems.length - 1}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+          <Icon name="keyboard-arrow-down" size={18} color={index === currentItems.length - 1 ? '#E0E0E0' : '#BDBDBD'} />
         </TouchableOpacity>
       </View>
-    </ScaleDecorator>
-  ), [savedMemoId, updateItem, deleteItem]);
+      <TextInput
+        style={styles.itemInput}
+        value={item.name}
+        onChangeText={text => updateItem(savedMemoId!, item.id, { name: text })}
+        multiline={false}
+        maxLength={50}
+      />
+      <TouchableOpacity
+        onPress={() => deleteItem(savedMemoId!, item.id)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Icon name="close" size={20} color="#EF5350" />
+      </TouchableOpacity>
+    </View>
+  ), [savedMemoId, currentItems.length, handleMoveItem, updateItem, deleteItem]);
 
   const handleDone = () => {
     isSavingRef.current = true;
@@ -225,17 +239,7 @@ export default function MemoEditScreen(): React.JSX.Element {
         {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
         <View ref={addRowRef} collapsable={false}>
           <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
-          {currentItems.length > 0 && (
-            <DraggableFlatList
-              data={currentItems}
-              keyExtractor={i => i.id}
-              renderItem={renderItem}
-              onDragEnd={({ data }) => {
-                if (savedMemoId) reorderItems(savedMemoId, data);
-              }}
-              scrollEnabled={false}
-            />
-          )}
+          {currentItems.map((item, index) => renderItem(item, index))}
 
           {/* アイテム入力 */}
           <View style={styles.addRow}>
@@ -309,18 +313,16 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 10,
     marginBottom: 4,
   },
-  itemRowActive: {
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+  reorderButtons: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0,
   },
   itemInput: {
     flex: 1,
