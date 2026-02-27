@@ -149,6 +149,9 @@ export default function MemoEditScreen(): React.JSX.Element {
       Alert.alert(t('memoEdit.errorTitle'), t('memoEdit.errorEmptyTitle'));
       return;
     }
+    if (newItemName.trim()) {
+      handleAddItem();
+    }
     const isNew = !memoId; // ルートパラメータがない → 新規作成
     let targetId: string | undefined = savedMemoId;
     if (savedMemoId) {
