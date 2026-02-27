@@ -6,6 +6,9 @@ import {
 } from 'react-native-google-mobile-ads';
 import Config from 'react-native-config';
 
+// 広告を表示するには false → true に変更してください
+const ADS_ENABLED = false;
+
 const AD_UNIT_ID = __DEV__
   ? TestIds.INTERSTITIAL
   : (Config.ADMOB_INTERSTITIAL_ID || TestIds.INTERSTITIAL);
@@ -16,10 +19,14 @@ const AD_UNIT_ID = __DEV__
  * 広告がロードされていない場合は即座に callback を実行して false を返す。
  */
 export function useInterstitialAd() {
+  // Hooks は常に同じ順序で呼ぶ必要があるため、ADS_ENABLED に関係なく宣言する
   const adRef = useRef<InterstitialAd | null>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
+    // 広告を有効にするには ADS_ENABLED を true にしてください
+    if (!ADS_ENABLED) return;
+
     const ad = InterstitialAd.createForAdRequest(AD_UNIT_ID);
     adRef.current = ad;
 
@@ -45,6 +52,11 @@ export function useInterstitialAd() {
    * @returns 広告を表示した場合 true、ロード未完了の場合 false
    */
   const showIfReady = (callback?: () => void): boolean => {
+    // 広告無効時は即座に callback を実行して終了
+    if (!ADS_ENABLED) {
+      callback?.();
+      return false;
+    }
     if (loadedRef.current && adRef.current) {
       if (callback) {
         const unsub = adRef.current.addAdEventListener(AdEventType.CLOSED, () => {
