@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SnackbarProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export default function Snackbar({
   onDismiss,
   duration = 3000,
 }: SnackbarProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
   const opacity = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -72,7 +74,7 @@ export default function Snackbar({
 
   return (
     <Animated.View
-      style={[styles.container, { opacity }]}
+      style={[styles.container, { opacity, bottom: insets.bottom + 16 }]}
       pointerEvents={visible ? 'box-none' : 'none'}>
       <Text style={styles.message} numberOfLines={2}>
         {message}
@@ -89,6 +91,7 @@ export default function Snackbar({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
+    // bottom はセーフエリア考慮で動的に上書きされる (style prop)
     bottom: 16,
     left: 16,
     right: 16,

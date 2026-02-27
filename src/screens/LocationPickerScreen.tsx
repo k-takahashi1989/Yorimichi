@@ -355,7 +355,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
             style={styles.slider}
             minimumValue={50}
             maximumValue={maxRadius}
-            step={1}
+            step={10}
             value={radius}
             onValueChange={val => setRadius(val)}
             minimumTrackTintColor="#4CAF50"

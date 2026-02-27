@@ -72,6 +72,7 @@ interface MemoState {
   updateItem: (memoId: string, itemId: string, partial: Partial<ShoppingItem>) => void;
   deleteItem: (memoId: string, itemId: string) => void;
   toggleItem: (memoId: string, itemId: string) => void;
+  reorderItems: (memoId: string, items: ShoppingItem[]) => void;
 
   // 場所
   addLocation: (memoId: string, location: Omit<MemoLocation, 'id'>) => MemoLocation | null;
@@ -167,6 +168,14 @@ export const useMemoStore = create<MemoState>()(
               ),
               updatedAt: Date.now(),
             };
+          }),
+        })),
+
+      reorderItems: (memoId, items) =>
+        set(state => ({
+          memos: state.memos.map(m => {
+            if (m.id !== memoId) return m;
+            return { ...m, items, updatedAt: Date.now() };
           }),
         })),
 

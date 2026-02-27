@@ -7,6 +7,7 @@
  */
 import BackgroundService from 'react-native-background-actions';
 import Geolocation from 'react-native-geolocation-service';
+import i18n from '../i18n';
 import { Memo } from '../types';
 import { haversineDistance } from '../utils/helpers';
 import { showArrivalNotification } from './notificationService';
@@ -57,7 +58,7 @@ function loadInsideCache(): void {
   } catch (e) {
     // キャッシュが破損している場合はリセット（次回進入時に再通知される）
     __DEV__ && console.warn('[Geofence] InsideCache corrupted, resetting:', e);
-    storage.delete(INSIDE_CACHE_KEY);
+    storage.remove(INSIDE_CACHE_KEY);
   }
 }
 
@@ -135,7 +136,7 @@ export async function startGeofenceMonitoring(): Promise<boolean> {
     await BackgroundService.start(backgroundTask, {
       taskName: 'YorimichiGeofence',
       taskTitle: 'Yorimichi',
-      taskDesc: '登録した場所に近づくとお知らせします',
+      taskDesc: i18n.t('geofence.taskDesc'),
       taskIcon: {
         name: 'ic_notification',
         type: 'drawable',
