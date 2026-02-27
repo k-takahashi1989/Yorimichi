@@ -108,6 +108,7 @@ const en: Translation = {
       title: 'App Info',
       version: 'Version: {{version}}',
       name: 'Nearist',
+      privacyPolicy: 'Privacy Policy',
     },
     alertFineLocation: {
       title: 'Location permission required',
@@ -115,8 +116,9 @@ const en: Translation = {
       openSettings: 'Open Settings',
     },
     alertBackground: {
-      title: 'Background location required',
-      message: 'Select "Always allow" in settings to receive notifications when the app is closed.',
+      title: 'Allow background location access',
+      message:
+        'Yorimichi collects location data to enable geofence reminders, even when the app is closed or not in use.\n\nPlease select "Always allow" in the settings screen.',
       openSettings: 'Open Settings',
     },
     alertMonitor: {

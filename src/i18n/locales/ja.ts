@@ -112,6 +112,7 @@ const ja = {
       title: 'アプリ情報',
       version: 'バージョン: {{version}}',
       name: 'Yorimichi',
+      privacyPolicy: 'プライバシーポリシー',
     },
     alertFineLocation: {
       title: '位置情報の許可が必要です',
@@ -119,9 +120,9 @@ const ja = {
       openSettings: '設定を開く',
     },
     alertBackground: {
-      title: 'バックグラウンド位置情報が必要です',
+      title: 'バックグラウンド位置情報のアクセス許可',
       message:
-        '設定で「常に許可」を選択してください。これによりアプリを閉じているときも通知が届きます。',
+        'よりみちは、アプリを閉じているときや使用していないときも、登録した場所への接近通知をお届けするために、バックグラウンドで位置情報を取得します。\n\n設定画面で「常に許可」を選択してください。',
       openSettings: '設定を開く',
     },
     alertMonitor: {
