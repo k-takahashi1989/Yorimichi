@@ -36,7 +36,7 @@ function MainTabs(): React.JSX.Element {
         options={{
           tabBarLabel: t('nav.tabList'),
           tabBarIcon: ({ color, size }) => (
-            <Icon name="shopping-cart" color={color} size={size} />
+            <Icon name="alt-route" color={color} size={size} />
           ),
         }}
       />

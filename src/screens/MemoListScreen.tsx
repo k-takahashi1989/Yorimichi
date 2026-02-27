@@ -91,7 +91,7 @@ export default function MemoListScreen(): React.JSX.Element {
 
       {memos.length === 0 ? (
         <View style={styles.empty}>
-          <Icon name="shopping-cart" size={64} color="#E0E0E0" />
+          <Icon name="alt-route" size={64} color="#E0E0E0" />
           <Text style={styles.emptyText}>{t('memoList.emptyText')}</Text>
           <Text style={styles.emptySubText}>{t('memoList.emptySubText')}</Text>
         </View>

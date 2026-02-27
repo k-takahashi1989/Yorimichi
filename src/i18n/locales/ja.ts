@@ -25,7 +25,7 @@ const ja = {
     screenTitleEdit: 'メモを編集',
     titleLabel: 'タイトル',
     titlePlaceholder: '例: スーパーで買うもの',
-    itemsLabel: 'もちものリスト',
+    itemsLabel: 'チェックリスト',
     addItemPlaceholder: '+ アイテムを追加',
     doneButton: '確認する',
     unsavedTitle: '編集中の内容があります',
@@ -44,7 +44,7 @@ const ja = {
     locationSection: '📍 場所 ({{count}} / 3)',
     addLocation: '追加',
     locationEmpty: '場所を追加するとそこに近づいたとき通知が来ます',
-    itemSection: '🛒 もちものリスト',
+    itemSection: '� チェックリスト',
     itemEmpty: '編集画面でアイテムを追加してください',
     radiusLabel: '半径 {{radius}}m',
     notificationOn: '通知オン',
@@ -143,7 +143,7 @@ const ja = {
 
   // ── AppNavigator ──────────────────────────────────────────
   nav: {
-    tabList: 'リスト',
+    tabList: 'よりみち',
     tabSettings: '設定',
     backButton: '戻る',
     memoDetail: 'メモ詳細',
