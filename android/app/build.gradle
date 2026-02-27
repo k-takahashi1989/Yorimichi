@@ -89,8 +89,8 @@ android {
         applicationId "com.ktakahashi.yorimichi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.0.4"
+        versionCode 6
+        versionName "1.0.5"
         // .env の GOOGLE_MAPS_API_KEY を manifestPlaceholders 経由で注入
         manifestPlaceholders = [
             GOOGLE_MAPS_API_KEY: project.env.get("GOOGLE_MAPS_API_KEY") ?: "",
