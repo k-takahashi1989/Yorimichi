@@ -1,64 +1,60 @@
 # Yorimichi 改善計画
 
+> 最終更新: 2026-02-28（versionCode 8 / versionName 1.0.6）
+
 ## 1. 実装済み変更
 
 ### 操作フロー
 
-| # | 内容 | 対応ファイル |
-|---|---|---|
-| #1 | チェック解除時の確認ダイアログを廃止し、即時実行 + Snackbar「元に戻す」に変更 | `MemoDetailScreen.tsx`, `Snackbar.tsx`（新規）|
-| #3 | 場所チップに「編集ペン」ボタンを追加し、`LocationPickerScreen` に `existingLocationId` を渡して編集モードで開けるようにした | `MemoDetailScreen.tsx` |
+| # | 内容 | 対応ファイル | コミット |
+|---|---|---|---|
+| #1 | チェック解除時の確認ダイアログを廃止し、即時実行 + Snackbar「元に戻す」に変更 | `MemoDetailScreen.tsx`, `Snackbar.tsx`（新規）| `0187b9b` |
+| #3 | 場所チップに「編集ペン」ボタンを追加し、`LocationPickerScreen` に `existingLocationId` を渡して編集モードで開けるようにした | `MemoDetailScreen.tsx` | `0187b9b` |
+| #12 | ドラッグハンドルによる並べ替えを実装。`react-native-draggable-flatlist` を導入し、ロングプレスでアイテムを上下に移動できるようになった。ストアに `reorderItems` アクションを追加 | `MemoEditScreen.tsx`, `memoStore.ts` | `d6c2c6f` |
 
 ### 通知の動作バグ
 
-| # | 内容 | 対応ファイル |
-|---|---|---|
-| #9 | 通知 ID を `arrival-${memoId}` → `arrival-${memoId}-${locationId}` に変更。同一メモの複数場所に同時進入しても通知が上書きされなくなった | `notificationService.ts`, `geofenceService.ts` |
-| #10 | 通知タイトル・本文をハードコード日本語から `i18n.t()` 経由に変更。英語設定ユーザーにも英語で通知が届く | `notificationService.ts`, `ja.ts`, `en.ts` |
+| # | 内容 | 対応ファイル | コミット |
+|---|---|---|---|
+| #9 | 通知 ID を `arrival-${memoId}` → `arrival-${memoId}-${locationId}` に変更。同一メモの複数場所に同時進入しても通知が上書きされなくなった | `notificationService.ts`, `geofenceService.ts` | `0187b9b` |
+| #10 | 通知タイトル・本文をハードコード日本語から `i18n.t()` 経由に変更。英語設定ユーザーにも英語で通知が届く | `notificationService.ts`, `ja.ts`, `en.ts` | `0187b9b` |
+| — | YorimichiGeofence バックグラウンドサービスの `taskDesc` もハードコード日本語から `i18n.t('geofence.taskDesc')` に変更 | `geofenceService.ts`, `ja.ts`, `en.ts` | `d6c2c6f` |
 
 ### データ・操作の安全性
 
-| # | 内容 | 対応ファイル |
-|---|---|---|
-| #21 | `isSavingRef` を追加し、`handleDone` 実行中は `onBlur` の `handleSaveTitle` をスキップすることで二重保存を防止 | `MemoEditScreen.tsx` |
-| #22 | アイテム入力欄（既存・新規）に `maxLength={50}` を設定しレイアウト崩れを防止 | `MemoEditScreen.tsx` |
-| #23 | `loadInsideCache` の catch 内でキャッシュをリセット（`storage.delete`）し、DEV 環境でログ出力。キャッシュ破損時も次回進入で再通知される | `geofenceService.ts` |
+| # | 内容 | 対応ファイル | コミット |
+|---|---|---|---|
+| #21 | `isSavingRef` を追加し、`handleDone` 実行中は `onBlur` の `handleSaveTitle` をスキップすることで二重保存を防止 | `MemoEditScreen.tsx` | `0187b9b` |
+| #22 | アイテム入力欄（既存・新規）に `maxLength={50}` を設定しレイアウト崩れを防止 | `MemoEditScreen.tsx` | `0187b9b` |
+| #23 | `loadInsideCache` の catch 内でキャッシュをリセット（`storage.remove`）し、DEV 環境でログ出力。キャッシュ破損時も次回進入で再通知される | `geofenceService.ts` | `0187b9b` |
+
+### UI 整合性
+
+| # | 内容 | 対応ファイル | コミット |
+|---|---|---|---|
+| #15 | 半径スライダーのステップ値を `LocationPickerScreen`（1m→10m）・`SettingsScreen`（50m→10m）で統一。10m 刻みで直感的に操作できる | `LocationPickerScreen.tsx`, `SettingsScreen.tsx` | `d6c2c6f` |
+| #16 | `MemoDetailScreen` にバックグラウンド監視状態のポーリングを追加。監視OFF時は通知ベルをオレンジ色にし「⚠️ リマインドが停止中です」警告テキストを表示 | `MemoDetailScreen.tsx`, `ja.ts`, `en.ts` | `d6c2c6f` |
+| #17 | 設定画面のバージョン表示を `'1.0.4'` ハードコードから `react-native-device-info` の `DeviceInfo.getVersion()` に変更。リリース毎に自動更新される | `SettingsScreen.tsx` | `d6c2c6f` |
 
 ### パフォーマンス
 
-| # | 内容 | 対応ファイル |
+| # | 内容 | 対応ファイル | コミット |
+|---|---|---|---|
+| #28 | `getMemoById` セレクターを `useShallow(s => s.memos.find(...))` に変更し、無関係なストア更新での再レンダリングを抑制 | `MemoDetailScreen.tsx` | `0187b9b` |
+| #29 | `renderItem` を `useCallback` でラップし、FlatList の不要な全アイテム再レンダリングを抑制 | `MemoListScreen.tsx` | `0187b9b` |
+| #30 | `ScrollView` 内の `FlatList`（`scrollEnabled={false}`）を `DraggableFlatList` に置き換え（#12 対応と同時に解消） | `MemoEditScreen.tsx` | `d6c2c6f` |
+| #31 | チュートリアル座標計測を `setTimeout` 固定遅延から `InteractionManager.runAfterInteractions` + 小遅延に変更し、描画遅延の影響を受けにくくした | `useTutorial.ts` | `0187b9b` |
+
+### その他バグ修正
+
+| 内容 | 対応ファイル | コミット |
 |---|---|---|
-| #28 | `getMemoById` セレクターを `useShallow(s => s.memos.find(...))` に変更し、無関係なストア更新での再レンダリングを抑制 | `MemoDetailScreen.tsx` |
-| #29 | `renderItem` を `useCallback` でラップし、FlatList の不要な全アイテム再レンダリングを抑制 | `MemoListScreen.tsx` |
-| #30 | `ScrollView` 内の `FlatList`（`scrollEnabled={false}`）を `Array.map()` に置き換え。仮想化が効かない状況での FlatList のオーバーヘッドを排除 | `MemoEditScreen.tsx` |
-| #31 | チュートリアル座標計測を `setTimeout` 固定遅延から `InteractionManager.runAfterInteractions` + 小遅延に変更し、描画遅延の影響を受けにくくした | `useTutorial.ts` |
+| Snackbar がホームボタンに重なる問題を `useSafeAreaInsets` で修正。`bottom: insets.bottom + 16` にしてセーフエリアを回避 | `Snackbar.tsx` | `d6c2c6f` |
+| MMKV の `storage.delete()` は存在しないメソッド。`storage.remove()` に修正 | `geofenceService.ts` | `d6c2c6f` |
 
 ---
 
 ## 2. 未対応 — UI 不整合・欠落（具体的な修正案）
-
-### #12 ドラッグハンドルが機能しない
-**問題:** `MemoEditScreen` のアイテム行に `drag-handle` アイコンが表示されているが、ドラッグ並べ替えは未実装。ユーザーが触っても何も起きない。
-
-**修正案:**
-- `react-native-draggable-flatlist`（MIT ライセンス、既存 `FlatList` の代替）を導入
-- `currentItems` の順番を変更する `reorderItems(memoId, fromIndex, toIndex)` アクションをストアに追加
-- アイコンを `drag-handle` のまま使用し、ドラッグ時のスタイル（影・スケール）を追加
-- `memos.map()` から `DraggableFlatList` に戻す必要があるため #30 との調整が必要
-
-```typescript
-// memoStore.ts に追加
-reorderItems: (memoId, fromIndex, toIndex) =>
-  set(state => ({
-    memos: state.memos.map(m => {
-      if (m.id !== memoId) return m;
-      const items = [...m.items];
-      const [moved] = items.splice(fromIndex, 1);
-      items.splice(toIndex, 0, moved);
-      return { ...m, items, updatedAt: Date.now() };
-    }),
-  })),
-```
 
 ### #13 完了メモの視覚フィードバックがない
 **問題:** `cardCompleted` スタイル（`opacity: 0.6`）が定義済みだが、全アイテムがチェック済みのメモカードに適用されていない。
@@ -84,65 +80,11 @@ const isCompleted = total > 0 && unchecked === 0;
 <Icon name="shopping-cart" size={64} color="#E0E0E0" />
 ```
 
-### #15 半径のステップ値がLocationPickerとSettingsで異なる
-**問題:**
-- `LocationPickerScreen` のスライダー: `step={1}`（1m刻み）
-- `SettingsScreen` のデフォルト半径スライダー: `step={50}`（50m刻み）
-
-**修正案:** 共通定数を `src/utils/constants.ts`（新規）に定義し両方から参照。
-
-```typescript
-// src/utils/constants.ts
-export const RADIUS_STEP = 10; // 10m刻みがユーザーにとって操作しやすい粒度
-export const RADIUS_MIN = 50;
-```
-
-### #16 バックグラウンド監視OFF時も通知ベルが「有効」に見える
-**問題:** `notificationEnabled=true` でも、バックグラウンドサービスが停止中なら通知は届かない。ユーザーに誤解を与える。
-
-**修正案:** `MemoDetailScreen.tsx` の通知ベルアイコン部分でサービス状態を確認して警告表示。
-
-```tsx
-import BackgroundService from 'react-native-background-actions';
-
-// コンポーネント内
-const isMonitoring = BackgroundService.isRunning();
-
-// JSXで
-<Icon
-  name={memo.notificationEnabled ? 'notifications' : 'notifications-off'}
-  size={22}
-  color={
-    !memo.notificationEnabled ? '#9E9E9E'
-    : isMonitoring ? '#4CAF50'
-    : '#FF9800' // オレンジ = 通知ON だが監視停止中
-  }
-/>
-// 監視停止中なら警告テキストを表示
-{memo.notificationEnabled && !isMonitoring && (
-  <Text style={styles.monitoringWarning}>{t('memoDetail.monitoringStopped')}</Text>
-)}
-```
-
-### #17 バージョン番号のハードコード
-**問題:** `SettingsScreen.tsx` でバージョンが `'1.0.4'` にハードコードされており、リリース毎に手動更新が必要。
-
-**修正案:** `react-native-device-info` を使用（既存パッケージの確認要）。
-
-```typescript
-import DeviceInfo from 'react-native-device-info';
-
-// バージョン文字列の取得
-const version = DeviceInfo.getVersion(); // '1.0.6'
-// SettingsScreen の表示
-t('settings.appInfo.version', { version })
-```
-
 ---
 
-## 3. 未対応 — データ・操作の安全性 #23（実装済みだが補足）
+## 3. データ安全性 #23（補足）
 
-`loadInsideCache` のキャッシュ破損対応は v1 として **リセット方式**で実装済み。
+`loadInsideCache` のキャッシュ破損対応は v1 として **リセット方式**で実装済み（`storage.remove` を使用）。
 将来的により堅牢にする場合の選択肢:
 
 | 方針 | 内容 | 採用条件 |
