@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Share,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,9 +17,16 @@ import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
 import { useTranslation } from 'react-i18next';
-import { useMemoStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore } from '../store/memoStore';
 import { useTutorial } from '../hooks/useTutorial';
-import { RootStackParamList, ShoppingItem, MemoLocation } from '../types';
+import { RootStackParamList, ShoppingItem, MemoLocation, SharePresence } from '../types';
+import { getDeviceId } from '../utils/deviceId';
+import {
+  uploadSharedMemo,
+  syncSharedMemo,
+  subscribePresence,
+  isPresenceActive,
+} from '../services/shareService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoDetail'>;
@@ -34,6 +42,10 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const updateItem = useMemoStore(s => s.updateItem);
   const updateMemo = useMemoStore(s => s.updateMemo);
   const deleteLocation = useMemoStore(s => s.deleteLocation);
+  const setMemoShareId = useMemoStore(s => s.setMemoShareId);
+  const isPremium = useSettingsStore(s => s.isPremium);
+  const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
+  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
 
   const bellRef = useRef<View>(null);
   const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
@@ -42,6 +54,23 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
+  const [presence, setPresence] = useState<SharePresence | null>(null);
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
+
+  // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
+  useEffect(() => {
+    if (!memo?.shareId) return;
+    const shareId = memo.shareId;
+    // Pull-on-open: Firestore から最新内容を取得
+    syncSharedMemo(shareId).then(doc => {
+      if (!doc) return;
+      updateMemo(memoId, { title: doc.title });
+    }).catch(() => {});
+    // プレゼンスをリアルタイム監視
+    const unsubscribe = subscribePresence(shareId, setPresence);
+    return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memo?.shareId]);
 
   // フォアグラウンド復帰時に監視状態を再チェック
   useEffect(() => {
@@ -61,6 +90,31 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const handleToggleNotification = () => {
     updateMemo(memoId, { notificationEnabled: !memo.notificationEnabled });
+  };
+
+  const handleShare = async () => {
+    if (!isPremium && sharedMemoIds.length >= 1 && !memo.shareId) {
+      Alert.alert(t('share.limitReached'), t('share.limitReachedMsg'));
+      return;
+    }
+    setIsSharingLoading(true);
+    try {
+      const deviceId = getDeviceId();
+      const shareId = await uploadSharedMemo(memo, deviceId);
+      if (!memo.shareId) {
+        setMemoShareId(memoId, shareId, true);
+        addSharedMemoId(shareId);
+      }
+      const url = `yorimichi://open?shareId=${shareId}`;
+      await Share.share({
+        message: `${t('share.shareMessage')}\n${url}`,
+        title: t('share.shareTitle'),
+      });
+    } catch {
+      Alert.alert(t('common.error'), t('share.uploadError'));
+    } finally {
+      setIsSharingLoading(false);
+    }
   };
 
   const handleDeleteLocation = (loc: MemoLocation) => {
@@ -123,7 +177,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-      {/* タイトル + 通知トグル + 編集ボタン */}
+      {/* タイトル + 通知トグル + 共有ボタン + 編集ボタン */}
       <View style={styles.titleRow}>
         <Text style={styles.title}>{memo.title}</Text>
         <View ref={bellRef} collapsable={false}>
@@ -143,12 +197,31 @@ export default function MemoDetailScreen(): React.JSX.Element {
           </TouchableOpacity>
         </View>
         <TouchableOpacity
+          onPress={handleShare}
+          disabled={isSharingLoading}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerIcon}>
+          <Icon
+            name={memo.shareId ? 'people' : 'share'}
+            size={22}
+            color={memo.shareId ? '#4CAF50' : '#757575'}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.pencilBtn}>
           <Icon name="edit" size={22} color="#757575" />
         </TouchableOpacity>
       </View>
+
+      {/* プレゼンスバナー（他ユーザーが編集中）*/}
+      {isPresenceActive(presence) && (
+        <View style={styles.presenceBanner}>
+          <Icon name="edit" size={14} color="#757575" />
+          <Text style={styles.presenceBannerText}>{t('share.presenceBanner')}</Text>
+        </View>
+      )}
 
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
@@ -258,6 +331,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: 'bold', color: '#212121', flex: 1, marginRight: 8 },
   headerIcon: { marginLeft: 8 },
   pencilBtn: { marginLeft: 16 },
+  presenceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  presenceBannerText: { fontSize: 12, color: '#757575' },
   monitoringWarning: {
     fontSize: 12,
     color: '#FF9800',

@@ -176,6 +176,25 @@ const en: Translation = {
     arrivalBody: '"{{title}}" checklist ({{count}} items) — tap to review',
     arrivalBodyBig: '"{{title}}" checklist ({{count}} items)\n\nTap to open the memo',
   },
+
+  share: {
+    button: 'Share',
+    shareTitle: 'Share Memo',
+    shareMessage: 'Share this memo on Yorimichi!',
+    limitReached: 'Share limit reached (free plan)',
+    limitReachedMsg: 'Free plan allows sharing 1 memo. Delete a shared memo or upgrade to Premium.',
+    importing: 'Importing memo...',
+    importTitle: 'Import Memo',
+    importMessage: 'Add "{{title}}" to your memos?',
+    importConfirm: 'Add',
+    importSuccess: 'Memo imported successfully',
+    importError: 'Failed to import memo',
+    notFound: 'Shared memo not found (may have been deleted)',
+    presenceBanner: 'Another user is editing...',
+    presenceWarning: 'Another user is editing. Your changes may be overwritten.',
+    syncError: 'Failed to sync memo',
+    uploadError: 'Failed to register share',
+  },
 };
 
 export default en;

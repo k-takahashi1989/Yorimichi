@@ -26,6 +26,8 @@ import { useTranslation } from 'react-i18next';
 import { RootStackParamList, ShoppingItem } from '../types';
 import TutorialTooltip from '../components/TutorialTooltip';
 import { useTutorial } from '../hooks/useTutorial';
+import { getDeviceId } from '../utils/deviceId';
+import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoEdit'>;
@@ -39,6 +41,7 @@ export default function MemoEditScreen(): React.JSX.Element {
   const existingMemo = useMemoStore(s => (memoId ? s.getMemoById(memoId) : undefined));
   const addMemo = useMemoStore(s => s.addMemo);
   const updateMemo = useMemoStore(s => s.updateMemo);
+  const getMemoById = useMemoStore(s => s.getMemoById);
   const addItem = useMemoStore(s => s.addItem);
   const deleteItem = useMemoStore(s => s.deleteItem);
   const updateItem = useMemoStore(s => s.updateItem);
@@ -69,6 +72,18 @@ export default function MemoEditScreen(): React.JSX.Element {
       return s.memos.find(m => m.id === savedMemoId)?.items ?? [];
     }),
   );
+
+  // 共有メモの場合: プレゼンスを記録（アンマウント時に自動クリア）
+  useEffect(() => {
+    const shareId = existingMemo?.shareId;
+    if (!shareId) return;
+    const deviceId = getDeviceId();
+    setPresence(shareId, deviceId).catch(() => {});
+    return () => {
+      clearPresence(shareId, deviceId).catch(() => {});
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingMemo?.shareId]);
 
   useEffect(() => {
     if (existingMemo) setTitle(existingMemo.title);
@@ -193,6 +208,12 @@ export default function MemoEditScreen(): React.JSX.Element {
       return;
     }
     const finalId = targetId;
+    // 共有メモの場合: Firestore に変更をアップロード
+    const savedMemo = getMemoById(finalId);
+    if (savedMemo?.shareId) {
+      const deviceId = getDeviceId();
+      uploadSharedMemo(savedMemo, deviceId).catch(() => {});
+    }
     const doNavigate = () => navigation.replace('MemoDetail', { memoId: finalId });
     if (isNew) {
       incrementMemoRegistrations();
