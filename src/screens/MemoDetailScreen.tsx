@@ -110,7 +110,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
         message: `${t('share.shareMessage')}\n${url}`,
         title: t('share.shareTitle'),
       });
-    } catch {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[handleShare] error:', msg);
       Alert.alert(t('common.error'), t('share.uploadError'));
     } finally {
       setIsSharingLoading(false);

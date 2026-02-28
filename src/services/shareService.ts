@@ -43,8 +43,9 @@ export async function syncSharedMemo(
 ): Promise<SharedMemoDoc | null> {
   await ensureSignedIn();
   const snap = await firestore().collection(COLLECTION).doc(shareId).get();
-  if (!snap.exists) return null;
-  return snap.data() as SharedMemoDoc;
+  const data = snap.data() as SharedMemoDoc | undefined;
+  if (!snap.exists || !data) return null;
+  return data;
 }
 
 // ── 受信者として memodoc に自デバイス ID を追記しデータを返す ─
@@ -55,9 +56,10 @@ export async function joinSharedMemo(
   await ensureSignedIn();
   const ref = firestore().collection(COLLECTION).doc(shareId);
   const snap = await ref.get();
-  if (!snap.exists) return null;
-  const data = snap.data() as SharedMemoDoc;
-  if (!data.collaborators.includes(deviceId)) {
+  // exists は boolean property だが snap.data() が undefined の場合も守る
+  const data = snap.data() as SharedMemoDoc | undefined;
+  if (!snap.exists || !data) return null;
+  if (Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId)) {
     await ref.update({
       collaborators: firestore.FieldValue.arrayUnion(deviceId),
     });
