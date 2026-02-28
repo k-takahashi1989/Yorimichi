@@ -75,8 +75,9 @@ export function AppNavigator(): React.JSX.Element {
   const handleSharedUrl = async (url: string | null) => {
     if (!url) return;
     try {
-      const parsed = new URL(url);
-      const shareId = parsed.searchParams.get('shareId');
+      // new URL() はカスタムスキームで失敗することがある → 正規表現でパース
+      const match = url.match(/[?&]shareId=([^&]+)/);
+      const shareId = match ? match[1] : null;
       if (!shareId) return;
       const deviceId = getDeviceId();
       const doc = await joinSharedMemo(shareId, deviceId);
@@ -97,13 +98,17 @@ export function AppNavigator(): React.JSX.Element {
                 shareId,
               );
               addSharedMemoId(shareId);
-              navigationRef.current?.navigate('MemoDetail', { memoId: memo.id });
+              // navigationRef がまだ準備できていない場合は少し待つ
+              setTimeout(() => {
+                navigationRef.current?.navigate('MemoDetail', { memoId: memo.id });
+              }, 300);
             },
           },
         ],
       );
-    } catch {
-      // URL パースエラーは無視
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[handleSharedUrl] error:', msg);
     }
   };
 
