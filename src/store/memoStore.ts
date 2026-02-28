@@ -13,10 +13,15 @@ interface SettingsState {
   maxRadius: number;                   // スライダー最大値
   totalMemoRegistrations: number;      // 新規メモ登録累計（広告表示判定用）
   seenTutorials: string[];             // 表示済みチュートリアルのキー
+  // 共有機能
+  isPremium: boolean;                  // TODO: リリース前に false に変更（クローズドテスト中は true）
+  sharedMemoIds: string[];             // 送信済み共有メモの shareId 一覧
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
   markTutorialSeen: (key: string) => void;
+  addSharedMemoId: (shareId: string) => void;
+  removeSharedMemoId: (shareId: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -26,7 +31,19 @@ export const useSettingsStore = create<SettingsState>()(
       maxRadius: 400,
       totalMemoRegistrations: 0,
       seenTutorials: [],
+      isPremium: true, // TODO: リリース前に false に変更（クローズドテスト中は true）
+      sharedMemoIds: [],
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
+      addSharedMemoId: (shareId: string) =>
+        set(state => ({
+          sharedMemoIds: state.sharedMemoIds.includes(shareId)
+            ? state.sharedMemoIds
+            : [...state.sharedMemoIds, shareId],
+        })),
+      removeSharedMemoId: (shareId: string) =>
+        set(state => ({
+          sharedMemoIds: state.sharedMemoIds.filter(id => id !== shareId),
+        })),
       incrementMemoRegistrations: () =>
         set(state => ({ totalMemoRegistrations: state.totalMemoRegistrations + 1 })),
       setMaxRadius: (max: number) => set(state => ({
@@ -42,12 +59,19 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'settings',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
         if (version <= 1) {
-          return { ...persisted, seenTutorials: persisted.seenTutorials ?? [] };
+          persisted = { ...persisted, seenTutorials: persisted.seenTutorials ?? [] };
+        }
+        if (version <= 2) {
+          persisted = {
+            ...persisted,
+            isPremium: true,
+            sharedMemoIds: persisted.sharedMemoIds ?? [],
+          };
         }
         return persisted;
       },
@@ -78,6 +102,10 @@ interface MemoState {
   addLocation: (memoId: string, location: Omit<MemoLocation, 'id'>) => MemoLocation | null;
   updateLocation: (memoId: string, locationId: string, partial: Partial<Omit<MemoLocation, 'id'>>) => void;
   deleteLocation: (memoId: string, locationId: string) => void;
+
+  // 共有機能
+  setMemoShareId: (memoId: string, shareId: string, isOwner: boolean) => void;
+  importSharedMemo: (data: Pick<Memo, 'title' | 'items' | 'locations'>, shareId: string) => Memo;
 }
 
 export const useMemoStore = create<MemoState>()(
@@ -223,6 +251,31 @@ export const useMemoStore = create<MemoState>()(
             };
           }),
         })),
+
+      // ── 共有機能 ──────────────────────────────────────────────
+      setMemoShareId: (memoId, shareId, isOwner) =>
+        set(state => ({
+          memos: state.memos.map(m =>
+            m.id === memoId ? { ...m, shareId, isOwner } : m,
+          ),
+        })),
+
+      importSharedMemo: (data, shareId) => {
+        const now = Date.now();
+        const memo: Memo = {
+          id: generateId(),
+          title: data.title,
+          items: data.items.map(it => ({ ...it, id: generateId() })),
+          locations: data.locations.map(loc => ({ ...loc, id: generateId() })),
+          notificationEnabled: true,
+          createdAt: now,
+          updatedAt: now,
+          shareId,
+          isOwner: false,
+        };
+        set(state => ({ memos: [memo, ...state.memos] }));
+        return memo;
+      },
     }),
     {
       name: 'memos',

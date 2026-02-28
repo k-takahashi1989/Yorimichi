@@ -26,6 +26,24 @@ export interface Memo {
   notificationEnabled: boolean;
   createdAt: number;           // Unix タイムスタンプ (ms)
   updatedAt: number;
+  // 共有機能
+  shareId?: string;            // Firestore ドキュメント ID（共有済みの場合のみ）
+  isOwner?: boolean;           // true = 共有の送信者
+}
+
+export interface SharePresence {
+  deviceId: string;
+  editingAt: number;           // Unix タイムスタンプ (ms)
+}
+
+export interface SharedMemoDoc {
+  title: string;
+  items: ShoppingItem[];
+  locations: MemoLocation[];
+  updatedAt: number;
+  ownerDeviceId: string;
+  collaborators: string[];
+  presence: SharePresence | null;
 }
 
 // ============================================================

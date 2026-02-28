@@ -185,7 +185,25 @@ const ja = {
     arrivalBody: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう',
     arrivalBodyBig: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう\n\nタップしてメモを開く',
   },
-} as const;
+  // ── 共有機能 ──────────────────────────────────────
+  share: {
+    button: '共有',
+    shareTitle: 'メモを共有',
+    shareMessage: 'Yorimichi でメモを共有しましょう！',
+    limitReached: '共有は1件まで（無料プラン）',
+    limitReachedMsg: '無料プランで共有できるメモは1件までです。共有済みのメモを削除するか、プレミアムにアップグレードしてください',
+    importing: 'メモを取り込んでいます...',
+    importTitle: 'メモを取り込む',
+    importMessage: '「{{title}}」を自分のメモに追加しますか？',
+    importConfirm: '追加',
+    importSuccess: 'メモを取り込みました',
+    importError: 'メモの取り込みに失敗しました',
+    notFound: '共有メモが見つかりません（削除済みの可能性があります）',
+    presenceBanner: '他のユーザーが編集中...',
+    presenceWarning: '他のユーザーが編集中です。上書きされる場合があります',
+    syncError: '同期に失敗しました',
+    uploadError: '共有の登録に失敗しました',
+  },} as const;
 
 export default ja;
 export type TranslationKeys = typeof ja;
