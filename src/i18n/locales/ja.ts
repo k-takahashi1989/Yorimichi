@@ -203,6 +203,11 @@ const ja = {
     presenceWarning: '他のユーザーが編集中です。上書きされる場合があります',
     syncError: '同期に失敗しました',
     uploadError: '共有の登録に失敗しました',
+    importByCode: '共有コードでインポート',
+    importByCodePrompt: '共有コードを入力してください',
+    shareCodeLabel: '共有コード',
+    shareCodeHint: 'アプリの「共有コードでインポート」にこのコードを入力してください',
+    importByCodeInvalid: '無効な共有コードです',
   },} as const;
 
 export default ja;
