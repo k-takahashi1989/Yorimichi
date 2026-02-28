@@ -54,8 +54,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
-  const [presence, setPresence] = useState<SharePresence | null>(null);
+  const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
+  const deviceId = getDeviceId();
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
       updateMemo(memoId, { title: doc.title });
     }).catch(() => {});
     // プレゼンスをリアルタイム監視
-    const unsubscribe = subscribePresence(shareId, setPresence);
+    const unsubscribe = subscribePresence(shareId, setPresences);
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memo?.shareId]);
@@ -99,7 +100,6 @@ export default function MemoDetailScreen(): React.JSX.Element {
     }
     setIsSharingLoading(true);
     try {
-      const deviceId = getDeviceId();
       const shareId = await uploadSharedMemo(memo, deviceId);
       if (!memo.shareId) {
         setMemoShareId(memoId, shareId, true);
@@ -217,7 +217,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
       </View>
 
       {/* プレゼンスバナー（他ユーザーが編集中）*/}
-      {isPresenceActive(presence) && (
+      {isPresenceActive(presences, deviceId) && (
         <View style={styles.presenceBanner}>
           <Icon name="edit" size={14} color="#757575" />
           <Text style={styles.presenceBannerText}>{t('share.presenceBanner')}</Text>
