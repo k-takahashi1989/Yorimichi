@@ -141,7 +141,7 @@ const en: Translation = {
   },
 
   nav: {
-    tabList: 'Yorimichi',
+    tabList: 'Nearist',
     tabSettings: 'Settings',
     backButton: 'Back',
     memoDetail: 'Memo Detail',
