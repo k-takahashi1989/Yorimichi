@@ -18,6 +18,8 @@ const ja = {
     noItems: 'アイテムなし',
     emptyText: 'メモがありません',
     emptySubText: '右上の + ボタンで追加しましょう',
+    deleteSwipe: '削除',
+    deletedSnack: '「{{title}}」を削除しました',
   },
 
   // ── MemoEditScreen ────────────────────────────────────────
@@ -55,6 +57,9 @@ const ja = {
     uncheckTitle: 'チェックを外しますか？',
     uncheckMessage: '購入日時の記録もクリアされます。',
     uncheckDone: 'チェックを外しました',
+    uncheckAll: '全て解除',
+    allCheckedTitle: '全アイテム完了！',
+    allCheckedMessage: 'このメモの通知をオフにしますか？',
   },
 
   // ── LocationPickerScreen ──────────────────────────────────
@@ -76,6 +81,7 @@ const ja = {
     labelPlaceholder: '例: スーパー三和',
     radiusLabel: '通知半径: {{radius}}m',
     saveButton: 'この場所を保存',
+    recentTitle: '最近の場所',
   },
 
   // ── SettingsScreen ────────────────────────────────────────

@@ -18,6 +18,8 @@ const en: Translation = {
     noItems: 'No items',
     emptyText: 'No memos yet',
     emptySubText: 'Tap + to add a memo',
+    deleteSwipe: 'Delete',
+    deletedSnack: '"{{title}}" deleted',
   },
 
   memoEdit: {
@@ -53,6 +55,9 @@ const en: Translation = {
     uncheckTitle: 'Uncheck item?',
     uncheckMessage: 'The recorded purchase date will also be cleared.',
     uncheckDone: 'Item unchecked',
+    uncheckAll: 'Uncheck all',
+    allCheckedTitle: 'All items done!',
+    allCheckedMessage: 'Turn off notifications for this memo?',
   },
 
   locationPicker: {
@@ -73,6 +78,7 @@ const en: Translation = {
     labelPlaceholder: 'e.g. Supermarket',
     radiusLabel: 'Notify radius: {{radius}}m',
     saveButton: 'Save this location',
+    recentTitle: 'Recent places',
   },
 
   settings: {
