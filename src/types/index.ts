@@ -43,7 +43,8 @@ export interface SharedMemoDoc {
   updatedAt: number;
   ownerDeviceId: string;
   collaborators: string[];
-  presence: SharePresence | null;
+  // deviceId をキーとするプレゼンスマップ（複数人対応）
+  presences: Record<string, SharePresence>;
 }
 
 // ============================================================

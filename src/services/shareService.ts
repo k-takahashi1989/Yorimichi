@@ -26,7 +26,7 @@ export async function uploadSharedMemo(
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],
-    presence: null,
+    presences: {},
   };
   if (memo.shareId) {
     // 既存ドキュメントを更新
@@ -73,14 +73,15 @@ export async function setPresence(
   deviceId: string,
 ): Promise<void> {
   await ensureSignedIn();
-  const presence: SharePresence = {
+  const entry: SharePresence = {
     deviceId,
     editingAt: Date.now(),
   };
+  // ドット記法で自分のエントリだけ更新（他デバイスのプレゼンスを消さない）
   await firestore()
     .collection(COLLECTION)
     .doc(shareId)
-    .update({ presence });
+    .update({ [`presences.${deviceId}`]: entry });
 }
 
 // ── プレゼンスをクリア ────────────────────────────────────────
@@ -89,22 +90,17 @@ export async function clearPresence(
   deviceId: string,
 ): Promise<void> {
   await ensureSignedIn();
-  const snap = await firestore().collection(COLLECTION).doc(shareId).get();
-  if (!snap.exists) return;
-  const data = snap.data() as SharedMemoDoc;
-  // 自分のプレゼンスだけクリア
-  if (data.presence?.deviceId === deviceId) {
-    await firestore()
-      .collection(COLLECTION)
-      .doc(shareId)
-      .update({ presence: null });
-  }
+  // FieldValue.delete() で自分のエントリだけ削除（事前読み込み不要）
+  await firestore()
+    .collection(COLLECTION)
+    .doc(shareId)
+    .update({ [`presences.${deviceId}`]: firestore.FieldValue.delete() });
 }
 
 // ── プレゼンスをリアルタイム監視（unsubscribe 関数を返す）────
 export function subscribePresence(
   shareId: string,
-  callback: (presence: SharePresence | null) => void,
+  callback: (presences: Record<string, SharePresence>) => void,
 ): () => void {
   const unsubscribe = firestore()
     .collection(COLLECTION)
@@ -112,19 +108,24 @@ export function subscribePresence(
     .onSnapshot(
       (snap: FirebaseFirestoreTypes.DocumentSnapshot) => {
         if (!snap.exists) {
-          callback(null);
+          callback({});
           return;
         }
         const data = snap.data() as SharedMemoDoc;
-        callback(data.presence ?? null);
+        callback(data.presences ?? {});
       },
-      () => callback(null),
+      () => callback({}),
     );
   return unsubscribe;
 }
 
-// ── プレゼンスが有効か判定（30秒 TTL）────────────────────────
-export function isPresenceActive(presence: SharePresence | null): boolean {
-  if (!presence) return false;
-  return Date.now() - presence.editingAt < 30_000;
+// ── 自分以外の誰かが30秒以内に編集中か判定 ──────────────────
+export function isPresenceActive(
+  presences: Record<string, SharePresence>,
+  ownDeviceId: string,
+): boolean {
+  const now = Date.now();
+  return Object.values(presences).some(
+    p => p.deviceId !== ownDeviceId && now - p.editingAt < 30_000,
+  );
 }
