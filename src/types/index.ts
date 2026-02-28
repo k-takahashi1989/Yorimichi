@@ -18,12 +18,20 @@ export interface MemoLocation {
   address?: string;     // 逆ジオコーディングで取得した住所 (町名まで)
 }
 
+export interface RecentPlace {
+  label: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+}
+
 export interface Memo {
   id: string;
   title: string;
   items: ShoppingItem[];
   locations: MemoLocation[];   // 最大3か所
   notificationEnabled: boolean;
+  autoDisabledNotification?: boolean; // 全チェック時に自動でOFFにした場合 true
   createdAt: number;           // Unix タイムスタンプ (ms)
   updatedAt: number;
   // 共有機能

@@ -10,6 +10,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useMemoStore, useSettingsStore } from '../store/memoStore';
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
+import Snackbar from '../components/Snackbar';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 
@@ -28,6 +30,7 @@ export default function MemoListScreen(): React.JSX.Element {
   const navigation = useNavigation<Nav>();
   const memos = useMemoStore(s => s.memos);
   const deleteMemo = useMemoStore(s => s.deleteMemo);
+  const restoreMemo = useMemoStore(s => s.restoreMemo);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
   const insets = useSafeAreaInsets();
@@ -35,6 +38,8 @@ export default function MemoListScreen(): React.JSX.Element {
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importCode, setImportCode] = useState('');
   const [importLoading, setImportLoading] = useState(false);
+  const [deletedMemo, setDeletedMemo] = useState<Memo | null>(null);
+  const [deleteSnackbarVisible, setDeleteSnackbarVisible] = useState(false);
 
   const handleImportByCode = useCallback(async () => {
     const code = importCode.trim();
@@ -93,41 +98,61 @@ export default function MemoListScreen(): React.JSX.Element {
   const renderItem = useCallback(({ item }: { item: Memo }) => {
     const unchecked = item.items.filter(i => !i.isChecked).length;
     const total = item.items.length;
+    const isCompleted = total > 0 && unchecked === 0;
+
+    const handleSwipeDelete = () => {
+      setDeletedMemo(item);
+      deleteMemo(item.id);
+      setDeleteSnackbarVisible(true);
+    };
+
+    const renderRightActions = () => (
+      <View style={styles.swipeDeleteAction}>
+        <Icon name="delete" size={24} color="#fff" />
+        <Text style={styles.swipeDeleteText}>{t('memoList.deleteSwipe')}</Text>
+      </View>
+    );
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('MemoDetail', { memoId: item.id })}>
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>
-            {item.title}
-          </Text>
-          <Text style={styles.cardSub}>
-            {total > 0 ? t('memoList.itemsLeft', { unchecked, total }) : t('memoList.noItems')}
-          </Text>
-          {item.locations.length > 0 && (
-            <Text style={styles.cardLoc}>
-              📍 {item.locations.map(l => l.label).join(' / ')}
+      <Swipeable
+        renderRightActions={renderRightActions}
+        onSwipeableOpen={handleSwipeDelete}
+        friction={2}
+        rightThreshold={60}>
+        <TouchableOpacity
+          style={[styles.card, isCompleted && styles.cardCompleted]}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('MemoDetail', { memoId: item.id })}>
+          <View style={styles.cardBody}>
+            <Text style={styles.cardTitle}>
+              {item.title}
             </Text>
-          )}
-        </View>
-        <View style={styles.cardActions}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Icon name="edit" size={22} color="#757575" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDelete(item)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.deleteBtn}>
-            <Icon name="delete" size={22} color="#EF5350" />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+            <Text style={styles.cardSub}>
+              {total > 0 ? t('memoList.itemsLeft', { unchecked, total }) : t('memoList.noItems')}
+            </Text>
+            {item.locations.length > 0 && (
+              <Text style={styles.cardLoc}>
+                📍 {item.locations.map(l => l.label).join(' / ')}
+              </Text>
+            )}
+          </View>
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Icon name="edit" size={22} color="#757575" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleDelete(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.deleteBtn}>
+              <Icon name="delete" size={22} color="#EF5350" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Swipeable>
     );
-  }, [navigation, handleDelete, t]);
+  }, [navigation, handleDelete, deleteMemo, t]);
 
   return (
     <View style={styles.container}>
@@ -203,6 +228,20 @@ export default function MemoListScreen(): React.JSX.Element {
           </View>
         </View>
       </Modal>
+      <Snackbar
+        visible={deleteSnackbarVisible}
+        message={t('memoList.deletedSnack', { title: deletedMemo?.title ?? '' })}
+        actionLabel={t('common.undo')}
+        onAction={() => {
+          if (deletedMemo) restoreMemo(deletedMemo);
+          setDeleteSnackbarVisible(false);
+          setDeletedMemo(null);
+        }}
+        onDismiss={() => {
+          setDeleteSnackbarVisible(false);
+          setDeletedMemo(null);
+        }}
+      />
     </View>
   );
 }
@@ -249,6 +288,17 @@ const styles = StyleSheet.create({
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
   cardActions: { flexDirection: 'row', gap: 8, marginLeft: 8 },
   deleteBtn: { marginLeft: 4 },
+  swipeDeleteAction: {
+    backgroundColor: '#EF5350',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginVertical: 0,
+  },
+  swipeDeleteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   emptyText: { fontSize: 18, color: '#9E9E9E', fontWeight: '600' },
   emptySubText: { fontSize: 14, color: '#BDBDBD' },

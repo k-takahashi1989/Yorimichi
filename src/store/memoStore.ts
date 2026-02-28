@@ -1,6 +1,6 @@
 ﻿import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Memo, ShoppingItem, MemoLocation } from '../types';
+import { Memo, ShoppingItem, MemoLocation, RecentPlace } from '../types';
 import { mmkvStorage } from '../storage/mmkvStorage';
 import { generateId } from '../utils/helpers';
 import { clearMemoFromCache } from '../services/geofenceService';
@@ -16,12 +16,15 @@ interface SettingsState {
   // 共有機能
   isPremium: boolean;                  // TODO: リリース前に false に変更（クローズドテスト中は true）
   sharedMemoIds: string[];             // 送信済み共有メモの shareId 一覧
+  // 場所検索履歴
+  recentPlaces: RecentPlace[];         // 最大5件
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
   markTutorialSeen: (key: string) => void;
   addSharedMemoId: (shareId: string) => void;
   removeSharedMemoId: (shareId: string) => void;
+  addRecentPlace: (place: RecentPlace) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -33,6 +36,7 @@ export const useSettingsStore = create<SettingsState>()(
       seenTutorials: [],
       isPremium: true, // TODO: リリース前に false に変更（クローズドテスト中は true）
       sharedMemoIds: [],
+      recentPlaces: [],
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       addSharedMemoId: (shareId: string) =>
         set(state => ({
@@ -56,10 +60,17 @@ export const useSettingsStore = create<SettingsState>()(
             ? state.seenTutorials
             : [...state.seenTutorials, key],
         })),
+      addRecentPlace: (place: RecentPlace) =>
+        set(state => {
+          // 重複除去（同じ標签があれば先頭に移動）
+          const filtered = state.recentPlaces.filter(p => p.label !== place.label);
+          const updated = [place, ...filtered].slice(0, 10);
+          return { recentPlaces: updated };
+        }),
     }),
     {
       name: 'settings',
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -72,6 +83,9 @@ export const useSettingsStore = create<SettingsState>()(
             isPremium: true,
             sharedMemoIds: persisted.sharedMemoIds ?? [],
           };
+        }
+        if (version <= 3) {
+          persisted = { ...persisted, recentPlaces: persisted.recentPlaces ?? [] };
         }
         return persisted;
       },
@@ -87,8 +101,9 @@ interface MemoState {
 
   // CRUD
   addMemo: (title: string) => Memo;
-  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled'>>) => void;
+  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification'>>) => void;
   deleteMemo: (id: string) => void;
+  restoreMemo: (memo: Memo) => void;
   getMemoById: (id: string) => Memo | undefined;
 
   // アイテム
@@ -97,6 +112,7 @@ interface MemoState {
   deleteItem: (memoId: string, itemId: string) => void;
   toggleItem: (memoId: string, itemId: string) => void;
   reorderItems: (memoId: string, items: ShoppingItem[]) => void;
+  uncheckAllItems: (memoId: string) => void;
 
   // 場所
   addLocation: (memoId: string, location: Omit<MemoLocation, 'id'>) => MemoLocation | null;
@@ -142,6 +158,9 @@ export const useMemoStore = create<MemoState>()(
           memos: state.memos.filter(m => m.id !== id),
         }));
       },
+
+      restoreMemo: (memo) =>
+        set(state => ({ memos: [memo, ...state.memos] })),
 
       getMemoById: (id) => get().memos.find(m => m.id === id),
 
@@ -204,6 +223,21 @@ export const useMemoStore = create<MemoState>()(
           memos: state.memos.map(m => {
             if (m.id !== memoId) return m;
             return { ...m, items, updatedAt: Date.now() };
+          }),
+        })),
+
+      uncheckAllItems: (memoId) =>
+        set(state => ({
+          memos: state.memos.map(m => {
+            if (m.id !== memoId) return m;
+            return {
+              ...m,
+              items: m.items.map(it => ({ ...it, isChecked: false, checkedAt: undefined })),
+              // 自動OFFされた場合は通知を再ONに戻す
+              notificationEnabled: m.autoDisabledNotification ? true : m.notificationEnabled,
+              autoDisabledNotification: false,
+              updatedAt: Date.now(),
+            };
           }),
         })),
 

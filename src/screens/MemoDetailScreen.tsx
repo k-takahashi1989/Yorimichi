@@ -43,6 +43,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const updateMemo = useMemoStore(s => s.updateMemo);
   const deleteLocation = useMemoStore(s => s.deleteLocation);
   const setMemoShareId = useMemoStore(s => s.setMemoShareId);
+  const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
   const isPremium = useSettingsStore(s => s.isPremium);
   const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
@@ -135,8 +136,27 @@ export default function MemoDetailScreen(): React.JSX.Element {
       // チェック解除時: 即座に実行して Snackbar で元に戻せる
       setUndoTarget(item);
       setSnackbarVisible(true);
+    } else {
+      // チェック時: 全アイテムがチェックされたか確認
+      const allOthersChecked = memo
+        ? memo.items.filter(it => it.id !== item.id).every(it => it.isChecked)
+        : false;
+      if (allOthersChecked && memo && memo.items.length > 0 && memo.notificationEnabled) {
+        Alert.alert(
+          t('memoDetail.allCheckedTitle'),
+          t('memoDetail.allCheckedMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('memoDetail.notificationOff'),
+              style: 'destructive',
+              onPress: () => updateMemo(memoId, { notificationEnabled: false, autoDisabledNotification: true }),
+            },
+          ],
+        );
+      }
     }
-  }, [memoId, toggleItem]);
+  }, [memoId, toggleItem, memo, t, updateMemo]);
 
   const handleUndo = useCallback(() => {
     if (!undoTarget) return;
@@ -277,7 +297,17 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
       {/* 買い物アイテムリスト */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+          {memo.items.some(it => it.isChecked) && (
+            <TouchableOpacity
+              onPress={() => uncheckAllItems(memoId)}
+              style={styles.addLocBtn}>
+              <Icon name="clear-all" size={18} color="#9E9E9E" />
+              <Text style={[styles.addLocText, { color: '#9E9E9E' }]}>{t('memoDetail.uncheckAll')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         {memo.items.length === 0 ? (
           <Text style={styles.noLocText}>
             {t('memoDetail.itemEmpty')}
