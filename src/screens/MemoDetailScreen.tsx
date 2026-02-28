@@ -105,9 +105,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         setMemoShareId(memoId, shareId, true);
         addSharedMemoId(shareId);
       }
-      const url = `yorimichi://open?shareId=${shareId}`;
       await Share.share({
-        message: `${t('share.shareMessage')}\n${url}`,
+        message: `${t('share.shareMessage')}\n\n${t('share.shareCodeLabel')}: ${shareId}\n\n${t('share.shareCodeHint')}`,
         title: t('share.shareTitle'),
       });
     } catch (e: unknown) {

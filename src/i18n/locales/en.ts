@@ -194,6 +194,11 @@ const en: Translation = {
     presenceWarning: 'Another user is editing. Your changes may be overwritten.',
     syncError: 'Failed to sync memo',
     uploadError: 'Failed to register share',
+    importByCode: 'Import by Share Code',
+    importByCodePrompt: 'Enter the share code',
+    shareCodeLabel: 'Share Code',
+    shareCodeHint: 'Enter this code via "Import by Share Code" in the app',
+    importByCodeInvalid: 'Invalid share code',
   },
 };
 

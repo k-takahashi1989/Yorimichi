@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useMemoStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore } from '../store/memoStore';
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
+import { joinSharedMemo } from '../services/shareService';
+import { getDeviceId } from '../utils/deviceId';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,7 +28,53 @@ export default function MemoListScreen(): React.JSX.Element {
   const navigation = useNavigation<Nav>();
   const memos = useMemoStore(s => s.memos);
   const deleteMemo = useMemoStore(s => s.deleteMemo);
+  const importSharedMemo = useMemoStore(s => s.importSharedMemo);
+  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
   const insets = useSafeAreaInsets();
+
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importCode, setImportCode] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+
+  const handleImportByCode = useCallback(async () => {
+    const code = importCode.trim();
+    if (!code) return;
+    setImportLoading(true);
+    try {
+      const deviceId = getDeviceId();
+      const doc = await joinSharedMemo(code, deviceId);
+      if (!doc) {
+        Alert.alert(t('common.error'), t('share.notFound'));
+        return;
+      }
+      Alert.alert(
+        t('share.importTitle'),
+        t('share.importMessage', { title: doc.title }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('share.importConfirm'),
+            onPress: () => {
+              const memo = importSharedMemo(
+                { title: doc.title, items: doc.items, locations: doc.locations },
+                code,
+              );
+              addSharedMemoId(code);
+              setImportModalVisible(false);
+              setImportCode('');
+              navigation.navigate('MemoDetail', { memoId: memo.id });
+            },
+          },
+        ],
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[importByCode] error:', msg);
+      Alert.alert(t('common.error'), t('share.importError'));
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importCode, importSharedMemo, addSharedMemoId, navigation, t]);
 
   const handleDelete = useCallback(
     (memo: Memo) => {
@@ -82,11 +133,18 @@ export default function MemoListScreen(): React.JSX.Element {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>{t('memoList.headerTitle')}</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.navigate('MemoEdit', {})}>
-          <Icon name="add" size={28} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => { setImportCode(''); setImportModalVisible(true); }}>
+            <Icon name="group-add" size={26} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => navigation.navigate('MemoEdit', {})}>
+            <Icon name="add" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {memos.length === 0 ? (
@@ -104,6 +162,47 @@ export default function MemoListScreen(): React.JSX.Element {
         />
       )}
       <AdBanner />
+
+      {/* Import by share code modal */}
+      <Modal
+        visible={importModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImportModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('share.importByCode')}</Text>
+            <Text style={styles.modalLabel}>{t('share.importByCodePrompt')}</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={importCode}
+              onChangeText={setImportCode}
+              placeholder={t('share.shareCodeLabel')}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleImportByCode}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => setImportModalVisible(false)}
+                disabled={importLoading}>
+                <Text style={styles.modalBtnCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnConfirm, (!importCode.trim() || importLoading) && styles.modalBtnDisabled]}
+                onPress={handleImportByCode}
+                disabled={!importCode.trim() || importLoading}>
+                {importLoading
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={styles.modalBtnConfirmText}>{t('share.importConfirm')}</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -119,6 +218,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerIconBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 20,
+    padding: 5,
+  },
   addBtn: {
     backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: 20,
@@ -147,4 +252,43 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   emptyText: { fontSize: 18, color: '#9E9E9E', fontWeight: '600' },
   emptySubText: { fontSize: 14, color: '#BDBDBD' },
+  // Import by code modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#212121', marginBottom: 8 },
+  modalLabel: { fontSize: 14, color: '#757575', marginBottom: 12 },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#212121',
+    backgroundColor: '#FAFAFA',
+    marginBottom: 16,
+  },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+  modalBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  modalBtnCancel: { backgroundColor: '#F5F5F5' },
+  modalBtnCancelText: { color: '#757575', fontWeight: '600' },
+  modalBtnConfirm: { backgroundColor: '#4CAF50' },
+  modalBtnConfirmText: { color: '#fff', fontWeight: '600' },
+  modalBtnDisabled: { opacity: 0.5 },
 });
