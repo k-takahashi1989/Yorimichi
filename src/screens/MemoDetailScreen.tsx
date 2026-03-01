@@ -45,7 +45,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const deleteLocation = useMemoStore(s => s.deleteLocation);
   const setMemoShareId = useMemoStore(s => s.setMemoShareId);
   const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
-  const deleteCheckedItems = useMemoStore(s => s.deleteCheckedItems);
+  const checkAllItems = useMemoStore(s => s.checkAllItems);
   const isPremium = useSettingsStore(s => s.isPremium);
   const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
@@ -59,6 +59,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
+  const [hideChecked, setHideChecked] = useState(false);
   const deviceId = getDeviceId();
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
@@ -302,36 +303,51 @@ export default function MemoDetailScreen(): React.JSX.Element {
       </View>
 
       {/* 買い物アイテムリスト */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
-          {memo.items.length > 0 && (
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              <TouchableOpacity
-                onPress={() => uncheckAllItems(memoId)}
-                disabled={!memo.items.some(it => it.isChecked)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[{ padding: 4 }, !memo.items.some(it => it.isChecked) && { opacity: 0.3 }]}>
-                <Icon name="clear-all" size={22} color="#9E9E9E" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => deleteCheckedItems(memoId)}
-                disabled={!memo.items.some(it => it.isChecked)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[{ padding: 4 }, !memo.items.some(it => it.isChecked) && { opacity: 0.3 }]}>
-                <Icon name="delete-sweep" size={22} color="#EF5350" />
-              </TouchableOpacity>
+      {(() => {
+        const allChecked = memo.items.length > 0 && memo.items.every(it => it.isChecked);
+        const hasChecked = memo.items.some(it => it.isChecked);
+        const checkedCount = memo.items.filter(it => it.isChecked).length;
+        const visibleItems = hideChecked ? memo.items.filter(it => !it.isChecked) : memo.items;
+        return (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+              {memo.items.length > 0 && (
+                <View style={{ flexDirection: 'row', gap: 4 }}>
+                  <TouchableOpacity
+                    onPress={() => allChecked ? uncheckAllItems(memoId) : checkAllItems(memoId)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{ padding: 4 }}>
+                    <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setHideChecked(v => !v)}
+                    disabled={!hasChecked && !hideChecked}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
+                    <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-          )}
-        </View>
-        {memo.items.length === 0 ? (
-          <Text style={styles.noLocText}>
-            {t('memoDetail.itemEmpty')}
-          </Text>
-        ) : (
-          memo.items.map(renderShoppingItem)
-        )}
-      </View>
+            {memo.items.length === 0 ? (
+              <Text style={styles.noLocText}>{t('memoDetail.itemEmpty')}</Text>
+            ) : (
+              <>
+                {visibleItems.map(renderShoppingItem)}
+                {hideChecked && checkedCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setHideChecked(false)}
+                    style={styles.hiddenItemsRow}>
+                    <Icon name="visibility-off" size={15} color="#BDBDBD" />
+                    <Text style={styles.hiddenItemsText}>{t('memoDetail.hiddenItems', { count: checkedCount })}</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        );
+      })()}
 
       </ScrollView>
 
@@ -412,6 +428,8 @@ const styles = StyleSheet.create({
   addLocBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   addLocText: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
   noLocText: { fontSize: 13, color: '#9E9E9E', textAlign: 'center', paddingVertical: 8 },
+  hiddenItemsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 4 },
+  hiddenItemsText: { fontSize: 13, color: '#BDBDBD' },
   locChip: {
     flexDirection: 'row',
     alignItems: 'center',
