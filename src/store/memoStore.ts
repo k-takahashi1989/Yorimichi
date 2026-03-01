@@ -113,7 +113,7 @@ interface MemoState {
   toggleItem: (memoId: string, itemId: string) => void;
   reorderItems: (memoId: string, items: ShoppingItem[]) => void;
   uncheckAllItems: (memoId: string) => void;
-  deleteCheckedItems: (memoId: string) => void;
+  checkAllItems: (memoId: string) => void;
 
   // 場所
   addLocation: (memoId: string, location: Omit<MemoLocation, 'id'>) => MemoLocation | null;
@@ -242,13 +242,17 @@ export const useMemoStore = create<MemoState>()(
           }),
         })),
 
-      deleteCheckedItems: (memoId) =>
+      checkAllItems: (memoId) =>
         set(state => ({
           memos: state.memos.map(m => {
             if (m.id !== memoId) return m;
             return {
               ...m,
-              items: m.items.filter(it => !it.isChecked),
+              items: m.items.map(it => ({
+                ...it,
+                isChecked: true,
+                checkedAt: it.checkedAt ?? Date.now(),
+              })),
               updatedAt: Date.now(),
             };
           }),

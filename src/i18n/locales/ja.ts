@@ -58,7 +58,7 @@ const ja = {
     uncheckMessage: '購入日時の記録もクリアされます。',
     uncheckDone: 'チェックを外しました',
     uncheckAll: '全て解除',
-    deleteChecked: 'チェック済みを削除',
+    hiddenItems: '{{count}}件完了（タップで表示）',
     allCheckedTitle: '全アイテム完了！',
     allCheckedMessage: 'このメモの通知をオフにしますか？',
   },
