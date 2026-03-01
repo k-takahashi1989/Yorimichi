@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Share,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -16,9 +18,16 @@ import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
 import { useTranslation } from 'react-i18next';
-import { useMemoStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore } from '../store/memoStore';
 import { useTutorial } from '../hooks/useTutorial';
-import { RootStackParamList, ShoppingItem, MemoLocation } from '../types';
+import { RootStackParamList, ShoppingItem, MemoLocation, SharePresence } from '../types';
+import { getDeviceId } from '../utils/deviceId';
+import {
+  uploadSharedMemo,
+  syncSharedMemo,
+  subscribePresence,
+  isPresenceActive,
+} from '../services/shareService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoDetail'>;
@@ -34,6 +43,12 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const updateItem = useMemoStore(s => s.updateItem);
   const updateMemo = useMemoStore(s => s.updateMemo);
   const deleteLocation = useMemoStore(s => s.deleteLocation);
+  const setMemoShareId = useMemoStore(s => s.setMemoShareId);
+  const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
+  const checkAllItems = useMemoStore(s => s.checkAllItems);
+  const isPremium = useSettingsStore(s => s.isPremium);
+  const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
+  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
 
   const bellRef = useRef<View>(null);
   const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
@@ -41,15 +56,38 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
+  const [allCheckedSnackbarVisible, setAllCheckedSnackbarVisible] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
+  const [presences, setPresences] = useState<Record<string, SharePresence>>({});
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
+  const [hideChecked, setHideChecked] = useState(false);
+  const deviceId = getDeviceId();
 
-  // フォアグラウンド復帰時に監視状態を再チェック
+  // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
   useEffect(() => {
-    const id = setInterval(() => {
+    if (!memo?.shareId) return;
+    const shareId = memo.shareId;
+    // Pull-on-open: Firestore から最新内容を取得
+    syncSharedMemo(shareId).then(doc => {
+      if (!doc) return;
+      updateMemo(memoId, { title: doc.title });
+    }).catch(() => {});
+    // プレゼンスをリアルタイム監視
+    const unsubscribe = subscribePresence(shareId, setPresences);
+    return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memo?.shareId]);
+
+  // フォアグラウンド復帰時に監視状態を再チェック（フォーカス中のみ: 遷移アニメーション中の再レンダリングを防ぐ）
+  useFocusEffect(
+    useCallback(() => {
       setIsMonitoring(BackgroundService.isRunning());
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
+      const id = setInterval(() => {
+        setIsMonitoring(BackgroundService.isRunning());
+      }, 3000);
+      return () => clearInterval(id);
+    }, []),
+  );
 
   if (!memo) {
     return (
@@ -61,6 +99,31 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const handleToggleNotification = () => {
     updateMemo(memoId, { notificationEnabled: !memo.notificationEnabled });
+  };
+
+  const handleShare = async () => {
+    if (!isPremium && sharedMemoIds.length >= 1 && !memo.shareId) {
+      Alert.alert(t('share.limitReached'), t('share.limitReachedMsg'));
+      return;
+    }
+    setIsSharingLoading(true);
+    try {
+      const shareId = await uploadSharedMemo(memo, deviceId);
+      if (!memo.shareId) {
+        setMemoShareId(memoId, shareId, true);
+        addSharedMemoId(shareId);
+      }
+      await Share.share({
+        message: `${t('share.shareMessage')}\n\n${t('share.shareCodeLabel')}: ${shareId}\n\n${t('share.shareCodeHint')}`,
+        title: t('share.shareTitle'),
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[handleShare] error:', msg);
+      Alert.alert(t('common.error'), t('share.uploadError'));
+    } finally {
+      setIsSharingLoading(false);
+    }
   };
 
   const handleDeleteLocation = (loc: MemoLocation) => {
@@ -80,8 +143,18 @@ export default function MemoDetailScreen(): React.JSX.Element {
       // チェック解除時: 即座に実行して Snackbar で元に戻せる
       setUndoTarget(item);
       setSnackbarVisible(true);
+    } else {
+      // チェック時: 全アイテムがチェックされたか確認
+      const allOthersChecked = memo
+        ? memo.items.filter(it => it.id !== item.id).every(it => it.isChecked)
+        : false;
+      if (allOthersChecked && memo && memo.items.length > 0) {
+        // Alert の代わりに Snackbar で通知 → back ボタンをブロックしない
+        setSnackbarVisible(false);
+        setAllCheckedSnackbarVisible(true);
+      }
     }
-  }, [memoId, toggleItem]);
+  }, [memoId, toggleItem, memo, t, updateMemo]);
 
   const handleUndo = useCallback(() => {
     if (!undoTarget) return;
@@ -123,7 +196,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-      {/* タイトル + 通知トグル + 編集ボタン */}
+      {/* タイトル + 通知トグル + 共有ボタン + 編集ボタン */}
       <View style={styles.titleRow}>
         <Text style={styles.title}>{memo.title}</Text>
         <View ref={bellRef} collapsable={false}>
@@ -143,12 +216,35 @@ export default function MemoDetailScreen(): React.JSX.Element {
           </TouchableOpacity>
         </View>
         <TouchableOpacity
+          onPress={handleShare}
+          disabled={isSharingLoading}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerIcon}>
+          {isSharingLoading ? (
+            <ActivityIndicator size={22} color="#4CAF50" />
+          ) : (
+            <Icon
+              name={memo.shareId ? 'people' : 'share'}
+              size={22}
+              color={memo.shareId ? '#4CAF50' : '#757575'}
+            />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.pencilBtn}>
           <Icon name="edit" size={22} color="#757575" />
         </TouchableOpacity>
       </View>
+
+      {/* プレゼンスバナー（他ユーザーが編集中）*/}
+      {isPresenceActive(presences, deviceId) && (
+        <View style={styles.presenceBanner}>
+          <Icon name="edit" size={14} color="#757575" />
+          <Text style={styles.presenceBannerText}>{t('share.presenceBanner')}</Text>
+        </View>
+      )}
 
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
@@ -202,16 +298,51 @@ export default function MemoDetailScreen(): React.JSX.Element {
       </View>
 
       {/* 買い物アイテムリスト */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
-        {memo.items.length === 0 ? (
-          <Text style={styles.noLocText}>
-            {t('memoDetail.itemEmpty')}
-          </Text>
-        ) : (
-          memo.items.map(renderShoppingItem)
-        )}
-      </View>
+      {(() => {
+        const allChecked = memo.items.length > 0 && memo.items.every(it => it.isChecked);
+        const hasChecked = memo.items.some(it => it.isChecked);
+        const checkedCount = memo.items.filter(it => it.isChecked).length;
+        const visibleItems = hideChecked ? memo.items.filter(it => !it.isChecked) : memo.items;
+        return (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+              {memo.items.length > 0 && (
+                <View style={{ flexDirection: 'row', gap: 4 }}>
+                  <TouchableOpacity
+                    onPress={() => allChecked ? uncheckAllItems(memoId) : checkAllItems(memoId)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{ padding: 4 }}>
+                    <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setHideChecked(v => !v)}
+                    disabled={!hasChecked && !hideChecked}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
+                    <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+            {memo.items.length === 0 ? (
+              <Text style={styles.noLocText}>{t('memoDetail.itemEmpty')}</Text>
+            ) : (
+              <>
+                {visibleItems.map(renderShoppingItem)}
+                {hideChecked && checkedCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setHideChecked(false)}
+                    style={styles.hiddenItemsRow}>
+                    <Icon name="visibility-off" size={15} color="#BDBDBD" />
+                    <Text style={styles.hiddenItemsText}>{t('memoDetail.hiddenItems', { count: checkedCount })}</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        );
+      })()}
 
       </ScrollView>
 
@@ -239,6 +370,17 @@ export default function MemoDetailScreen(): React.JSX.Element {
           setUndoTarget(null);
         }}
       />
+      <Snackbar
+        visible={allCheckedSnackbarVisible}
+        message={t('memoDetail.allCheckedTitle')}
+        actionLabel={t('memoDetail.notificationOff')}
+        onAction={() => {
+          updateMemo(memoId, { notificationEnabled: false, autoDisabledNotification: true });
+          setAllCheckedSnackbarVisible(false);
+        }}
+        onDismiss={() => setAllCheckedSnackbarVisible(false)}
+        duration={5000}
+      />
     </View>
   );
 }
@@ -258,6 +400,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: 'bold', color: '#212121', flex: 1, marginRight: 8 },
   headerIcon: { marginLeft: 8 },
   pencilBtn: { marginLeft: 16 },
+  presenceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  presenceBannerText: { fontSize: 12, color: '#757575' },
   monitoringWarning: {
     fontSize: 12,
     color: '#FF9800',
@@ -281,6 +434,8 @@ const styles = StyleSheet.create({
   addLocBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   addLocText: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
   noLocText: { fontSize: 13, color: '#9E9E9E', textAlign: 'center', paddingVertical: 8 },
+  hiddenItemsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 4 },
+  hiddenItemsText: { fontSize: 13, color: '#BDBDBD' },
   locChip: {
     flexDirection: 'row',
     alignItems: 'center',

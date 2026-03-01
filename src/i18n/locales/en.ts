@@ -18,6 +18,9 @@ const en: Translation = {
     noItems: 'No items',
     emptyText: 'No memos yet',
     emptySubText: 'Tap + to add a memo',
+    deleteSwipe: 'Delete',
+    deletedSnack: '"{{title}}" deleted',
+    completed: 'DONE',
   },
 
   memoEdit: {
@@ -43,7 +46,7 @@ const en: Translation = {
     locationSection: '📍 Locations ({{count}} / 3)',
     addLocation: 'Add',
     locationEmpty: 'Add a location to get notified when you arrive nearby',
-    itemSection: '🛒 Checklist',
+    itemSection: '� Checklist',
     itemEmpty: 'Add items in the edit screen',
     radiusLabel: 'Radius {{radius}}m',
     notificationOn: 'Notification on',
@@ -53,6 +56,10 @@ const en: Translation = {
     uncheckTitle: 'Uncheck item?',
     uncheckMessage: 'The recorded purchase date will also be cleared.',
     uncheckDone: 'Item unchecked',
+    uncheckAll: 'Uncheck all',
+    hiddenItems: '{{count}} done (tap to show)',
+    allCheckedTitle: 'All items done!',
+    allCheckedMessage: 'Turn off notifications for this memo?',
   },
 
   locationPicker: {
@@ -73,6 +80,7 @@ const en: Translation = {
     labelPlaceholder: 'e.g. Supermarket',
     radiusLabel: 'Notify radius: {{radius}}m',
     saveButton: 'Save this location',
+    recentTitle: 'Recent places',
   },
 
   settings: {
@@ -141,7 +149,7 @@ const en: Translation = {
   },
 
   nav: {
-    tabList: 'Yorimichi',
+    tabList: 'Nearist',
     tabSettings: 'Settings',
     backButton: 'Back',
     memoDetail: 'Memo Detail',
@@ -175,6 +183,30 @@ const en: Translation = {
     arrivalTitle: '📍 Approaching {{label}}',
     arrivalBody: '"{{title}}" checklist ({{count}} items) — tap to review',
     arrivalBodyBig: '"{{title}}" checklist ({{count}} items)\n\nTap to open the memo',
+  },
+
+  share: {
+    button: 'Share',
+    shareTitle: 'Share Memo',
+    shareMessage: 'Share this memo on Yorimichi!',
+    limitReached: 'Share limit reached (free plan)',
+    limitReachedMsg: 'Free plan allows sharing 1 memo. Delete a shared memo or upgrade to Premium.',
+    importing: 'Importing memo...',
+    importTitle: 'Import Memo',
+    importMessage: 'Add "{{title}}" to your memos?',
+    importConfirm: 'Add',
+    importSuccess: 'Memo imported successfully',
+    importError: 'Failed to import memo',
+    notFound: 'Shared memo not found (may have been deleted)',
+    presenceBanner: 'Another user is editing...',
+    presenceWarning: 'Another user is editing. Your changes may be overwritten.',
+    syncError: 'Failed to sync memo',
+    uploadError: 'Failed to register share',
+    importByCode: 'Import by Share Code',
+    importByCodePrompt: 'Enter the share code',
+    shareCodeLabel: 'Share Code',
+    shareCodeHint: 'Enter this code via "Import by Share Code" in the app',
+    importByCodeInvalid: 'Invalid share code',
   },
 };
 

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,21 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useMemoStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore } from '../store/memoStore';
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
+import Snackbar from '../components/Snackbar';
+import { joinSharedMemo } from '../services/shareService';
+import { getDeviceId } from '../utils/deviceId';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,7 +29,56 @@ export default function MemoListScreen(): React.JSX.Element {
   const navigation = useNavigation<Nav>();
   const memos = useMemoStore(s => s.memos);
   const deleteMemo = useMemoStore(s => s.deleteMemo);
+  const restoreMemo = useMemoStore(s => s.restoreMemo);
+  const importSharedMemo = useMemoStore(s => s.importSharedMemo);
+  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
   const insets = useSafeAreaInsets();
+
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importCode, setImportCode] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [deletedMemo, setDeletedMemo] = useState<Memo | null>(null);
+  const [deleteSnackbarVisible, setDeleteSnackbarVisible] = useState(false);
+
+  const handleImportByCode = useCallback(async () => {
+    const code = importCode.trim();
+    if (!code) return;
+    setImportLoading(true);
+    try {
+      const deviceId = getDeviceId();
+      const doc = await joinSharedMemo(code, deviceId);
+      if (!doc) {
+        Alert.alert(t('common.error'), t('share.notFound'));
+        return;
+      }
+      Alert.alert(
+        t('share.importTitle'),
+        t('share.importMessage', { title: doc.title }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('share.importConfirm'),
+            onPress: () => {
+              const memo = importSharedMemo(
+                { title: doc.title, items: doc.items, locations: doc.locations },
+                code,
+              );
+              addSharedMemoId(code);
+              setImportModalVisible(false);
+              setImportCode('');
+              navigation.navigate('MemoDetail', { memoId: memo.id });
+            },
+          },
+        ],
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[importByCode] error:', msg);
+      Alert.alert(t('common.error'), t('share.importError'));
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importCode, importSharedMemo, addSharedMemoId, navigation, t]);
 
   const handleDelete = useCallback(
     (memo: Memo) => {
@@ -42,39 +97,45 @@ export default function MemoListScreen(): React.JSX.Element {
   const renderItem = useCallback(({ item }: { item: Memo }) => {
     const unchecked = item.items.filter(i => !i.isChecked).length;
     const total = item.items.length;
+    const isCompleted = total > 0 && unchecked === 0;
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('MemoDetail', { memoId: item.id })}>
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>
-            {item.title}
-          </Text>
-          <Text style={styles.cardSub}>
-            {total > 0 ? t('memoList.itemsLeft', { unchecked, total }) : t('memoList.noItems')}
-          </Text>
-          {item.locations.length > 0 && (
-            <Text style={styles.cardLoc}>
-              📍 {item.locations.map(l => l.label).join(' / ')}
+        <TouchableOpacity
+          style={[styles.card, isCompleted && styles.cardCompleted]}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('MemoDetail', { memoId: item.id })}>
+          <View style={styles.cardBody}>
+            <Text style={styles.cardTitle}>
+              {item.title}
             </Text>
-          )}
-        </View>
-        <View style={styles.cardActions}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Icon name="edit" size={22} color="#757575" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDelete(item)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.deleteBtn}>
-            <Icon name="delete" size={22} color="#EF5350" />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+            <Text style={styles.cardSub}>
+              {total > 0 ? t('memoList.itemsLeft', { unchecked, total }) : t('memoList.noItems')}
+            </Text>
+            {item.locations.length > 0 && (
+              <Text style={styles.cardLoc}>
+                📍 {item.locations.map(l => l.label).join(' / ')}
+              </Text>
+            )}
+            {isCompleted && (
+              <View style={styles.completedStamp} pointerEvents="none">
+                <Text style={styles.completedStampText}>{t('memoList.completed')}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Icon name="edit" size={22} color="#757575" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleDelete(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.deleteBtn}>
+              <Icon name="delete" size={22} color="#EF5350" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
     );
   }, [navigation, handleDelete, t]);
 
@@ -82,11 +143,18 @@ export default function MemoListScreen(): React.JSX.Element {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>{t('memoList.headerTitle')}</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.navigate('MemoEdit', {})}>
-          <Icon name="add" size={28} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => { setImportCode(''); setImportModalVisible(true); }}>
+            <Icon name="group-add" size={26} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => navigation.navigate('MemoEdit', {})}>
+            <Icon name="add" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {memos.length === 0 ? (
@@ -104,6 +172,61 @@ export default function MemoListScreen(): React.JSX.Element {
         />
       )}
       <AdBanner />
+
+      {/* Import by share code modal */}
+      <Modal
+        visible={importModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImportModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('share.importByCode')}</Text>
+            <Text style={styles.modalLabel}>{t('share.importByCodePrompt')}</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={importCode}
+              onChangeText={setImportCode}
+              placeholder={t('share.shareCodeLabel')}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleImportByCode}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => setImportModalVisible(false)}
+                disabled={importLoading}>
+                <Text style={styles.modalBtnCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnConfirm, (!importCode.trim() || importLoading) && styles.modalBtnDisabled]}
+                onPress={handleImportByCode}
+                disabled={!importCode.trim() || importLoading}>
+                {importLoading
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={styles.modalBtnConfirmText}>{t('share.importConfirm')}</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Snackbar
+        visible={deleteSnackbarVisible}
+        message={t('memoList.deletedSnack', { title: deletedMemo?.title ?? '' })}
+        actionLabel={t('common.undo')}
+        onAction={() => {
+          if (deletedMemo) restoreMemo(deletedMemo);
+          setDeleteSnackbarVisible(false);
+          setDeletedMemo(null);
+        }}
+        onDismiss={() => {
+          setDeleteSnackbarVisible(false);
+          setDeletedMemo(null);
+        }}
+      />
     </View>
   );
 }
@@ -119,6 +242,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerIconBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 20,
+    padding: 5,
+  },
   addBtn: {
     backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: 20,
@@ -137,14 +266,71 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  cardCompleted: { opacity: 0.6 },
+  cardCompleted: { opacity: 0.72 },
   cardBody: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '600', color: '#212121', marginBottom: 4 },
   cardSub: { fontSize: 13, color: '#757575' },
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
+  completedStamp: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    borderWidth: 2.5,
+    borderColor: '#4CAF50',
+    borderRadius: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    transform: [{ rotate: '-15deg' }],
+    opacity: 0.6,
+  },
+  completedStampText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#4CAF50',
+    letterSpacing: 2,
+  },
   cardActions: { flexDirection: 'row', gap: 8, marginLeft: 8 },
   deleteBtn: { marginLeft: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   emptyText: { fontSize: 18, color: '#9E9E9E', fontWeight: '600' },
   emptySubText: { fontSize: 14, color: '#BDBDBD' },
+  // Import by code modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#212121', marginBottom: 8 },
+  modalLabel: { fontSize: 14, color: '#757575', marginBottom: 12 },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#212121',
+    backgroundColor: '#FAFAFA',
+    marginBottom: 16,
+  },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+  modalBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  modalBtnCancel: { backgroundColor: '#F5F5F5' },
+  modalBtnCancelText: { color: '#757575', fontWeight: '600' },
+  modalBtnConfirm: { backgroundColor: '#4CAF50' },
+  modalBtnConfirmText: { color: '#fff', fontWeight: '600' },
+  modalBtnDisabled: { opacity: 0.5 },
 });

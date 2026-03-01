@@ -18,14 +18,41 @@ export interface MemoLocation {
   address?: string;     // 逆ジオコーディングで取得した住所 (町名まで)
 }
 
+export interface RecentPlace {
+  label: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+}
+
 export interface Memo {
   id: string;
   title: string;
   items: ShoppingItem[];
   locations: MemoLocation[];   // 最大3か所
   notificationEnabled: boolean;
+  autoDisabledNotification?: boolean; // 全チェック時に自動でOFFにした場合 true
   createdAt: number;           // Unix タイムスタンプ (ms)
   updatedAt: number;
+  // 共有機能
+  shareId?: string;            // Firestore ドキュメント ID（共有済みの場合のみ）
+  isOwner?: boolean;           // true = 共有の送信者
+}
+
+export interface SharePresence {
+  deviceId: string;
+  editingAt: number;           // Unix タイムスタンプ (ms)
+}
+
+export interface SharedMemoDoc {
+  title: string;
+  items: ShoppingItem[];
+  locations: MemoLocation[];
+  updatedAt: number;
+  ownerDeviceId: string;
+  collaborators: string[];
+  // deviceId をキーとするプレゼンスマップ（複数人対応）
+  presences: Record<string, SharePresence>;
 }
 
 // ============================================================
