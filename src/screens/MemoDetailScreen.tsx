@@ -49,10 +49,22 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const isPremium = useSettingsStore(s => s.isPremium);
   const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
+  const seenTutorials = useSettingsStore(s => s.seenTutorials);
 
   const bellRef = useRef<View>(null);
+  const shareRef = useRef<View>(null);
+  const checkAllRef = useRef<View>(null);
+  const hideCheckedRef = useRef<View>(null);
+  const syncRef = useRef<View>(null);
+
   const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
     useTutorial('memoDetail', 1, [bellRef], 800);
+  const { isActive: tutShareActive, targetLayout: tutShareLayout, advance: tutShareAdvance, skip: tutShareSkip } =
+    useTutorial('memoDetailShare', 1, [shareRef], 800, seenTutorials.includes('memoDetail'));
+  const { step: tutItemsStep, isActive: tutItemsActive, targetLayout: tutItemsLayout, advance: tutItemsAdvance, skip: tutItemsSkip } =
+    useTutorial('memoDetailItems', 2, [checkAllRef, hideCheckedRef], 800, seenTutorials.includes('memoDetailShare') && memo != null && memo.items.length > 0);
+  const { isActive: tutSyncActive, targetLayout: tutSyncLayout, advance: tutSyncAdvance, skip: tutSyncSkip } =
+    useTutorial('memoDetailSync', 1, [syncRef], 800, seenTutorials.includes('memoDetailShare') && !!memo?.shareId);
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
@@ -234,33 +246,37 @@ export default function MemoDetailScreen(): React.JSX.Element {
             />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={handleShare}
-          disabled={isSharingLoading}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerIcon}>
-          {isSharingLoading ? (
-            <ActivityIndicator size={22} color="#4CAF50" />
-          ) : (
-            <Icon
-              name={memo.shareId ? 'people' : 'share'}
-              size={22}
-              color={memo.shareId ? '#4CAF50' : '#757575'}
-            />
-          )}
-        </TouchableOpacity>
-        {memo.shareId && (
+        <View ref={shareRef} collapsable={false}>
           <TouchableOpacity
-            onPress={handleSyncSharedMemo}
-            disabled={isSyncLoading}
+            onPress={handleShare}
+            disabled={isSharingLoading}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.headerIcon}>
-            {isSyncLoading ? (
-              <ActivityIndicator size={22} color="#2196F3" />
+            {isSharingLoading ? (
+              <ActivityIndicator size={22} color="#4CAF50" />
             ) : (
-              <Icon name="sync" size={22} color="#2196F3" />
+              <Icon
+                name={memo.shareId ? 'people' : 'share'}
+                size={22}
+                color={memo.shareId ? '#4CAF50' : '#757575'}
+              />
             )}
           </TouchableOpacity>
+        </View>
+        {memo.shareId && (
+          <View ref={syncRef} collapsable={false}>
+            <TouchableOpacity
+              onPress={handleSyncSharedMemo}
+              disabled={isSyncLoading}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.headerIcon}>
+              {isSyncLoading ? (
+                <ActivityIndicator size={22} color="#2196F3" />
+              ) : (
+                <Icon name="sync" size={22} color="#2196F3" />
+              )}
+            </TouchableOpacity>
+          </View>
         )}
         <TouchableOpacity
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
@@ -341,19 +357,23 @@ export default function MemoDetailScreen(): React.JSX.Element {
               <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
               {memo.items.length > 0 && (
                 <View style={{ flexDirection: 'row', gap: 4 }}>
-                  <TouchableOpacity
-                    onPress={() => allChecked ? uncheckAllItems(memoId) : checkAllItems(memoId)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={{ padding: 4 }}>
-                    <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setHideChecked(v => !v)}
-                    disabled={!hasChecked && !hideChecked}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
-                    <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
-                  </TouchableOpacity>
+                  <View ref={checkAllRef} collapsable={false}>
+                    <TouchableOpacity
+                      onPress={() => allChecked ? uncheckAllItems(memoId) : checkAllItems(memoId)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{ padding: 4 }}>
+                      <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
+                    </TouchableOpacity>
+                  </View>
+                  <View ref={hideCheckedRef} collapsable={false}>
+                    <TouchableOpacity
+                      onPress={() => setHideChecked(v => !v)}
+                      disabled={!hasChecked && !hideChecked}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
+                      <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               )}
             </View>
@@ -391,6 +411,39 @@ export default function MemoDetailScreen(): React.JSX.Element {
         skipLabel={t('tutorial.skip')}
         onNext={tutAdvance}
         onSkip={tutSkip}
+      />
+      <TutorialTooltip
+        visible={tutShareActive}
+        targetLayout={tutShareLayout}
+        text={t('tutorial.memoDetailShare.step1')}
+        stepLabel={`STEP 1 / 1`}
+        isLast
+        nextLabel={t('tutorial.ok')}
+        skipLabel={t('tutorial.skip')}
+        onNext={tutShareAdvance}
+        onSkip={tutShareSkip}
+      />
+      <TutorialTooltip
+        visible={tutItemsActive}
+        targetLayout={tutItemsLayout}
+        text={[t('tutorial.memoDetailItems.step1'), t('tutorial.memoDetailItems.step2')][tutItemsStep] ?? ''}
+        stepLabel={`STEP ${tutItemsStep + 1} / 2`}
+        isLast={tutItemsStep === 1}
+        nextLabel={tutItemsStep === 1 ? t('tutorial.ok') : t('tutorial.next')}
+        skipLabel={t('tutorial.skip')}
+        onNext={tutItemsAdvance}
+        onSkip={tutItemsSkip}
+      />
+      <TutorialTooltip
+        visible={tutSyncActive}
+        targetLayout={tutSyncLayout}
+        text={t('tutorial.memoDetailSync.step1')}
+        stepLabel={`STEP 1 / 1`}
+        isLast
+        nextLabel={t('tutorial.ok')}
+        skipLabel={t('tutorial.skip')}
+        onNext={tutSyncAdvance}
+        onSkip={tutSyncSkip}
       />
       <Snackbar
         visible={snackbarVisible}
