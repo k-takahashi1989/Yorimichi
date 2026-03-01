@@ -20,6 +20,7 @@ const en: Translation = {
     emptySubText: 'Tap + to add a memo',
     deleteSwipe: 'Delete',
     deletedSnack: '"{{title}}" deleted',
+    completed: 'DONE',
   },
 
   memoEdit: {

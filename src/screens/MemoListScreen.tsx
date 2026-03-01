@@ -118,7 +118,7 @@ export default function MemoListScreen(): React.JSX.Element {
             )}
             {isCompleted && (
               <View style={styles.completedStamp} pointerEvents="none">
-                <Text style={styles.completedStampText}>完了</Text>
+                <Text style={styles.completedStampText}>{t('memoList.completed')}</Text>
               </View>
             )}
           </View>
