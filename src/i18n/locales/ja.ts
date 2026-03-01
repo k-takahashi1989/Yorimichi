@@ -48,7 +48,7 @@ const ja = {
     locationSection: '📍 場所 ({{count}} / 3)',
     addLocation: '追加',
     locationEmpty: '場所を追加するとそこに近づいたとき通知が来ます',
-    itemSection: '� チェックリスト',
+    itemSection: '📝 チェックリスト',
     itemEmpty: '編集画面でアイテムを追加してください',
     radiusLabel: '半径 {{radius}}m',
     notificationOn: '通知オン',
