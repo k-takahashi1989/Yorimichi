@@ -305,6 +305,24 @@ export default function MemoDetailScreen(): React.JSX.Element {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+          {memo.items.length > 0 && (
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              <TouchableOpacity
+                onPress={() => uncheckAllItems(memoId)}
+                disabled={!memo.items.some(it => it.isChecked)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={[{ padding: 4 }, !memo.items.some(it => it.isChecked) && { opacity: 0.3 }]}>
+                <Icon name="clear-all" size={22} color="#9E9E9E" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => deleteCheckedItems(memoId)}
+                disabled={!memo.items.some(it => it.isChecked)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={[{ padding: 4 }, !memo.items.some(it => it.isChecked) && { opacity: 0.3 }]}>
+                <Icon name="delete-sweep" size={22} color="#EF5350" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
         {memo.items.length === 0 ? (
           <Text style={styles.noLocText}>
@@ -314,32 +332,6 @@ export default function MemoDetailScreen(): React.JSX.Element {
           memo.items.map(renderShoppingItem)
         )}
       </View>
-
-      {/* 全て解除ボタン（セクション外） */}
-      {memo.items.length > 0 && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 16, marginBottom: 16 }}>
-          <TouchableOpacity
-            onPress={() => uncheckAllItems(memoId)}
-            disabled={!memo.items.some(it => it.isChecked)}
-            style={[
-              styles.addLocBtn,
-              !memo.items.some(it => it.isChecked) && { opacity: 0.3 },
-            ]}>
-            <Icon name="clear-all" size={18} color="#9E9E9E" />
-            <Text style={[styles.addLocText, { color: '#9E9E9E' }]}>{t('memoDetail.uncheckAll')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => deleteCheckedItems(memoId)}
-            disabled={!memo.items.some(it => it.isChecked)}
-            style={[
-              styles.addLocBtn,
-              !memo.items.some(it => it.isChecked) && { opacity: 0.3 },
-            ]}>
-            <Icon name="delete-sweep" size={18} color="#EF5350" />
-            <Text style={[styles.addLocText, { color: '#EF5350' }]}>{t('memoDetail.deleteChecked')}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       </ScrollView>
 
