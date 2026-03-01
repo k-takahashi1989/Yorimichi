@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   Share,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -222,11 +223,15 @@ export default function MemoDetailScreen(): React.JSX.Element {
           disabled={isSharingLoading}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.headerIcon}>
-          <Icon
-            name={memo.shareId ? 'people' : 'share'}
-            size={22}
-            color={memo.shareId ? '#4CAF50' : '#757575'}
-          />
+          {isSharingLoading ? (
+            <ActivityIndicator size={22} color="#4CAF50" />
+          ) : (
+            <Icon
+              name={memo.shareId ? 'people' : 'share'}
+              size={22}
+              color={memo.shareId ? '#4CAF50' : '#757575'}
+            />
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
