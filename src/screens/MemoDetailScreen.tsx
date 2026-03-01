@@ -9,7 +9,7 @@ import {
   Share,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -56,6 +56,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
+  const [allCheckedSnackbarVisible, setAllCheckedSnackbarVisible] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
@@ -77,13 +78,16 @@ export default function MemoDetailScreen(): React.JSX.Element {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memo?.shareId]);
 
-  // フォアグラウンド復帰時に監視状態を再チェック
-  useEffect(() => {
-    const id = setInterval(() => {
+  // フォアグラウンド復帰時に監視状態を再チェック（フォーカス中のみ: 遷移アニメーション中の再レンダリングを防ぐ）
+  useFocusEffect(
+    useCallback(() => {
       setIsMonitoring(BackgroundService.isRunning());
-    }, 3000);
-    return () => clearInterval(id);
-  }, []);
+      const id = setInterval(() => {
+        setIsMonitoring(BackgroundService.isRunning());
+      }, 3000);
+      return () => clearInterval(id);
+    }, []),
+  );
 
   if (!memo) {
     return (
@@ -145,18 +149,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
         ? memo.items.filter(it => it.id !== item.id).every(it => it.isChecked)
         : false;
       if (allOthersChecked && memo && memo.items.length > 0) {
-        Alert.alert(
-          t('memoDetail.allCheckedTitle'),
-          t('memoDetail.allCheckedMessage'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('memoDetail.notificationOff'),
-              style: 'destructive',
-              onPress: () => updateMemo(memoId, { notificationEnabled: false, autoDisabledNotification: true }),
-            },
-          ],
-        );
+        // Alert の代わりに Snackbar で通知 → back ボタンをブロックしない
+        setSnackbarVisible(false);
+        setAllCheckedSnackbarVisible(true);
       }
     }
   }, [memoId, toggleItem, memo, t, updateMemo]);
@@ -374,6 +369,17 @@ export default function MemoDetailScreen(): React.JSX.Element {
           setSnackbarVisible(false);
           setUndoTarget(null);
         }}
+      />
+      <Snackbar
+        visible={allCheckedSnackbarVisible}
+        message={t('memoDetail.allCheckedTitle')}
+        actionLabel={t('memoDetail.notificationOff')}
+        onAction={() => {
+          updateMemo(memoId, { notificationEnabled: false, autoDisabledNotification: true });
+          setAllCheckedSnackbarVisible(false);
+        }}
+        onDismiss={() => setAllCheckedSnackbarVisible(false)}
+        duration={5000}
       />
     </View>
   );
