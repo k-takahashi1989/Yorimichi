@@ -60,6 +60,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
+  const [isSyncLoading, setIsSyncLoading] = useState(false);
   const [hideChecked, setHideChecked] = useState(false);
   const deviceId = getDeviceId();
 
@@ -123,6 +124,24 @@ export default function MemoDetailScreen(): React.JSX.Element {
       Alert.alert(t('common.error'), t('share.uploadError'));
     } finally {
       setIsSharingLoading(false);
+    }
+  };
+
+  const handleSyncSharedMemo = async () => {
+    if (!memo.shareId) return;
+    setIsSyncLoading(true);
+    try {
+      const doc = await syncSharedMemo(memo.shareId);
+      if (!doc) {
+        Alert.alert(t('common.error'), t('share.notFound'));
+        return;
+      }
+      updateMemo(memoId, { title: doc.title, items: doc.items, locations: doc.locations });
+      Alert.alert(t('share.syncSuccess'), undefined, [{ text: t('common.ok') }]);
+    } catch {
+      Alert.alert(t('common.error'), t('share.syncError'));
+    } finally {
+      setIsSyncLoading(false);
     }
   };
 
@@ -230,6 +249,19 @@ export default function MemoDetailScreen(): React.JSX.Element {
             />
           )}
         </TouchableOpacity>
+        {memo.shareId && (
+          <TouchableOpacity
+            onPress={handleSyncSharedMemo}
+            disabled={isSyncLoading}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.headerIcon}>
+            {isSyncLoading ? (
+              <ActivityIndicator size={22} color="#2196F3" />
+            ) : (
+              <Icon name="sync" size={22} color="#2196F3" />
+            )}
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

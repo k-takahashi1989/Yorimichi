@@ -101,7 +101,7 @@ interface MemoState {
 
   // CRUD
   addMemo: (title: string) => Memo;
-  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification'>>) => void;
+  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations'>>) => void;
   deleteMemo: (id: string) => void;
   restoreMemo: (memo: Memo) => void;
   getMemoById: (id: string) => Memo | undefined;
