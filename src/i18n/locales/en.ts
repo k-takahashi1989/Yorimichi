@@ -46,7 +46,7 @@ const en: Translation = {
     locationSection: '📍 Locations ({{count}} / 3)',
     addLocation: 'Add',
     locationEmpty: 'Add a location to get notified when you arrive nearby',
-    itemSection: '🛒 Checklist',
+    itemSection: '� Checklist',
     itemEmpty: 'Add items in the edit screen',
     radiusLabel: 'Radius {{radius}}m',
     notificationOn: 'Notification on',
