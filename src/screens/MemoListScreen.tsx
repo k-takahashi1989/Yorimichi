@@ -116,6 +116,11 @@ export default function MemoListScreen(): React.JSX.Element {
                 📍 {item.locations.map(l => l.label).join(' / ')}
               </Text>
             )}
+            {isCompleted && (
+              <View style={styles.completedStamp} pointerEvents="none">
+                <Text style={styles.completedStampText}>完了</Text>
+              </View>
+            )}
           </View>
           <View style={styles.cardActions}>
             <TouchableOpacity
@@ -261,11 +266,29 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  cardCompleted: { opacity: 0.6 },
+  cardCompleted: { opacity: 0.72 },
   cardBody: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '600', color: '#212121', marginBottom: 4 },
   cardSub: { fontSize: 13, color: '#757575' },
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
+  completedStamp: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    borderWidth: 2.5,
+    borderColor: '#4CAF50',
+    borderRadius: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    transform: [{ rotate: '-15deg' }],
+    opacity: 0.6,
+  },
+  completedStampText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#4CAF50',
+    letterSpacing: 2,
+  },
   cardActions: { flexDirection: 'row', gap: 8, marginLeft: 8 },
   deleteBtn: { marginLeft: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
