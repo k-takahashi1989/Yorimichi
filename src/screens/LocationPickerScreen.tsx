@@ -9,6 +9,7 @@ import {
   Platform,
   Keyboard,
   KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import {
   useNavigation,
@@ -27,7 +28,7 @@ import Config from 'react-native-config';
 import { useMemoStore } from '../store/memoStore';
 import { useSettingsStore } from '../store/memoStore';
 import { useShallow } from 'zustand/react/shallow';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, RecentPlace } from '../types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'LocationPicker'>;
@@ -56,6 +57,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const updateLocation = useMemoStore(s => s.updateLocation);
   const defaultRadius = useSettingsStore(s => s.defaultRadius);
   const maxRadius = useSettingsStore(s => s.maxRadius);
+  const recentPlaces = useSettingsStore(s => s.recentPlaces);
+  const addRecentPlace = useSettingsStore(s => s.addRecentPlace);
 
   // 同一メモの登録済み場所（編集中の場所自体は除外）
   const otherLocations = useMemoStore(
@@ -199,15 +202,28 @@ export default function LocationPickerScreen(): React.JSX.Element {
     const { lat, lng } = details.geometry.location;
     const coords = { latitude: lat, longitude: lng };
     setPicked(coords);
+    const placeLabel = details.name ?? label;
     if (!label && details.name) setLabel(details.name);
     Keyboard.dismiss();
     reverseGeocode(lat, lng);
+    addRecentPlace({ label: placeLabel, latitude: lat, longitude: lng });
     setTimeout(() => {
       mapRef.current?.animateToRegion(
         { ...coords, latitudeDelta: 0.005, longitudeDelta: 0.005 },
         400,
       );
     }, 100);
+  };
+
+  const handleRecentPlacePress = (place: RecentPlace) => {
+    const coords = { latitude: place.latitude, longitude: place.longitude };
+    setPicked(coords);
+    if (!label) setLabel(place.label);
+    if (place.address) setAddress(place.address);
+    mapRef.current?.animateToRegion(
+      { ...coords, latitudeDelta: 0.005, longitudeDelta: 0.005 },
+      400,
+    );
   };
 
   const handleSave = () => {
@@ -378,6 +394,24 @@ export default function LocationPickerScreen(): React.JSX.Element {
           </View>
         )}
 
+        {/* 最近の場所 */}
+        {recentPlaces.length > 0 && !picked && (
+          <View style={styles.recentSection}>
+            <Text style={styles.recentTitle}>{t('locationPicker.recentTitle')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {recentPlaces.map((place, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={styles.recentChip}
+                  onPress={() => handleRecentPlacePress(place)}>
+                  <Icon name="history" size={14} color="#757575" />
+                  <Text style={styles.recentChipText}>{place.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
           <Icon name="check" size={20} color="#fff" />
           <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
@@ -533,6 +567,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   pickedBadgeText: { fontSize: 12, color: '#2E7D32' },
+
+  /* 最近の場所 */
+  recentSection: { marginBottom: 10 },
+  recentTitle: { fontSize: 12, color: '#757575', fontWeight: '600', marginBottom: 6 },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  recentChipText: { fontSize: 13, color: '#424242' },
 
   /* 保存ボタン */
   saveBtn: {

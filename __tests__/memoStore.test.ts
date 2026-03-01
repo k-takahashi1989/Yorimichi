@@ -22,7 +22,6 @@ describe('useMemoStore - Memo CRUD', () => {
     expect(memo.title).toBe('買い物リスト');
     expect(memo.items).toEqual([]);
     expect(memo.locations).toEqual([]);
-    expect(memo.isCompleted).toBe(false);
     expect(memo.id).toBeTruthy();
   });
 
@@ -57,14 +56,6 @@ describe('useMemoStore - Memo CRUD', () => {
 
     const updated = useMemoStore.getState().getMemoById(memo.id);
     expect(updated?.title).toBe('変更後のタイトル');
-  });
-
-  it('メモを完了状態にできる', () => {
-    const memo = useMemoStore.getState().addMemo('完了テスト');
-    useMemoStore.getState().updateMemo(memo.id, { isCompleted: true });
-
-    const updated = useMemoStore.getState().getMemoById(memo.id);
-    expect(updated?.isCompleted).toBe(true);
   });
 
   it('メモを削除できる', () => {

@@ -1,12 +1,16 @@
 import React, { useRef, useEffect } from 'react';
+import { Alert, Linking } from 'react-native';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useSettingsStore } from '../store/memoStore';
+import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { useForegroundNotificationHandler } from '../services/notificationService';
+import { joinSharedMemo } from '../services/shareService';
+import { getDeviceId } from '../utils/deviceId';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import MemoListScreen from '../screens/MemoListScreen';
@@ -64,12 +68,63 @@ function MainTabs(): React.JSX.Element {
 export function AppNavigator(): React.JSX.Element {
   const { t } = useTranslation();
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  const importSharedMemo = useMemoStore(s => s.importSharedMemo);
+  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
+
+  // 共有リンクを処理するハンドラ
+  const handleSharedUrl = async (url: string | null) => {
+    if (!url) return;
+    try {
+      // new URL() はカスタムスキームで失敗することがある → 正規表現でパース
+      const match = url.match(/[?&]shareId=([^&]+)/);
+      const shareId = match ? match[1] : null;
+      if (!shareId) return;
+      const deviceId = getDeviceId();
+      const doc = await joinSharedMemo(shareId, deviceId);
+      if (!doc) {
+        Alert.alert(t('common.error'), t('share.notFound'));
+        return;
+      }
+      Alert.alert(
+        t('share.importTitle'),
+        t('share.importMessage', { title: doc.title }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('share.importConfirm'),
+            onPress: () => {
+              const memo = importSharedMemo(
+                { title: doc.title, items: doc.items, locations: doc.locations },
+                shareId,
+              );
+              addSharedMemoId(shareId);
+              // navigationRef がまだ準備できていない場合は少し待つ
+              setTimeout(() => {
+                navigationRef.current?.navigate('MemoDetail', { memoId: memo.id });
+              }, 300);
+            },
+          },
+        ],
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[handleSharedUrl] error:', msg);
+    }
+  };
 
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
     useForegroundNotificationHandler((memoId: string) => {
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
+  }, []);
+
+  // アプリ起動時のディープリンク処理
+  useEffect(() => {
+    Linking.getInitialURL().then(handleSharedUrl);
+    const sub = Linking.addEventListener('url', ({ url }) => handleSharedUrl(url));
+    return () => sub.remove();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

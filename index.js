@@ -1,5 +1,6 @@
 /**
  * @format
+ * @build-cache-bust 20260301
  */
 
 import { AppRegistry } from 'react-native';
