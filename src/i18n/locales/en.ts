@@ -56,6 +56,7 @@ const en: Translation = {
     uncheckMessage: 'The recorded purchase date will also be cleared.',
     uncheckDone: 'Item unchecked',
     uncheckAll: 'Uncheck all',
+    deleteChecked: 'Delete Checked',
     allCheckedTitle: 'All items done!',
     allCheckedMessage: 'Turn off notifications for this memo?',
   },
