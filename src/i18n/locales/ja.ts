@@ -216,6 +216,8 @@ const ja = {
     shareCodeLabel: '共有コード',
     shareCodeHint: 'アプリの「共有コードでインポート」にこのコードを入力してください',
     importByCodeInvalid: '無効な共有コードです',
+    syncButton: '最新に更新',
+    syncSuccess: 'メモを最新の状態に更新しました',
   },} as const;
 
 export default ja;
