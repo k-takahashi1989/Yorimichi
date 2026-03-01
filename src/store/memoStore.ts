@@ -113,6 +113,7 @@ interface MemoState {
   toggleItem: (memoId: string, itemId: string) => void;
   reorderItems: (memoId: string, items: ShoppingItem[]) => void;
   uncheckAllItems: (memoId: string) => void;
+  deleteCheckedItems: (memoId: string) => void;
 
   // 場所
   addLocation: (memoId: string, location: Omit<MemoLocation, 'id'>) => MemoLocation | null;
@@ -236,6 +237,18 @@ export const useMemoStore = create<MemoState>()(
               // 自動OFFされた場合は通知を再ONに戻す
               notificationEnabled: m.autoDisabledNotification ? true : m.notificationEnabled,
               autoDisabledNotification: false,
+              updatedAt: Date.now(),
+            };
+          }),
+        })),
+
+      deleteCheckedItems: (memoId) =>
+        set(state => ({
+          memos: state.memos.map(m => {
+            if (m.id !== memoId) return m;
+            return {
+              ...m,
+              items: m.items.filter(it => !it.isChecked),
               updatedAt: Date.now(),
             };
           }),

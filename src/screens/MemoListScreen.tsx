@@ -10,7 +10,6 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -100,25 +99,7 @@ export default function MemoListScreen(): React.JSX.Element {
     const total = item.items.length;
     const isCompleted = total > 0 && unchecked === 0;
 
-    const handleSwipeDelete = () => {
-      setDeletedMemo(item);
-      deleteMemo(item.id);
-      setDeleteSnackbarVisible(true);
-    };
-
-    const renderRightActions = () => (
-      <View style={styles.swipeDeleteAction}>
-        <Icon name="delete" size={24} color="#fff" />
-        <Text style={styles.swipeDeleteText}>{t('memoList.deleteSwipe')}</Text>
-      </View>
-    );
-
     return (
-      <Swipeable
-        renderRightActions={renderRightActions}
-        onSwipeableOpen={handleSwipeDelete}
-        friction={2}
-        rightThreshold={60}>
         <TouchableOpacity
           style={[styles.card, isCompleted && styles.cardCompleted]}
           activeOpacity={0.7}
@@ -150,9 +131,8 @@ export default function MemoListScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
-      </Swipeable>
     );
-  }, [navigation, handleDelete, deleteMemo, t]);
+  }, [navigation, handleDelete, t]);
 
   return (
     <View style={styles.container}>
@@ -288,17 +268,6 @@ const styles = StyleSheet.create({
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
   cardActions: { flexDirection: 'row', gap: 8, marginLeft: 8 },
   deleteBtn: { marginLeft: 4 },
-  swipeDeleteAction: {
-    backgroundColor: '#EF5350',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginVertical: 0,
-  },
-  swipeDeleteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   emptyText: { fontSize: 18, color: '#9E9E9E', fontWeight: '600' },
   emptySubText: { fontSize: 14, color: '#BDBDBD' },
