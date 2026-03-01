@@ -20,6 +20,7 @@ const ja = {
     emptySubText: '右上の + ボタンで追加しましょう',
     deleteSwipe: '削除',
     deletedSnack: '「{{title}}」を削除しました',
+    completed: '完了',
   },
 
   // ── MemoEditScreen ────────────────────────────────────────
