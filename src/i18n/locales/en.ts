@@ -170,6 +170,16 @@ const en: Translation = {
     memoDetail: {
       step1: '🔔 Tap the bell to toggle location notifications on / off',
     },
+    memoDetailShare: {
+      step1: '👥 Share this memo by tapping Share. Send the code to anyone to view the same list',
+    },
+    memoDetailItems: {
+      step1: '☑️ Tap here to check or uncheck all items at once',
+      step2: '👁️ Hide completed items to focus on what is left',
+    },
+    memoDetailSync: {
+      step1: '🔄 Shared memos are not auto-updated. Tap here to fetch the latest content',
+    },
   },
   geofence: {
     taskDesc: 'Notifies you when approaching registered locations',

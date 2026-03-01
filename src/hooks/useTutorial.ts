@@ -11,7 +11,7 @@ type AnyRef = React.MutableRefObject<any> | React.RefObject<any>;
  * @param totalSteps ステップ総数
  * @param refs       各ステップで spotlight させる ref 配列
  */
-export function useTutorial(key: string, totalSteps: number, refs: AnyRef[], delay = 400) {
+export function useTutorial(key: string, totalSteps: number, refs: AnyRef[], delay = 400, enabled = true) {
   const seenTutorials = useSettingsStore(s => s.seenTutorials);
   const markTutorialSeen = useSettingsStore(s => s.markTutorialSeen);
 
@@ -20,7 +20,7 @@ export function useTutorial(key: string, totalSteps: number, refs: AnyRef[], del
   const mounted = useRef(true);
   const measureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isActive = !seenTutorials.includes(key);
+  const isActive = !seenTutorials.includes(key) && enabled;
 
   // ステップが変わったら対象の View を測定する
   useEffect(() => {
