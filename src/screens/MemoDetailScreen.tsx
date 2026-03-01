@@ -137,7 +137,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         return;
       }
       updateMemo(memoId, { title: doc.title, items: doc.items, locations: doc.locations });
-      Alert.alert(t('share.syncSuccess'), undefined, [{ text: t('common.ok') }]);
+      Alert.alert(t('share.syncSuccess'));
     } catch {
       Alert.alert(t('common.error'), t('share.syncError'));
     } finally {
