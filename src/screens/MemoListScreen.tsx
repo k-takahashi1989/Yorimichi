@@ -105,9 +105,17 @@ export default function MemoListScreen(): React.JSX.Element {
           activeOpacity={0.7}
           onPress={() => navigation.navigate('MemoDetail', { memoId: item.id })}>
           <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>
-              {item.title}
-            </Text>
+            {/* タイトル行: タイトル + 完了スタンプを横並び */}
+            <View style={styles.cardTitleRow}>
+              <Text style={[styles.cardTitle, isCompleted && styles.cardTitleCompleted]}>
+                {item.title}
+              </Text>
+              {isCompleted && (
+                <View style={styles.completedStamp} pointerEvents="none">
+                  <Text style={styles.completedStampText}>{t('memoList.completed')}</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.cardSub}>
               {total > 0 ? t('memoList.itemsLeft', { unchecked, total }) : t('memoList.noItems')}
             </Text>
@@ -115,11 +123,6 @@ export default function MemoListScreen(): React.JSX.Element {
               <Text style={styles.cardLoc}>
                 📍 {item.locations.map(l => l.label).join(' / ')}
               </Text>
-            )}
-            {isCompleted && (
-              <View style={styles.completedStamp} pointerEvents="none">
-                <Text style={styles.completedStampText}>{t('memoList.completed')}</Text>
-              </View>
             )}
           </View>
           <View style={styles.cardActions}>
@@ -268,19 +271,19 @@ const styles = StyleSheet.create({
   },
   cardCompleted: { opacity: 0.72 },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#212121', marginBottom: 4 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: '#212121', flexShrink: 1 },
+  cardTitleCompleted: { flexShrink: 1 },
   cardSub: { fontSize: 13, color: '#757575' },
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
   completedStamp: {
-    alignSelf: 'flex-end',
-    marginTop: 6,
-    borderWidth: 2.5,
+    borderWidth: 2,
     borderColor: '#4CAF50',
     borderRadius: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    transform: [{ rotate: '-15deg' }],
-    opacity: 0.6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    transform: [{ rotate: '-10deg' }],
+    opacity: 0.65,
   },
   completedStampText: {
     fontSize: 13,

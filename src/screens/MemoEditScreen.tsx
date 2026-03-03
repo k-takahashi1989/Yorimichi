@@ -214,7 +214,16 @@ export default function MemoEditScreen(): React.JSX.Element {
       const deviceId = getDeviceId();
       uploadSharedMemo(savedMemo, deviceId).catch(() => {});
     }
-    const doNavigate = () => navigation.replace('MemoDetail', { memoId: finalId });
+    // MemoDetail から編集した場合は replace ではなく goBack
+    // (replace を使うと MemoDetail がスタックに重複して積まれ、戻るボタンが余分に必要になる)
+    const prevRouteName = navigation.getState().routes.slice(-2)[0]?.name;
+    const doNavigate = () => {
+      if (!isNew && prevRouteName === 'MemoDetail') {
+        navigation.goBack();
+      } else {
+        navigation.replace('MemoDetail', { memoId: finalId });
+      }
+    };
     if (isNew) {
       incrementMemoRegistrations();
       // totalMemoRegistrations は increment 前の値。
