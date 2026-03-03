@@ -92,6 +92,8 @@ export default function MemoEditScreen(): React.JSX.Element {
   // 未保存の変更がある場合、戻るときに確認ダイアログを表示
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // 確認ボタンによる保存済み遷移はスキップ
+      if (isSavingRef.current) return;
       // 新規作成でまだ何も入力していない場合はスキップ
       if (!memoId && !title.trim() && currentItems.length === 0) return;
       // MemoDetail への replace 遷移時はスキップ

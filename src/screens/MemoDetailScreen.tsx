@@ -158,7 +158,14 @@ export default function MemoDetailScreen(): React.JSX.Element {
         Alert.alert(t('common.error'), t('share.notFound'));
         return;
       }
-      updateMemo(memoId, { title: doc.title, items: doc.items, locations: doc.locations });
+      // ローカルのチェック状態を保持しつつ Firestore の最新データをマージ
+      const mergedItems = doc.items.map(docItem => {
+        const localItem = memo.items.find(li => li.id === docItem.id);
+        return localItem
+          ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
+          : docItem; // 新規追加アイテムはチェックなし
+      });
+      updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations });
       Alert.alert(t('share.syncSuccess'));
     } catch {
       Alert.alert(t('common.error'), t('share.syncError'));
