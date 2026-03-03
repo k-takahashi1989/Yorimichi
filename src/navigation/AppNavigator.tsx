@@ -4,6 +4,7 @@ import { NavigationContainer, NavigationContainerRef } from '@react-navigation/n
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import notifee from '@notifee/react-native';
 import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useSettingsStore } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
@@ -132,7 +133,15 @@ export function AppNavigator(): React.JSX.Element {
     <NavigationContainer
       ref={navigationRef}
       onReady={() => {
-        // Killed 状態から通知タップで起動した場合: MMKV に保存された未処理の memoId を読み出して遷移
+        // killed 状態から通知タップで起動した場合: getInitialNotification で memoId を取得し遷移
+        notifee.getInitialNotification().then(initial => {
+          const memoId = initial?.notification?.data?.memoId as string | undefined;
+          if (memoId) {
+            navigationRef.current?.navigate('MemoDetail', { memoId });
+          }
+        }).catch(() => {});
+
+        // MMKV 経由のブックマーク（バックグラウンドからのフォールバック）
         const pending = storage.getString('pendingNotificationMemoId');
         if (pending) {
           storage.remove('pendingNotificationMemoId');
