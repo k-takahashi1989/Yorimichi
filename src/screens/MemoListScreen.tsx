@@ -74,7 +74,7 @@ export default function MemoListScreen(): React.JSX.Element {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('[importByCode] error:', msg);
-      Alert.alert(t('common.error'), t('share.importError'));
+      Alert.alert(t('common.error'), msg || t('share.importError'));
     } finally {
       setImportLoading(false);
     }
