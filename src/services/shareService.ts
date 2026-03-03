@@ -59,10 +59,15 @@ export async function joinSharedMemo(
   // exists は boolean property だが snap.data() が undefined の場合も守る
   const data = snap.data() as SharedMemoDoc | undefined;
   if (!snap.exists || !data) return null;
+  // collaborators への追記: Security Rules で弾かれても import 自体は続行する
   if (Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId)) {
-    await ref.update({
-      collaborators: firestore.FieldValue.arrayUnion(deviceId),
-    });
+    try {
+      await ref.update({
+        collaborators: firestore.FieldValue.arrayUnion(deviceId),
+      });
+    } catch (e) {
+      console.warn('[joinSharedMemo] could not update collaborators:', e);
+    }
   }
   return data;
 }
