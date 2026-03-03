@@ -28,7 +28,10 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
 jest.mock('react-native-screens', () => ({
   enableScreens: jest.fn(),
 }));
-jest.mock('react-native-gesture-handler', () => ({}));
+jest.mock('react-native-gesture-handler', () => ({
+  GestureHandlerRootView: ({ children }: { children: React.ReactNode }) => children,
+  Swipeable: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 // サービスのモック (副作用を防ぐ)
 jest.mock('../src/services/notificationService', () => ({
@@ -40,6 +43,10 @@ jest.mock('../src/services/geofenceService', () => ({
   startGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),
   stopGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),
   clearMemoFromCache: jest.fn(),
+}));
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
 import React from 'react';

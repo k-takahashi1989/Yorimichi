@@ -8,6 +8,7 @@ import {
   Alert,
   Share,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,6 +28,7 @@ import {
   syncSharedMemo,
   subscribePresence,
   isPresenceActive,
+  updateSharedMemoItems,
 } from '../services/shareService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -98,8 +100,16 @@ export default function MemoDetailScreen(): React.JSX.Element {
       const id = setInterval(() => {
         setIsMonitoring(BackgroundService.isRunning());
       }, 3000);
-      return () => clearInterval(id);
-    }, []),
+      // スタック積み重なりによる「戈る」ボタンが利かない問題を防止
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        navigation.popToTop();
+        return true;
+      });
+      return () => {
+        clearInterval(id);
+        backHandler.remove();
+      };
+    }, [navigation]),
   );
 
   if (!memo) {
@@ -170,6 +180,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const handleToggleItem = useCallback((item: ShoppingItem) => {
     toggleItem(memoId, item.id);
+    // 共有メモの場合: チェック状態を Firestore に即時反映（fire-and-forget）
+    if (memo?.shareId) {
+      const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
+      updateSharedMemoItems(memo.shareId, updatedItems).catch(() => {});
+    }
     if (item.isChecked) {
       // チェック解除時: 即座に実行して Snackbar で元に戻せる
       setUndoTarget(item);
@@ -186,6 +201,21 @@ export default function MemoDetailScreen(): React.JSX.Element {
       }
     }
   }, [memoId, toggleItem, memo, t, updateMemo]);
+
+  // checkAll/uncheckAll のハンドラ（共有メモへの Firestore 即時反映付き）
+  const handleCheckAllToggle = useCallback(() => {
+    if (!memo) return;
+    const allChecked = memo.items.length > 0 && memo.items.every(it => it.isChecked);
+    if (allChecked) {
+      uncheckAllItems(memoId);
+    } else {
+      checkAllItems(memoId);
+    }
+    if (memo.shareId) {
+      const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
+      updateSharedMemoItems(memo.shareId, updatedItems).catch(() => {});
+    }
+  }, [memoId, memo, checkAllItems, uncheckAllItems]);
 
   const handleUndo = useCallback(() => {
     if (!undoTarget) return;
@@ -359,7 +389,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
                 <View style={{ flexDirection: 'row', gap: 4 }}>
                   <View ref={checkAllRef} collapsable={false}>
                     <TouchableOpacity
-                      onPress={() => allChecked ? uncheckAllItems(memoId) : checkAllItems(memoId)}
+                      onPress={handleCheckAllToggle}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       style={{ padding: 4 }}>
                       <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />

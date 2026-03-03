@@ -4,6 +4,8 @@
  * #32 スワイプ削除の undo (restoreMemo)
  * #36 場所検索履歴 (addRecentPlace)
  * #37 全チェック解除 (uncheckAllItems)
+ * Fix#3 updateMemo でアイテム一括更新（sync/checkState push 用）
+ * Fix#4 pendingNotificationMemoId via MMKV
  */
 import { useMemoStore, useSettingsStore } from '../src/store/memoStore';
 import { RecentPlace } from '../src/types';
@@ -211,5 +213,81 @@ describe('#36 addRecentPlace', () => {
 
     const place = useSettingsStore.getState().recentPlaces[0];
     expect(place.address).toBe('東京都千代田区丸の内1丁目');
+  });
+});
+
+// ============================================================
+// Fix#3  updateMemo — items / locations の部分更新（sync 用）
+// ============================================================
+describe('Fix#3 updateMemo で items を一括更新', () => {
+  it('items を指定すれば既存アイテムが丸ごと置き換わる', () => {
+    const memo = useMemoStore.getState().addMemo('syncTest');
+    useMemoStore.getState().addItem(memo.id, '牛乳');
+    useMemoStore.getState().addItem(memo.id, '卵');
+
+    const newItems = [
+      { id: 'x1', name: 'パン', isChecked: true, checkedAt: 1000 },
+    ];
+    useMemoStore.getState().updateMemo(memo.id, { items: newItems });
+
+    const updated = useMemoStore.getState().getMemoById(memo.id);
+    expect(updated?.items).toHaveLength(1);
+    expect(updated?.items[0].name).toBe('パン');
+    expect(updated?.items[0].isChecked).toBe(true);
+  });
+
+  it('items を省略すれば既存アイテムはそのまま', () => {
+    const memo = useMemoStore.getState().addMemo('keepItems');
+    useMemoStore.getState().addItem(memo.id, '醤油');
+
+    useMemoStore.getState().updateMemo(memo.id, { title: '変更後' });
+
+    const updated = useMemoStore.getState().getMemoById(memo.id);
+    expect(updated?.title).toBe('変更後');
+    expect(updated?.items).toHaveLength(1);
+    expect(updated?.items[0].name).toBe('醤油');
+  });
+
+  it('チェック状態が items に保持されたまま updateMemo で保存できる', () => {
+    const memo = useMemoStore.getState().addMemo('checkStateSync');
+    useMemoStore.getState().addItem(memo.id, 'トマト');
+    const item = useMemoStore.getState().getMemoById(memo.id)!.items[0];
+
+    // チェック ON
+    useMemoStore.getState().toggleItem(memo.id, item.id);
+    const checkedItem = useMemoStore.getState().getMemoById(memo.id)!.items[0];
+    expect(checkedItem.isChecked).toBe(true);
+
+    // この items を Firestore に push する想定でそのまま updateMemo
+    const snapshot = useMemoStore.getState().getMemoById(memo.id)!.items;
+    useMemoStore.getState().updateMemo(memo.id, { items: snapshot });
+    const final = useMemoStore.getState().getMemoById(memo.id)!.items[0];
+    expect(final.isChecked).toBe(true);
+  });
+});
+
+// ============================================================
+// Fix#4  pendingNotificationMemoId — MMKV 経由の通知遷移
+// ============================================================
+describe('Fix#4 MMKV pendingNotificationMemoId', () => {
+  const { storage } = require('../src/storage/mmkvStorage');
+
+  beforeEach(() => {
+    storage.remove('pendingNotificationMemoId');
+  });
+
+  it('set → getString で同じ値が取れる', () => {
+    storage.set('pendingNotificationMemoId', 'memo-abc-123');
+    expect(storage.getString('pendingNotificationMemoId')).toBe('memo-abc-123');
+  });
+
+  it('remove 後は getString が undefined を返す', () => {
+    storage.set('pendingNotificationMemoId', 'memo-abc-123');
+    storage.remove('pendingNotificationMemoId');
+    expect(storage.getString('pendingNotificationMemoId')).toBeUndefined();
+  });
+
+  it('キーが存在しない場合は getString が undefined を返す', () => {
+    expect(storage.getString('pendingNotificationMemoId')).toBeUndefined();
   });
 });
