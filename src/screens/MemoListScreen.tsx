@@ -272,9 +272,8 @@ const styles = StyleSheet.create({
   cardSub: { fontSize: 13, color: '#757575' },
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
   completedStamp: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
+    alignSelf: 'flex-end',
+    marginTop: 6,
     borderWidth: 2.5,
     borderColor: '#4CAF50',
     borderRadius: 4,

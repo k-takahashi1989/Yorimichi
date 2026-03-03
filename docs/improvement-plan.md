@@ -1,8 +1,28 @@
 # Yorimichi 改善計画
 
-> 最終更新: 2026-02-28（versionCode 8 / versionName 1.0.6）
+> 最終更新: 2026-03-03（versionCode 9 / versionName 1.0.8）
 
 ## 1. 実装済み変更
+
+### 品質修正（2026-03-03）
+
+| Fix | 内容 | 対応ファイル |
+|-----|------|-------------|
+| Fix#1 | Snackbar「元に戻す」押下後にバーが残る問題を修正。`handleAction` 内の 200ms フェードアウトアニメーションを廃止し、`opacity.setValue(0)` → `onDismiss()` を即時実行するように変更 | `Snackbar.tsx` |
+| Fix#2 | 完了スタンプ（「完了」ラベル）が場所テキストと重なる問題を修正。`completedStamp` スタイルを `position: 'absolute'` から通常フロー（`alignSelf: 'flex-end'`, `marginTop: 6`）に変更 | `MemoListScreen.tsx` |
+| Fix#3 | 共有メモのチェック操作（個別チェック・全チェック・全解除）を Firestore に即時反映（fire-and-forget）。`updateSharedMemoItems` を `shareService.ts` に追加し、`handleToggleItem` / `handleCheckAllToggle` から呼び出す。sync 時に他ユーザーのチェック状態も保持される | `shareService.ts`, `MemoDetailScreen.tsx` |
+| Fix#4 | プッシュ通知タップでメモ詳細を開く（killed 状態対応）。バックグラウンドハンドラーで `memoId` を MMKV の `pendingNotificationMemoId` に保存し、`AppNavigator` の `onReady` で読み出して `navigate('MemoDetail')` を実行 | `index.js`, `AppNavigator.tsx` |
+| Fix#5 | sync 複数回実行後に戻るボタンが MemoDetail に留まる問題を修正。`useFocusEffect` 内で `BackHandler` を登録し、常に `navigation.popToTop()` で MemoList に戻るよう統一 | `MemoDetailScreen.tsx` |
+
+### テスト追加（2026-03-03）
+
+| ファイル | 内容 |
+|----------|------|
+| `__tests__/snackbar.test.tsx`（新規）| Snackbar のアクションボタン押下で `onAction` + `onDismiss` が即時呼ばれることを確認。`visible=false` 時に `pointerEvents=none` になることを確認 |
+| `__tests__/features.test.ts` | Fix#3: `updateMemo` で `items` 一括更新・チェック状態保持のテスト追加（3件）|
+| `__tests__/features.test.ts` | Fix#4: MMKV `pendingNotificationMemoId` の set/get/remove 動作テスト追加（3件）|
+| `__tests__/App.test.tsx` | `GestureHandlerRootView` / `SafeAreaProvider` / `react-native-gesture-handler` のモックを修正し App スモークテストが通るように修正 |
+| `jest.config.js` | `react-native-google-mobile-ads`・`@react-native-firebase/firestore`・`@react-native-firebase/auth`・`react-native-device-info` のモックを追加 |
 
 ### 操作フロー
 

@@ -2,7 +2,7 @@ import firestore, {
   FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import { Memo, SharedMemoDoc, SharePresence } from '../types';
+import { Memo, SharedMemoDoc, SharePresence, ShoppingItem } from '../types';
 
 const COLLECTION = 'sharedMemos';
 
@@ -96,7 +96,17 @@ export async function clearPresence(
     .doc(shareId)
     .update({ [`presences.${deviceId}`]: firestore.FieldValue.delete() });
 }
-
+// ── 共有メモのアイテム一覧を Firestore に即時反映する ────────────────────
+export async function updateSharedMemoItems(
+  shareId: string,
+  items: ShoppingItem[],
+): Promise<void> {
+  await ensureSignedIn();
+  await firestore()
+    .collection(COLLECTION)
+    .doc(shareId)
+    .update({ items, updatedAt: Date.now() });
+}
 // ── プレゼンスをリアルタイム監視（unsubscribe 関数を返す）────
 export function subscribePresence(
   shareId: string,

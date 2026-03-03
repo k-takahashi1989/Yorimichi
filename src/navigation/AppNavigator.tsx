@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useForegroundNotificationHandler } from '../services/notificationService';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
+import { storage } from '../storage/mmkvStorage';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import MemoListScreen from '../screens/MemoListScreen';
@@ -128,7 +129,16 @@ export function AppNavigator(): React.JSX.Element {
   }, []);
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        // Killed 状態から通知タップで起動した場合: MMKV に保存された未処理の memoId を読み出して遷移
+        const pending = storage.getString('pendingNotificationMemoId');
+        if (pending) {
+          storage.remove('pendingNotificationMemoId');
+          navigationRef.current?.navigate('MemoDetail', { memoId: pending });
+        }
+      }}>
       <Stack.Navigator
         screenOptions={{
           headerTintColor: '#4CAF50',

@@ -65,11 +65,9 @@ export default function Snackbar({
       timerRef.current = null;
     }
     onAction?.();
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => onDismiss());
+    // アクション実行後はアニメーションなしで即座に非表示にする
+    opacity.setValue(0);
+    onDismiss();
   };
 
   return (
