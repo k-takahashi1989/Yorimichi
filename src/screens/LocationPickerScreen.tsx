@@ -258,8 +258,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const handleRecentPlacePress = (place: RecentPlace) => {
     const coords = { latitude: place.latitude, longitude: place.longitude };
     setPicked(coords);
-    if (!label) setLabel(place.label);
-    if (place.address) setAddress(place.address);
+    setLabel(place.label);                        // 常に上書き（何度でも選択し直せる）
+    setAddress(place.address ?? place.label);     // address がなければ地名をそのまま流用
     mapRef.current?.animateToRegion(
       { ...coords, latitudeDelta: 0.005, longitudeDelta: 0.005 },
       400,
