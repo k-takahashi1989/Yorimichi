@@ -215,7 +215,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
       try {
         const lang = i18n.language === 'ja' ? 'ja' : 'en';
         const token = Config.MAPBOX_ACCESS_TOKEN ?? '';
-        const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(text)}&access_token=${token}&language=${lang}&limit=6`;
+        const proximity = `${initialRegion.longitude},${initialRegion.latitude}`;
+        const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(text)}&access_token=${token}&language=${lang}&limit=6&proximity=${proximity}`;
         const res = await fetch(url);
         const json = await res.json();
         const features = json.features ?? [];
