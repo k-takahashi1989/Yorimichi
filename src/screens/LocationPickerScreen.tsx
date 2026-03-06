@@ -214,22 +214,20 @@ export default function LocationPickerScreen(): React.JSX.Element {
       setIsSearching(true);
       try {
         const lang = i18n.language === 'ja' ? 'ja' : 'en';
-        const token = Config.MAPBOX_ACCESS_TOKEN ?? '';
-        const proximity = `${initialRegion.longitude},${initialRegion.latitude}`;
-        // v5 を使用：テキスト前方一致のみ。v6のセマンティック検索は日本語で意図しない結果を返すため使わない
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(text)}.json?access_token=${token}&language=${lang}&limit=6&proximity=${proximity}`;
-        const res = await fetch(url);
+        // Nominatim (OSM) を使用：APIキー不要・日本POIデータあり
+        // viewbox で現在地周辺を優先、countrycodes=jp で日本に絞る
+        const { latitude: clat, longitude: clng } = initialRegion;
+        const delta = 1.0; // ±1度（約100km）のビューボックスで近くを優先
+        const viewbox = `${clng - delta},${clat - delta},${clng + delta},${clat + delta}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&accept-language=${lang}&limit=6&countrycodes=jp&viewbox=${viewbox}&bounded=0`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'YorimichiApp/1.0' } });
         const json = await res.json();
-        const features = json.features ?? [];
-        const results = features.map((f: {
-          text?: string;
-          place_name?: string;
-          center: [number, number];
-        }) => ({
-          name: f.text ?? text,
-          address: f.place_name ?? '',
-          lat: f.center[1],
-          lng: f.center[0],
+        const features: { display_name?: string; lat: string; lon: string; name?: string }[] = Array.isArray(json) ? json : [];
+        const results = features.map(f => ({
+          name: f.name ?? f.display_name?.split(',')[0] ?? text,
+          address: f.display_name ?? '',
+          lat: parseFloat(f.lat),
+          lng: parseFloat(f.lon),
         }));
         setSearchResults(results);
       } catch {
