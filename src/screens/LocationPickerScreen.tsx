@@ -216,18 +216,20 @@ export default function LocationPickerScreen(): React.JSX.Element {
         const lang = i18n.language === 'ja' ? 'ja' : 'en';
         const token = Config.MAPBOX_ACCESS_TOKEN ?? '';
         const proximity = `${initialRegion.longitude},${initialRegion.latitude}`;
-        const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(text)}&access_token=${token}&language=${lang}&limit=6&proximity=${proximity}`;
+        // v5 を使用：テキスト前方一致のみ。v6のセマンティック検索は日本語で意図しない結果を返すため使わない
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(text)}.json?access_token=${token}&language=${lang}&limit=6&proximity=${proximity}`;
         const res = await fetch(url);
         const json = await res.json();
         const features = json.features ?? [];
         const results = features.map((f: {
-          properties: { name?: string; full_address?: string };
-          geometry: { coordinates: [number, number] };
+          text?: string;
+          place_name?: string;
+          center: [number, number];
         }) => ({
-          name: f.properties.name ?? text,
-          address: f.properties.full_address ?? '',
-          lat: f.geometry.coordinates[1],
-          lng: f.geometry.coordinates[0],
+          name: f.text ?? text,
+          address: f.place_name ?? '',
+          lat: f.center[1],
+          lng: f.center[0],
         }));
         setSearchResults(results);
       } catch {
