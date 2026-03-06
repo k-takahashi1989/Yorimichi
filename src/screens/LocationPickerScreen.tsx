@@ -10,6 +10,8 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
+  FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -23,7 +25,6 @@ import Geolocation from 'react-native-geolocation-service';
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-import { GooglePlacesAutocomplete, GooglePlaceData, GooglePlaceDetail } from 'react-native-google-places-autocomplete';
 import Config from 'react-native-config';
 import { useMemoStore } from '../store/memoStore';
 import { useSettingsStore } from '../store/memoStore';
@@ -74,6 +75,12 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const [radius, setRadius] = useState(defaultRadius);
   const [address, setAddress] = useState<string | null>(null);
   const [initialRegion, setInitialRegion] = useState<Region>(FALLBACK_REGION);
+
+  // Mapbox 場所検索
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<{ name: string; address: string; lat: number; lng: number }[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapRef = useRef<MapView>(null);
   const geocodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -197,16 +204,48 @@ export default function LocationPickerScreen(): React.JSX.Element {
     );
   };
 
-  const handlePlaceSelected = (_data: GooglePlaceData, details: GooglePlaceDetail | null) => {
-    if (!details?.geometry?.location) return;
-    const { lat, lng } = details.geometry.location;
+  // Mapbox Geocoding API で場所を検索（300ms デバウンス）
+  const handleSearchChange = (text: string) => {
+    setSearchText(text);
+    setSearchResults([]);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!text.trim()) return;
+    searchTimerRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const lang = i18n.language === 'ja' ? 'ja' : 'en';
+        const token = Config.MAPBOX_ACCESS_TOKEN ?? '';
+        const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(text)}&access_token=${token}&language=${lang}&limit=6`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const features = json.features ?? [];
+        const results = features.map((f: {
+          properties: { name?: string; full_address?: string };
+          geometry: { coordinates: [number, number] };
+        }) => ({
+          name: f.properties.name ?? text,
+          address: f.properties.full_address ?? '',
+          lat: f.geometry.coordinates[1],
+          lng: f.geometry.coordinates[0],
+        }));
+        setSearchResults(results);
+      } catch {
+        // 検索失敗は無視
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleSearchResultPress = (name: string, lat: number, lng: number) => {
     const coords = { latitude: lat, longitude: lng };
     setPicked(coords);
-    const placeLabel = details.name ?? label;
-    if (!label && details.name) setLabel(details.name);
+    if (!label) setLabel(name);
+    setSearchText('');
+    setSearchResults([]);
     Keyboard.dismiss();
     reverseGeocode(lat, lng);
-    addRecentPlace({ label: placeLabel, latitude: lat, longitude: lng });
+    addRecentPlace({ label: name, latitude: lat, longitude: lng });
     setTimeout(() => {
       mapRef.current?.animateToRegion(
         { ...coords, latitudeDelta: 0.005, longitudeDelta: 0.005 },
@@ -302,27 +341,46 @@ export default function LocationPickerScreen(): React.JSX.Element {
           ))}
         </MapView>
 
-        {/* 地名検索バー */}
-        <GooglePlacesAutocomplete
-          placeholder={t('locationPicker.searchPlaceholder')}
-          onPress={handlePlaceSelected}
-          query={{
-            key: Config.GOOGLE_PLACES_API_KEY ?? '',
-            language: i18n.language === 'ja' ? 'ja' : 'en',
-          }}
-          fetchDetails={true}
-          enablePoweredByContainer={false}
-          currentLocation={false}
-          textInputProps={{ placeholderTextColor: '#9E9E9E' }}
-          styles={{
-            container: styles.placesContainer,
-            textInputContainer: styles.placesTextInputContainer,
-            textInput: styles.placesTextInput,
-            listView: styles.placesList,
-            row: styles.placesRow,
-            description: styles.placesDescription,
-          }}
-        />
+        {/* 地名検索バー (Mapbox) */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputRow}>
+            <Icon name="search" size={18} color="#9E9E9E" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('locationPicker.searchPlaceholder')}
+              placeholderTextColor="#9E9E9E"
+              value={searchText}
+              onChangeText={handleSearchChange}
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+            {isSearching && <ActivityIndicator size="small" color="#4CAF50" style={{ marginRight: 8 }} />}
+            {searchText.length > 0 && !isSearching && (
+              <TouchableOpacity onPress={() => { setSearchText(''); setSearchResults([]); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Icon name="close" size={18} color="#9E9E9E" style={{ marginRight: 8 }} />
+              </TouchableOpacity>
+            )}
+          </View>
+          {searchResults.length > 0 && (
+            <FlatList
+              style={styles.searchList}
+              keyboardShouldPersistTaps="handled"
+              data={searchResults}
+              keyExtractor={(_, i) => String(i)}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.searchRow}
+                  onPress={() => handleSearchResultPress(item.name, item.lat, item.lng)}>
+                  <Icon name="place" size={16} color="#757575" style={{ marginRight: 8, marginTop: 1 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.searchRowName} numberOfLines={1}>{item.name}</Text>
+                    {item.address ? <Text style={styles.searchRowAddress} numberOfLines={1}>{item.address}</Text> : null}
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </View>
 
         {/* 現在地ボタン（検索バー右端） */}
         <TouchableOpacity style={styles.gpsBtn} onPress={handleGpsPress}>
@@ -424,46 +482,55 @@ export default function LocationPickerScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5' },
 
-  /* 地名検索 */
-  placesContainer: {
+  /* 地名検索 (Mapbox) */
+  searchContainer: {
     position: 'absolute',
     top: 10,
     left: 10,
-    right: 58, // GPSボタン分の余白
+    right: 58,
     zIndex: 10,
     elevation: 5,
   },
-  placesTextInputContainer: {
-    backgroundColor: 'transparent',
-    borderTopWidth: 0,
-    borderBottomWidth: 0,
-  },
-  placesTextInput: {
+  searchInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 8,
     height: 44,
-    fontSize: 14,
-    color: '#212121',
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  placesList: {
+  searchIcon: { marginLeft: 10, marginRight: 4 },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#212121',
+    paddingVertical: 0,
+  },
+  searchList: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    marginTop: 2,
+    marginTop: 4,
     elevation: 5,
+    maxHeight: 220,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
-  placesRow: {
-    backgroundColor: '#fff',
-    paddingVertical: 4,
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  placesDescription: {
-    fontSize: 13,
-    color: '#212121',
-  },
+  searchRowName: { fontSize: 13, color: '#212121', fontWeight: '600' },
+  searchRowAddress: { fontSize: 11, color: '#9E9E9E', marginTop: 1 },
 
   /* 地図 */
   mapContainer: { flex: 1, position: 'relative' },
