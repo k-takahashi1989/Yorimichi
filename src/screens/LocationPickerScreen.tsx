@@ -454,7 +454,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
         )}
 
         {/* 最近の場所 */}
-        {recentPlaces.length > 0 && !picked && (
+        {recentPlaces.length > 0 && (
           <View style={styles.recentSection}>
             <Text style={styles.recentTitle}>{t('locationPicker.recentTitle')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
