@@ -3,8 +3,9 @@
 ## 目次
 
 1. [8081エラー：Metroが起動できない](#1-8081エラーmetroが起動できない)
-2. [デバッグビルドに変更が反映されない](#2-デバッグビルドに変更が反映されない)
-3. [Gradle ビルドエラー](#3-gradle-ビルドエラー)
+2. ["Make sure running Metro" エラー](#2-make-sure-running-metro-or-that-your-bundle-indexandroidbundle-エラー)
+3. [デバッグビルドに変更が反映されない](#3-デバッグビルドに変更が反映されない)
+4. [Gradle ビルドエラー](#4-gradle-ビルドエラー)
 
 ---
 
@@ -66,7 +67,48 @@ cd c:\Users\neigh\Documents\ShoppingReminder\android
 
 ---
 
-## 2. デバッグビルドに変更が反映されない
+## 2. "Make sure running Metro or that your bundle index.android.bundle" エラー
+
+### 症状
+
+アプリを開くと赤い画面で以下が表示される：
+
+```
+Make sure running Metro or that your bundle 'index.android.bundle' is packaged correctly for release.
+```
+
+### 原因
+
+デバイスがPCのMetroサーバー（ポート8081）に接続できていない。
+USBケーブルの再接続・PC再起動などで `adb reverse` の設定がリセットされると発生する。
+
+### 解決手順
+
+#### ステップ1：Metroが起動しているか確認
+
+```powershell
+netstat -ano | findstr :8081
+```
+
+起動していない場合は起動する（[1. 8081エラー](#1-8081エラーmetroが起動できない)参照）。
+
+#### ステップ2：adb reverseでポートフォワーディングを設定
+
+```powershell
+adb reverse tcp:8081 tcp:8081
+```
+
+`8081` と返ってくれば成功。
+
+#### ステップ3：アプリをリロード
+
+デバイスを振って「Reload」を選択、またはアプリを再起動。
+
+> **注意**: USBを繋ぎ直すたびに `adb reverse` の再実行が必要になる場合がある。
+
+---
+
+## 3. デバッグビルドに変更が反映されない
 
 ### 症状
 
@@ -95,7 +137,7 @@ Metroが起動していない場合、古いキャッシュのまま動作する
 
 ---
 
-## 3. Gradle ビルドエラー
+## 4. Gradle ビルドエラー
 
 ### よくあるエラーと対処
 
