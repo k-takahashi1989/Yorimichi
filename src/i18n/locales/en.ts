@@ -220,6 +220,31 @@ const en: Translation = {
     syncButton: 'Sync',
     syncSuccess: 'Memo updated to latest version',
   },
+  // ── Premium plan ────────────────────────────────────────
+  premium: {
+    screenTitle: '✨ Premium Plan',
+    currentFree: 'Current plan: Free',
+    currentPremium: 'Current plan: Premium ✨',
+    freePlan: 'Free',
+    premiumPlan: 'Premium',
+    upgradeButton: 'Upgrade to Premium',
+    comingSoon: '(Coming soon)',
+    alreadyPremium: '✅ You are on the Premium plan',
+    devToggleOn: '[DEV] Turn Premium OFF',
+    devToggleOff: '[DEV] Turn Premium ON',
+    featureMemos: 'Memos',
+    featureItems: 'Items / memo',
+    featureLocations: 'Locations / memo',
+    featureCollaborators: 'Sharing',
+    featureAds: 'Ads',
+    freeVal: '5',
+    freeValItems: '10',
+    freeValLocations: '2',
+    freeValCollaborators: '1-to-1',
+    freeValAds: 'Yes',
+    premiumVal: 'Unlimited',
+    premiumValAds: 'None',
+  },
 };
 
 export default en;

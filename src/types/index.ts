@@ -67,6 +67,7 @@ export type RootStackParamList = {
     memoId: string;
     existingLocationId?: string;                   // undefined = 新規追加
   };
+  Premium: undefined;
 };
 
 export type MainTabParamList = {

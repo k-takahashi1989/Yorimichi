@@ -25,6 +25,7 @@ interface SettingsState {
   addSharedMemoId: (shareId: string) => void;
   removeSharedMemoId: (shareId: string) => void;
   addRecentPlace: (place: RecentPlace) => void;
+  setIsPremium: (value: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -67,6 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
           const updated = [place, ...filtered].slice(0, 10);
           return { recentPlaces: updated };
         }),
+      setIsPremium: (value: boolean) => set({ isPremium: value }),
     }),
     {
       name: 'settings',
