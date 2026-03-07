@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { isGeofencingActive } from '../services/geofenceService';
-import { getLocationsLimit } from '../config/planLimits';
+import { getLocationsLimit, LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
@@ -126,7 +126,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   };
 
   const handleShare = async () => {
-    if (!isPremium && sharedMemoIds.length >= 1 && !memo.shareId) {
+    if (LIMITS_ENABLED && !isPremium && sharedMemoIds.length >= 1 && !memo.shareId) {
       Alert.alert(t('share.limitReached'), t('share.limitReachedMsg'));
       return;
     }
@@ -343,14 +343,24 @@ export default function MemoDetailScreen(): React.JSX.Element {
           <Text style={styles.sectionTitle}>
             {t('memoDetail.locationSection', { count: memo.locations.length })}
           </Text>
-          {memo.locations.length < getLocationsLimit(isPremium) && (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('LocationPicker', { memoId })}
-              style={styles.addLocBtn}>
-              <Icon name="add-location" size={18} color="#4CAF50" />
-              <Text style={styles.addLocText}>{t('memoDetail.addLocation')}</Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.sectionHeaderRight}>
+            {LIMITS_ENABLED && !isPremium && (
+              <Text style={[
+                styles.limitCounter,
+                memo.locations.length >= FREE_LIMITS.locationsPerMemo && styles.limitCounterFull,
+              ]}>
+                {memo.locations.length} / {FREE_LIMITS.locationsPerMemo}
+              </Text>
+            )}
+            {memo.locations.length < getLocationsLimit(isPremium) && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('LocationPicker', { memoId })}
+                style={styles.addLocBtn}>
+                <Icon name="add-location" size={18} color="#4CAF50" />
+                <Text style={styles.addLocText}>{t('memoDetail.addLocation')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
         {memo.locations.length === 0 ? (
           <Text style={styles.noLocText}>
@@ -556,6 +566,9 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 15, fontWeight: '600', color: '#424242' },
   addLocBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   addLocText: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
+  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  limitCounter: { fontSize: 12, color: '#9E9E9E' },
+  limitCounterFull: { color: '#FF9800', fontWeight: '600' as const },
   noLocText: { fontSize: 13, color: '#9E9E9E', textAlign: 'center', paddingVertical: 8 },
   hiddenItemsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 4 },
   hiddenItemsText: { fontSize: 13, color: '#BDBDBD' },

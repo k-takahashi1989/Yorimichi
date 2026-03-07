@@ -28,7 +28,7 @@ import TutorialTooltip from '../components/TutorialTooltip';
 import { useTutorial } from '../hooks/useTutorial';
 import { getDeviceId } from '../utils/deviceId';
 import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
-import { LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
+import { LIMITS_ENABLED, FREE_LIMITS, getItemsLimit } from '../config/planLimits';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoEdit'>;
@@ -135,7 +135,7 @@ export default function MemoEditScreen(): React.JSX.Element {
   const handleAddItem = useCallback(() => {
     if (!newItemName.trim()) return;
     // アイテム上限チェック
-    if (LIMITS_ENABLED && !isPremium && currentItems.length >= FREE_LIMITS.itemsPerMemo) {
+    if (LIMITS_ENABLED && !isPremium && currentItems.length >= getItemsLimit(isPremium)) {
       Alert.alert(
         t('errors.itemLimitTitle'),
         t('errors.itemLimitMsg', { count: FREE_LIMITS.itemsPerMemo }),
@@ -280,7 +280,17 @@ export default function MemoEditScreen(): React.JSX.Element {
 
         {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
         <View ref={addRowRef} collapsable={false}>
-          <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
+            {LIMITS_ENABLED && !isPremium && savedMemoId && (
+              <Text style={[
+                styles.limitCounter,
+                currentItems.length >= FREE_LIMITS.itemsPerMemo && styles.limitCounterFull,
+              ]}>
+                {currentItems.length} / {FREE_LIMITS.itemsPerMemo}
+              </Text>
+            )}
+          </View>
           {currentItems.map((item, index) => renderItem(item, index))}
 
           {/* アイテム入力 */}
@@ -398,4 +408,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   doneBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  limitCounter: { fontSize: 12, color: '#9E9E9E' },
+  limitCounterFull: { color: '#FF9800', fontWeight: '600' as const },
 });
