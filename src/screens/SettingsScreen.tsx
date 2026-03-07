@@ -10,6 +10,9 @@ import {
   ScrollView,
   Linking,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
 import {
   check,
   request,
@@ -32,6 +35,8 @@ import {
 import BackgroundService from 'react-native-background-actions';
 
 type PermStatus = 'granted' | 'denied' | 'blocked' | 'unavailable' | 'limited' | 'unknown';
+
+type SettingsNav = NativeStackNavigationProp<RootStackParamList>;
 
 const androidVersion = Platform.Version as number;
 
@@ -58,6 +63,7 @@ async function checkLocationPermissions(): Promise<{
 
 export default function SettingsScreen(): React.JSX.Element {
   const { t } = useTranslation();
+  const navigation = useNavigation<SettingsNav>();
   const defaultRadius = useSettingsStore(s => s.defaultRadius);
   const setDefaultRadius = useSettingsStore(s => s.setDefaultRadius);
   const maxRadius = useSettingsStore(s => s.maxRadius);
@@ -312,6 +318,21 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </View>
 
+      {/* プレミアムプランカード */}
+      <TouchableOpacity
+        style={styles.premiumCard}
+        onPress={() => navigation.navigate('Premium')}
+        activeOpacity={0.85}>
+        <View style={styles.premiumCardLeft}>
+          <Text style={styles.premiumCardIcon}>✨</Text>
+          <View>
+            <Text style={styles.premiumCardTitle}>{t('premium.screenTitle')}</Text>
+            <Text style={styles.premiumCardSub}>{t('premium.upgradeButton')} {t('premium.comingSoon')}</Text>
+          </View>
+        </View>
+        <Icon name="chevron-right" size={24} color="#FFF" />
+      </TouchableOpacity>
+
       {/* アプリ情報 */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('settings.appInfo.title')}</Text>
@@ -331,6 +352,25 @@ export default function SettingsScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  premiumCard: {
+    backgroundColor: '#E65100',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+  },
+  premiumCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  premiumCardIcon: { fontSize: 28 },
+  premiumCardTitle: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+  premiumCardSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
   pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#212121', marginBottom: 16, marginTop: 8 },
   card: {

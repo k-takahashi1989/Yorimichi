@@ -20,6 +20,7 @@ import MemoDetailScreen from '../screens/MemoDetailScreen';
 import MemoEditScreen from '../screens/MemoEditScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import PremiumScreen from '../screens/PremiumScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -174,6 +175,11 @@ export function AppNavigator(): React.JSX.Element {
           name="LocationPicker"
           component={LocationPickerScreen}
           options={{ title: t('nav.locationPicker') }}
+        />
+        <Stack.Screen
+          name="Premium"
+          component={PremiumScreen}
+          options={{ title: t('premium.screenTitle') }}
         />
       </Stack.Navigator>
     </NavigationContainer>

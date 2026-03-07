@@ -228,7 +228,33 @@ const ja = {
     importByCodeInvalid: '無効な共有コードです',
     syncButton: '最新に更新',
     syncSuccess: 'メモを最新の状態に更新しました',
-  },} as const;
+  },
+  // ── プレミアムプラン ───────────────────────────────────
+  premium: {
+    screenTitle: '✨ プレミアムプラン',
+    currentFree: '現在のプラン：無料',
+    currentPremium: '現在のプラン：プレミアム ✨',
+    freePlan: '無料プラン',
+    premiumPlan: 'プレミアム',
+    upgradeButton: 'プレミアムにアップグレード',
+    comingSoon: '（準備中）',
+    alreadyPremium: '✅ プレミアムプランを利用中',
+    devToggleOn: '[DEV] プレミアムをOFFにする',
+    devToggleOff: '[DEV] プレミアムをONにする',
+    featureMemos: 'メモ数',
+    featureItems: 'アイテム数 / メモ',
+    featureLocations: '登録地点数 / メモ',
+    featureCollaborators: '共有人数',
+    featureAds: '広告',
+    freeVal: '5件',
+    freeValItems: '10個',
+    freeValLocations: '2か所',
+    freeValCollaborators: '1対1',
+    freeValAds: 'あり',
+    premiumVal: '無制限',
+    premiumValAds: 'なし',
+  },
+} as const;
 
 export default ja;
 export type TranslationKeys = typeof ja;
