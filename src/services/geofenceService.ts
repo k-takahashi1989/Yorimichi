@@ -22,6 +22,9 @@ const YorimichiGeofence = NativeModules.YorimichiGeofence as {
 
 const MONITORING_KEY = 'geofence_monitoring_active';
 
+/** Android GeofencingClient のハードリミット（1アプリあたり最大100件） */
+export const MAX_GEOFENCES = 100;
+
 // ============================================================
 // ストアからメモを読み込む
 // ============================================================
@@ -69,7 +72,7 @@ function buildEntries(memos: Memo[]): GeofenceEntry[] {
       });
     }
   }
-  return entries;
+  return entries.slice(0, MAX_GEOFENCES);
 }
 
 // ============================================================
