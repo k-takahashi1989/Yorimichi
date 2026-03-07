@@ -30,6 +30,7 @@ import {
   subscribePresence,
   isPresenceActive,
   updateSharedMemoItems,
+  updateSharedMemoLocations,
 } from '../services/shareService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -59,6 +60,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const checkAllRef = useRef<View>(null);
   const hideCheckedRef = useRef<View>(null);
   const syncRef = useRef<View>(null);
+  // 初回フォーカス判定（LocationPickerScreen から戻ってきた場合のみ地点プッシュ）
+  const isFirstFocus = useRef(true);
 
   const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
     useTutorial('memoDetail', 1, [bellRef], 800);
@@ -106,11 +109,19 @@ export default function MemoDetailScreen(): React.JSX.Element {
         navigation.popToTop();
         return true;
       });
+      // オーナーの場合: LocationPickerScreen から戻ってきたとき地点変更を Firestore に即時反映
+      if (!isFirstFocus.current) {
+        const currentMemo = useMemoStore.getState().memos.find(m => m.id === memoId);
+        if (currentMemo?.shareId && currentMemo.isOwner) {
+          updateSharedMemoLocations(currentMemo.shareId, currentMemo.locations).catch(() => {});
+        }
+      }
+      isFirstFocus.current = false;
       return () => {
         clearInterval(id);
         backHandler.remove();
       };
-    }, [navigation]),
+    }, [navigation, memoId]),
   );
 
   if (!memo) {
@@ -166,7 +177,10 @@ export default function MemoDetailScreen(): React.JSX.Element {
           ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
           : docItem; // 新規追加アイテムはチェックなし
       });
-      updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations });
+      // オーナーは地点変更の権限を持つためローカルを優先
+      // コラボレーターはオーナーが変更した地点を Firestore から受け取る
+      const mergedLocations = memo.isOwner ? memo.locations : doc.locations;
+      updateMemo(memoId, { title: doc.title, items: mergedItems, locations: mergedLocations });
       Alert.alert(t('share.syncSuccess'));
     } catch {
       Alert.alert(t('common.error'), t('share.syncError'));
@@ -181,7 +195,14 @@ export default function MemoDetailScreen(): React.JSX.Element {
       {
         text: t('common.delete'),
         style: 'destructive',
-        onPress: () => deleteLocation(memoId, loc.id),
+        onPress: () => {
+          deleteLocation(memoId, loc.id);
+          // 共有メモのオーナーの場合: 地点削除を Firestore に即時反映
+          if (memo?.shareId && memo.isOwner) {
+            const updatedLocations = useMemoStore.getState().memos.find(m => m.id === memoId)?.locations ?? [];
+            updateSharedMemoLocations(memo.shareId, updatedLocations).catch(() => {});
+          }
+        },
       },
     ]);
   };
