@@ -1,169 +1,132 @@
 /**
- * Geofence Service
+ * Geofence Service — Android ネイティブ GeofencingClient 版
  *
- * react-native-background-actions でバックグラウンドでも動作し続け、
- * 定期的に位置情報を取得してジオフェンス侵入を検知する。
- * 侵入を検知したら notifee でプッシュ通知を発火する。
+ * react-native-background-actions のポーリング方式を廃止し、
+ * Android の GeofencingClient（Google Play Services）をネイティブモジュール
+ * (YorimichiGeofence) 経由で使用することでバッテリー消費を大幅削減。
+ *
+ * 通知発行は GeofenceTransitionReceiver.kt が行うため、
+ * アプリが killed 状態でも確実に届く。
  */
-import BackgroundService from 'react-native-background-actions';
-import Geolocation from 'react-native-geolocation-service';
+import { NativeModules, Platform } from 'react-native';
 import i18n from '../i18n';
 import { Memo } from '../types';
-import { haversineDistance } from '../utils/helpers';
-import { showArrivalNotification } from './notificationService';
 import { storage } from '../storage/mmkvStorage';
 
-// 現在「半径内」にあるジオフェンスのIDをキャッシュ（進入/退出検出用）
-const insideGeofences = new Set<string>();
+// NativeModule: YorimichiGeofence (GeofenceModule.kt の getName() と一致)
+const YorimichiGeofence = NativeModules.YorimichiGeofence as {
+  syncGeofences: (json: string) => Promise<void>;
+  removeGeofencesForMemo: (memoId: string) => Promise<void>;
+  clearAll: () => Promise<void>;
+} | undefined;
 
-// MMKV への「半径内」キャッシュ保存キー
-const INSIDE_CACHE_KEY = 'inside_geofences';
-
-const POLL_INTERVAL_MS = 10 * 1000; // 10秒ごとに位置確認
-
-// ============================================================
-// 位置情報の取得
-// ============================================================
-function getCurrentPosition(): Promise<{ latitude: number; longitude: number }> {
-  return new Promise((resolve, reject) => {
-    Geolocation.getCurrentPosition(
-      pos => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-      err => reject(err),
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 },
-    );
-  });
-}
+const MONITORING_KEY = 'geofence_monitoring_active';
 
 // ============================================================
-// ジオフェンスのチェック
+// ストアからメモを読み込む
 // ============================================================
 function loadMemos(): Memo[] {
   try {
     const raw = storage.getString('memos');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    // zustand persist は { state: { memos: [...] } } の形式
     return parsed?.state?.memos ?? [];
   } catch {
     return [];
   }
 }
 
-function loadInsideCache(): void {
-  try {
-    const raw = storage.getString(INSIDE_CACHE_KEY);
-    if (!raw) return;
-    const arr: string[] = JSON.parse(raw);
-    arr.forEach(id => insideGeofences.add(id));
-  } catch (e) {
-    // キャッシュが破損している場合はリセット（次回進入時に再通知される）
-    __DEV__ && console.warn('[Geofence] InsideCache corrupted, resetting:', e);
-    storage.remove(INSIDE_CACHE_KEY);
-  }
+// ============================================================
+// ジオフェンスエントリ構築（通知文言を JS で生成して Kotlin に渡す）
+// ============================================================
+interface GeofenceEntry {
+  id: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  memoId: string;
+  notifTitle: string;
+  notifBody: string;
 }
 
-function saveInsideCache(): void {
-  storage.set(INSIDE_CACHE_KEY, JSON.stringify([...insideGeofences]));
-}
-
-async function checkGeofences(
-  lat: number,
-  lon: number,
-): Promise<void> {
-  const memos = loadMemos();
-  let cacheChanged = false;
-
+function buildEntries(memos: Memo[]): GeofenceEntry[] {
+  const entries: GeofenceEntry[] = [];
   for (const memo of memos) {
     if (!memo.notificationEnabled) continue;
-
-    for (const location of memo.locations) {
-      const cacheKey = `${memo.id}:${location.id}`;
-      const distance = haversineDistance(lat, lon, location.latitude, location.longitude);
-      const isInside = distance <= location.radius;
-      const wasInside = insideGeofences.has(cacheKey);
-
-      if (isInside && !wasInside) {
-        // 進入: 通知を送る
-        insideGeofences.add(cacheKey);
-        cacheChanged = true;
-        await showArrivalNotification({
-          memoId: memo.id,
-          locationId: location.id,
-          memoTitle: memo.title,
-          locationLabel: location.label,
-          itemCount: memo.items.filter(it => !it.isChecked).length,
-        });
-      } else if (!isInside && wasInside) {
-        // 退出: 次回進入で再通知できるよう削除
-        insideGeofences.delete(cacheKey);
-        cacheChanged = true;
-      }
+    for (const loc of memo.locations) {
+      const itemCount = memo.items.filter(it => !it.isChecked).length;
+      entries.push({
+        id: `${memo.id}:${loc.id}`,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        radius: loc.radius,
+        memoId: memo.id,
+        notifTitle: i18n.t('notification.arrivalTitle', { label: loc.label }),
+        notifBody: i18n.t('notification.arrivalBody', {
+          title: memo.title,
+          count: itemCount,
+        }),
+      });
     }
   }
-
-  if (cacheChanged) saveInsideCache();
-}
-
-// ============================================================
-// バックグラウンドタスク本体
-// ============================================================
-export const backgroundTask = async (): Promise<void> => {
-  loadInsideCache();
-
-  // eslint-disable-next-line no-constant-condition
-  while (BackgroundService.isRunning()) {
-    try {
-      const pos = await getCurrentPosition();
-      await checkGeofences(pos.latitude, pos.longitude);
-    } catch {
-      // 位置情報取得失敗は無視して継続
-    }
-    await sleep(POLL_INTERVAL_MS);
-  }
-};
-
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return entries;
 }
 
 // ============================================================
 // 公開 API
 // ============================================================
-export async function startGeofenceMonitoring(): Promise<boolean> {
-  if (BackgroundService.isRunning()) return true;
 
+/** 現在ジオフェンス監視が有効かどうか */
+export function isGeofencingActive(): boolean {
+  return storage.getBoolean(MONITORING_KEY) ?? false;
+}
+
+/**
+ * MMKV からメモを読み込み、ネイティブジオフェンスを全同期して監視を開始する。
+ * App.tsx の起動時・権限取得後・SettingsScreen のトグル ON 時に呼ぶ。
+ */
+export async function startGeofenceMonitoring(): Promise<boolean> {
+  if (Platform.OS !== 'android' || !YorimichiGeofence) return false;
   try {
-    await BackgroundService.start(backgroundTask, {
-      taskName: 'YorimichiGeofence',
-      taskTitle: 'Yorimichi',
-      taskDesc: i18n.t('geofence.taskDesc'),
-      taskIcon: {
-        name: 'ic_notification',
-        type: 'drawable',
-      },
-      color: '#4CAF50',
-      linkingURI: 'yorimichi://open',
-      parameters: {},
-    });
+    const memos = loadMemos();
+    const entries = buildEntries(memos);
+    await YorimichiGeofence.syncGeofences(JSON.stringify(entries));
+    storage.set(MONITORING_KEY, true);
     return true;
-  } catch (error) {
-    __DEV__ && console.warn('startGeofenceMonitoring failed:', error);
+  } catch (e) {
+    __DEV__ && console.warn('[GeofenceService] startGeofenceMonitoring failed:', e);
     return false;
   }
 }
 
+/**
+ * 全ジオフェンスを削除して監視を停止する。
+ */
 export async function stopGeofenceMonitoring(): Promise<void> {
-  if (BackgroundService.isRunning()) {
-    await BackgroundService.stop();
+  if (Platform.OS !== 'android' || !YorimichiGeofence) return;
+  try {
+    await YorimichiGeofence.clearAll();
+  } catch (e) {
+    __DEV__ && console.warn('[GeofenceService] stopGeofenceMonitoring failed:', e);
+  } finally {
+    storage.set(MONITORING_KEY, false);
   }
 }
 
 /**
- * メモを完了にしたとき、そのメモのジオフェンスを通知済みキャッシュから削除する
- * (次回有効化したときに再通知されるようにする)
+ * 監視が有効な場合、全ジオフェンスを再同期する。
+ * 場所の追加・削除・通知ON/OFF変更時に呼ぶ。
+ */
+export async function syncGeofences(): Promise<void> {
+  if (!isGeofencingActive()) return;
+  await startGeofenceMonitoring();
+}
+
+/**
+ * 特定メモのジオフェンスをネイティブから削除する（メモ削除時）。
+ * Fire-and-forget でよい。
  */
 export function clearMemoFromCache(memoId: string): void {
-  const keysToDelete = [...insideGeofences].filter(k => k.startsWith(`${memoId}:`));
-  keysToDelete.forEach(k => insideGeofences.delete(k));
-  saveInsideCache();
+  if (Platform.OS !== 'android' || !YorimichiGeofence) return;
+  YorimichiGeofence.removeGeofencesForMemo(memoId).catch(() => {});
 }

@@ -72,7 +72,7 @@ const ja = {
     alertNoLabel: '名前を入力してください',
     alertNoLabelMsg: 'この場所の名前 (例: スーパー) を入力してください',
     alertMaxTitle: '追加できません',
-    alertMaxMsg: '場所は最大3か所まで登録できます',
+    alertMaxMsg: '登録できる場所の上限に達しています。プレミアムプランにアップグレードすると、より多くの場所を登録できます。',
     markerSelected: '選択中',
     markerRegistered: '登録済み',
     searchPlaceholder: '場所を検索…',
@@ -253,6 +253,13 @@ const ja = {
     freeValAds: 'あり',
     premiumVal: '無制限',
     premiumValAds: 'なし',
+  },
+  // ── 上限エラー ────────────────────────────────────────────────────
+  errors: {
+    memoLimitTitle: 'メモの上限に達しました',
+    memoLimitMsg: '無料プランでは最大{{count}}件までです。プレミアムプランにアップグレードすると無制限に追加できます。',
+    itemLimitTitle: 'アイテムの上限に達しました',
+    itemLimitMsg: '無料プランでは1メモあたり最大{{count}}個までです。プレミアムプランにアップグレードすると無制限に追加できます。',
   },
 } as const;
 

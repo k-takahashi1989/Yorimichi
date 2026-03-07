@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Memo, ShoppingItem, MemoLocation, RecentPlace } from '../types';
 import { mmkvStorage } from '../storage/mmkvStorage';
 import { generateId } from '../utils/helpers';
-import { clearMemoFromCache } from '../services/geofenceService';
+import { clearMemoFromCache, syncGeofences } from '../services/geofenceService';
+import { getLocationsLimit } from '../config/planLimits';
 
 // ============================================================
 // 設定ストア
@@ -148,12 +149,17 @@ export const useMemoStore = create<MemoState>()(
         return memo;
       },
 
-      updateMemo: (id, partial) =>
+      updateMemo: (id, partial) => {
         set(state => ({
           memos: state.memos.map(m =>
             m.id === id ? { ...m, ...partial, updatedAt: Date.now() } : m,
           ),
-        })),
+        }));
+        // notificationEnabled が変わったときジオフェンスを再同期
+        if ('notificationEnabled' in partial) {
+          syncGeofences().catch(() => {});
+        }
+      },
 
       deleteMemo: (id) => {
         clearMemoFromCache(id);
@@ -263,7 +269,9 @@ export const useMemoStore = create<MemoState>()(
       // ── 場所 ──────────────────────────────────────────────
       addLocation: (memoId, locationData): MemoLocation | null => {
         const memo = get().getMemoById(memoId);
-        if (!memo || memo.locations.length >= 3) return null;
+        const { isPremium } = useSettingsStore.getState();
+        const maxLocations = getLocationsLimit(isPremium);
+        if (!memo || memo.locations.length >= maxLocations) return null;
 
         const location: MemoLocation = { id: generateId(), ...locationData };
         set(state => ({
@@ -276,10 +284,11 @@ export const useMemoStore = create<MemoState>()(
             };
           }),
         }));
+        syncGeofences().catch(() => {});
         return location;
       },
 
-      updateLocation: (memoId, locationId, partial) =>
+      updateLocation: (memoId, locationId, partial) => {
         set(state => ({
           memos: state.memos.map(m => {
             if (m.id !== memoId) return m;
@@ -291,9 +300,11 @@ export const useMemoStore = create<MemoState>()(
               updatedAt: Date.now(),
             };
           }),
-        })),
+        }));
+        syncGeofences().catch(() => {});
+      },
 
-      deleteLocation: (memoId, locationId) =>
+      deleteLocation: (memoId, locationId) => {
         set(state => ({
           memos: state.memos.map(m => {
             if (m.id !== memoId) return m;
@@ -303,7 +314,9 @@ export const useMemoStore = create<MemoState>()(
               updatedAt: Date.now(),
             };
           }),
-        })),
+        }));
+        syncGeofences().catch(() => {});
+      },
 
       // ── 共有機能 ──────────────────────────────────────────────
       setMemoShareId: (memoId, shareId, isOwner) =>

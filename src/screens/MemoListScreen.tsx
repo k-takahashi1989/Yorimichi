@@ -21,6 +21,7 @@ import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
+import { LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +33,7 @@ export default function MemoListScreen(): React.JSX.Element {
   const restoreMemo = useMemoStore(s => s.restoreMemo);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
+  const isPremium = useSettingsStore(s => s.isPremium);
   const insets = useSafeAreaInsets();
 
   const [importModalVisible, setImportModalVisible] = useState(false);
@@ -79,6 +81,17 @@ export default function MemoListScreen(): React.JSX.Element {
       setImportLoading(false);
     }
   }, [importCode, importSharedMemo, addSharedMemoId, navigation, t]);
+
+  const handleAddNewMemo = useCallback(() => {
+    if (LIMITS_ENABLED && !isPremium && memos.length >= FREE_LIMITS.memos) {
+      Alert.alert(
+        t('errors.memoLimitTitle'),
+        t('errors.memoLimitMsg', { count: FREE_LIMITS.memos }),
+      );
+      return;
+    }
+    navigation.navigate('MemoEdit', {});
+  }, [memos.length, isPremium, navigation, t]);
 
   const handleDelete = useCallback(
     (memo: Memo) => {
@@ -154,7 +167,7 @@ export default function MemoListScreen(): React.JSX.Element {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.addBtn}
-            onPress={() => navigation.navigate('MemoEdit', {})}>
+            onPress={handleAddNewMemo}>
             <Icon name="add" size={28} color="#fff" />
           </TouchableOpacity>
         </View>

@@ -168,7 +168,7 @@ describe('useMemoStore - Location CRUD', () => {
     expect(memo?.locations[0].label).toBe('スーパー三和');
   });
 
-  it('最大3か所まで追加できる', () => {
+  it('最大3か所以上でも追加できる（LIMITS_ENABLED=false 時は上限10）', () => {
     useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所1' });
     useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所2' });
     const result3 = useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所3' });
@@ -178,16 +178,16 @@ describe('useMemoStore - Location CRUD', () => {
     expect(memo?.locations).toHaveLength(3);
   });
 
-  it('4か所目の追加は null を返す', () => {
-    useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所1' });
-    useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所2' });
-    useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所3' });
-
-    const result = useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所4' });
+  it('上限（PREMIUM_LIMITS.locationsPerMemo=10か所）を超えると null を返す', () => {
+    // LIMITS_ENABLED=false → getLocationsLimit は PREMIUM_LIMITS.locationsPerMemo = 10 を返す
+    for (let i = 1; i <= 10; i++) {
+      useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: `場所${i}` });
+    }
+    const result = useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所11' });
     expect(result).toBeNull();
 
     const memo = useMemoStore.getState().getMemoById(memoId);
-    expect(memo?.locations).toHaveLength(3); // 3を超えない
+    expect(memo?.locations).toHaveLength(10); // 10を超えない
   });
 
   it('場所の半径を更新できる', () => {

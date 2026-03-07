@@ -14,7 +14,8 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import BackgroundService from 'react-native-background-actions';
+import { isGeofencingActive } from '../services/geofenceService';
+import { getLocationsLimit } from '../config/planLimits';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
@@ -71,7 +72,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
   const [allCheckedSnackbarVisible, setAllCheckedSnackbarVisible] = useState(false);
-  const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
+  const [isMonitoring, setIsMonitoring] = useState(isGeofencingActive());
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
   const [isSyncLoading, setIsSyncLoading] = useState(false);
@@ -96,9 +97,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
   // フォアグラウンド復帰時に監視状態を再チェック（フォーカス中のみ: 遷移アニメーション中の再レンダリングを防ぐ）
   useFocusEffect(
     useCallback(() => {
-      setIsMonitoring(BackgroundService.isRunning());
+      setIsMonitoring(isGeofencingActive());
       const id = setInterval(() => {
-        setIsMonitoring(BackgroundService.isRunning());
+        setIsMonitoring(isGeofencingActive());
       }, 3000);
       // スタック積み重なりによる「戈る」ボタンが利かない問題を防止
       const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -342,7 +343,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
           <Text style={styles.sectionTitle}>
             {t('memoDetail.locationSection', { count: memo.locations.length })}
           </Text>
-          {memo.locations.length < 3 && (
+          {memo.locations.length < getLocationsLimit(isPremium) && (
             <TouchableOpacity
               onPress={() => navigation.navigate('LocationPicker', { memoId })}
               style={styles.addLocBtn}>
