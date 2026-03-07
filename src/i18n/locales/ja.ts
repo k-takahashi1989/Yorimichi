@@ -45,7 +45,7 @@ const ja = {
   memoDetail: {
     screenTitle: 'メモ詳細',
     notFound: 'メモが見つかりません',
-    locationSection: '📍 場所 ({{count}} / 3)',
+    locationSection: '📍 場所 ({{count}}件)',
     addLocation: '追加',
     locationEmpty: '場所を追加するとそこに近づいたとき通知が来ます',
     itemSection: '📝 チェックリスト',
@@ -84,6 +84,7 @@ const ja = {
     radiusLabel: '通知半径: {{radius}}m',
     saveButton: 'この場所を保存',
     recentTitle: '最近の場所',
+    geocodingInProgress: '住所を取得中…',
   },
 
   // ── SettingsScreen ────────────────────────────────────────
