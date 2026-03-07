@@ -38,6 +38,8 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
 
     public static final String PREFS_NAME = "yorimichi_geofence_meta";
     private static final String MODULE_NAME = "YorimichiGeofence";
+    /** Android GeofencingClient ハードリミット */
+    private static final int MAX_GEOFENCES = 100;
 
     private GeofencingClient geofencingClient;
     private PendingIntent geofencePendingIntent;
@@ -96,6 +98,7 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
             }
 
             for (int i = 0; i < array.length(); i++) {
+                if (geofences.size() >= MAX_GEOFENCES) break;
                 JSONObject obj = array.getJSONObject(i);
                 String id = obj.getString("id");
                 float radius = Math.max(50f, (float) obj.getDouble("radius"));
