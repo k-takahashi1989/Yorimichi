@@ -1,6 +1,6 @@
 # Yorimichi 改善計画
 
-> 最終更新: 2026-03-07（versionCode 9 / versionName 1.0.8）
+> 最終更新: 2026-03-08（versionCode 10 / versionName 1.0.9）
 
 ## 1. 実装済み変更
 
@@ -79,6 +79,25 @@
 | Google Places API → Mapbox Geocoding に移行（API キーレス化） | `LocationPickerScreen.tsx` | `b2db8b5` |
 | Mapbox は日本語 POI データが不足していたため、Nominatim OSM（`nominatim.openstreetmap.org`）に再移行 | `LocationPickerScreen.tsx` | `b2db8b5` |
 | `countrycodes=jp` + `viewbox=±1°`（現在地バイアス）+ `accept-language=ja` でクエリ精度を向上 | `LocationPickerScreen.tsx` | `b2db8b5` |
+
+### ネイティブ Geofencing 移行 ＆ プラン上限フラグ管理 #35（2026-03-08）
+
+| 内容 | 対応ファイル |
+|------|-------------|
+| `GeofenceModule.java`（新規）— NativeModule 本体。`syncGeofences` / `removeGeofencesForMemo` / `clearAll` を JS に公開。SharedPreferences にメタデータ保存 | `android/app/src/main/java/.../GeofenceModule.java` |
+| `GeofenceTransitionReceiver.java`（新規）— `BroadcastReceiver`。ジオフェンス進入時に `NotificationCompat.Builder` で直接通知を発行。アプリ killed 状態でも動作 | `android/app/src/main/java/.../GeofenceTransitionReceiver.java` |
+| `GeofencePackage.kt`（新規）— `ReactPackage` 実装。`GeofenceModule` を RN に登録。GMS インポートなし（Kotlin K2 回避） | `android/app/src/main/java/.../GeofencePackage.kt` |
+| `YorimichiApplication.kt` — `getPackages()` に `GeofencePackage()` を追加 | `android/app/src/main/java/.../YorimichiApplication.kt` |
+| `AndroidManifest.xml` — `<receiver android:name=".GeofenceTransitionReceiver" android:exported="false" />` を追加 | `android/app/src/main/AndroidManifest.xml` |
+| `geofenceService.ts` 完全リライト — ポーリング方式を廃止し、`NativeModules.YorimichiGeofence` 経由で `syncGeofences` / `stopGeofenceMonitoring` / `clearMemoFromCache` を実装 | `src/services/geofenceService.ts` |
+| `memoStore.ts` — `addLocation` に `getLocationsLimit()` 上限チェック追加。`updateLocation` / `deleteLocation` で `syncGeofences()` を呼び出す | `src/store/memoStore.ts` |
+| `planLimits.ts` — `LIMITS_ENABLED = false` + `FREE_LIMITS` 定数。`getLocationsLimit()` / `getMemosLimit()` / `getItemsLimit()` を追加（`PremiumScreen.tsx` と連動） | `src/config/planLimits.ts` |
+| `android/build.gradle` — `classpath("com.google.gms:google-services:4.4.2")` を追加（誤って削除されていた） | `android/build.gradle` |
+| `android/app/build.gradle` — `implementation "com.google.android.gms:play-services-location:21.3.0"` および `apply plugin: "com.google.gms.google-services"` を復元 | `android/app/build.gradle` |
+
+**Kotlin K2 対応メモ:** Kotlin K2（2.1.20）は `Geofence` クラスのネスト annotation interface によってコンパイルエラーになるため、`GeofenceModule` と `GeofenceTransitionReceiver` を **Java** で実装。`GeofencePackage.kt` のみ Kotlin（GMS インポートなし）。
+
+**削除対象（`react-native-background-actions` ポーリング方式）:** `geofenceService.ts` から完全に除去済み。
 
 ### 最近の場所バグ修正（2026-03-07）
 
@@ -166,26 +185,15 @@ const isCompleted = total > 0 && unchecked === 0;
 - `SettingsStore` に `isMonitoring` 状態を追加し、`startGeofenceMonitoring` / `stop` 時に更新
 - MemoDetailScreen の #16 警告表示もこの状態を参照する
 
-### #35 ネイティブ Geofencing API 移行
+### ~~#35 ネイティブ Geofencing API 移行~~ ✅ 実装済み（2026-03-08）
 
-**設計方針:**
-- 現状: `react-native-background-actions` + 10秒ポーリング（バッテリー消費大）
-- 目標: Android `GeofencingClient` (Google Play Services) をネイティブモジュール経由で使用
-- 期待効果: バッテリー消費約 80% 削減、精度向上
+> 詳細は「1. 実装済み変更 > ネイティブ Geofencing 移行 ＆ プラン上限フラグ管理 #35」を参照。
 
-**確定済み実装アーキテクチャ（設計フェーズ完了）:**
-
-| ファイル | 役割 |
-|----------|------|
-| `GeofenceModule.kt`（新規） | NativeModule 本体。`addGeofence` / `removeGeofence` / `clearAll` を JS に公開 |
-| `GeofenceTransitionReceiver.kt`（新規） | `BroadcastReceiver`。ジオフェンス進入時に Kotlin から直接 `NotificationCompat.Builder` で通知を発行 |
-| `GeofencePackage.kt`（新規） | `ReactPackage` 実装。`GeofenceModule` を RN へ登録 |
-| `MainApplication.kt`（更新） | `getPackages()` に `GeofencePackage()` を追加 |
-| `geofenceService.ts`（更新） | ポーリングロジックを削除し `NativeModules.GeofenceModule` の呼び出しに置き換え |
-
-**通知方式:** JS のコールバック経由ではなく、`GeofenceTransitionReceiver` 内の Kotlin コードが直接 `NotificationCompat.Builder` で通知を発行。アプリが killed 状態でも動作する。
-
-**削除対象:** `react-native-background-actions` パッケージおよび `BackgroundService.start()` 呼び出し一式。
+**実績:**
+- 現状: `react-native-background-actions` ポーリングを完全廃止
+- Android `GeofencingClient` をネイティブモジュール（Java）経由で使用
+- バッテリー消費大幅削減・アプリ killed 状態でも通知動作確認済み
+- versionCode 10 / versionName 1.0.9 でリリース
 
 ### #36 場所検索履歴
 

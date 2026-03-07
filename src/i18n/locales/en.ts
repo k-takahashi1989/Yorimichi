@@ -69,7 +69,7 @@ const en: Translation = {
     alertNoLabel: 'Enter a name',
     alertNoLabelMsg: 'Enter a name for this location (e.g. Supermarket)',
     alertMaxTitle: 'Cannot add',
-    alertMaxMsg: 'You can register up to 3 locations',
+    alertMaxMsg: 'You have reached the location limit. Upgrade to Premium to add more.',
     markerSelected: 'Selected',
     markerRegistered: 'Registered',
     searchPlaceholder: 'Search for a place…',
@@ -244,6 +244,12 @@ const en: Translation = {
     freeValAds: 'Yes',
     premiumVal: 'Unlimited',
     premiumValAds: 'None',
+  },
+  errors: {
+    memoLimitTitle: 'Memo limit reached',
+    memoLimitMsg: 'Free plan allows up to {{count}} memos. Upgrade to Premium for unlimited memos.',
+    itemLimitTitle: 'Item limit reached',
+    itemLimitMsg: 'Free plan allows up to {{count}} items per memo. Upgrade to Premium for unlimited items.',
   },
 };
 

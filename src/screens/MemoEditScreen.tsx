@@ -28,6 +28,7 @@ import TutorialTooltip from '../components/TutorialTooltip';
 import { useTutorial } from '../hooks/useTutorial';
 import { getDeviceId } from '../utils/deviceId';
 import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
+import { LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoEdit'>;
@@ -49,6 +50,7 @@ export default function MemoEditScreen(): React.JSX.Element {
 
   const totalMemoRegistrations = useSettingsStore(s => s.totalMemoRegistrations);
   const incrementMemoRegistrations = useSettingsStore(s => s.incrementMemoRegistrations);
+  const isPremium = useSettingsStore(s => s.isPremium);
   const { showIfReady } = useInterstitialAd();
 
   const insets = useSafeAreaInsets();
@@ -132,6 +134,14 @@ export default function MemoEditScreen(): React.JSX.Element {
 
   const handleAddItem = useCallback(() => {
     if (!newItemName.trim()) return;
+    // アイテム上限チェック
+    if (LIMITS_ENABLED && !isPremium && currentItems.length >= FREE_LIMITS.itemsPerMemo) {
+      Alert.alert(
+        t('errors.itemLimitTitle'),
+        t('errors.itemLimitMsg', { count: FREE_LIMITS.itemsPerMemo }),
+      );
+      return;
+    }
     if (!savedMemoId) {
       // メモ未保存なら先に保存する
       if (!title.trim()) {
@@ -145,7 +155,7 @@ export default function MemoEditScreen(): React.JSX.Element {
       addItem(savedMemoId, newItemName.trim());
     }
     setNewItemName('');
-  }, [newItemName, savedMemoId, title, addMemo, addItem]);
+  }, [newItemName, savedMemoId, title, addMemo, addItem, isPremium, currentItems.length, t]);
 
   const handleMoveItem = useCallback((index: number, direction: 'up' | 'down') => {
     if (!savedMemoId) return;

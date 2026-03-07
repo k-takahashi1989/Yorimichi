@@ -31,8 +31,8 @@ import { useSettingsStore } from '../store/memoStore';
 import {
   startGeofenceMonitoring,
   stopGeofenceMonitoring,
+  isGeofencingActive,
 } from '../services/geofenceService';
-import BackgroundService from 'react-native-background-actions';
 
 type PermStatus = 'granted' | 'denied' | 'blocked' | 'unavailable' | 'limited' | 'unknown';
 
@@ -77,7 +77,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
   const [displayRadius, setDisplayRadius] = useState(defaultRadius);
 
-  const [isMonitoring, setIsMonitoring] = useState(BackgroundService.isRunning());
+  const [isMonitoring, setIsMonitoring] = useState(isGeofencingActive());
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
   const handleChangeLang = (lang: string) => {
