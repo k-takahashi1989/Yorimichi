@@ -4,7 +4,7 @@
 // LIMITS_ENABLED = false の間は上限チェックをすべてスキップ（テスト中は全開放）
 // サブスク実装時に true に変更し、isPremium で分岐する
 
-export const LIMITS_ENABLED = false;
+export const LIMITS_ENABLED = true;
 
 /** 無料プランの上限値 */
 export const FREE_LIMITS = {
@@ -39,4 +39,9 @@ export function getMemosLimit(isPremium: boolean): number {
 export function getItemsLimit(isPremium: boolean): number {
   if (!LIMITS_ENABLED) return PREMIUM_LIMITS.itemsPerMemo;
   return isPremium ? PREMIUM_LIMITS.itemsPerMemo : FREE_LIMITS.itemsPerMemo;
+}
+
+export function getCollaboratorsLimit(isPremium: boolean): number {
+  if (!LIMITS_ENABLED) return PREMIUM_LIMITS.collaborators;
+  return isPremium ? PREMIUM_LIMITS.collaborators : FREE_LIMITS.collaborators;
 }

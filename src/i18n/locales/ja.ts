@@ -260,6 +260,10 @@ const ja = {
     memoLimitMsg: '無料プランでは最大{{count}}件までです。プレミアムプランにアップグレードすると無制限に追加できます。',
     itemLimitTitle: 'アイテムの上限に達しました',
     itemLimitMsg: '無料プランでは1メモあたり最大{{count}}個までです。プレミアムプランにアップグレードすると無制限に追加できます。',
+    locationLimitTitle: '地点の上限に達しました',
+    locationLimitMsg: '無料プランでは1メモあたり最大{{count}}か所まで登録できます。プレミアムプランでは無制限に追加できます。',
+    collaboratorLimitTitle: '参加人数の上限に達しました',
+    collaboratorLimitMsg: '無料プランでは1対1（2人）まで共有できます。プレミアムプランにアップグレードするともっと多くのメンバーを招待できます。',
   },
 } as const;
 

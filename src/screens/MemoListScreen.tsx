@@ -21,7 +21,7 @@ import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
-import { LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
+import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -48,7 +48,7 @@ export default function MemoListScreen(): React.JSX.Element {
     setImportLoading(true);
     try {
       const deviceId = getDeviceId();
-      const doc = await joinSharedMemo(code, deviceId);
+      const doc = await joinSharedMemo(code, deviceId, isPremium);
       if (!doc) {
         Alert.alert(t('common.error'), t('share.notFound'));
         return;
@@ -75,6 +75,13 @@ export default function MemoListScreen(): React.JSX.Element {
       );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
+      if (msg === 'COLLABORATORS_FULL') {
+        Alert.alert(
+          t('errors.collaboratorLimitTitle'),
+          t('errors.collaboratorLimitMsg', { count: FREE_LIMITS.collaborators }),
+        );
+        return;
+      }
       console.error('[importByCode] error:', msg);
       Alert.alert(t('common.error'), msg || t('share.importError'));
     } finally {
@@ -83,7 +90,7 @@ export default function MemoListScreen(): React.JSX.Element {
   }, [importCode, importSharedMemo, addSharedMemoId, navigation, t]);
 
   const handleAddNewMemo = useCallback(() => {
-    if (LIMITS_ENABLED && !isPremium && memos.length >= FREE_LIMITS.memos) {
+    if (LIMITS_ENABLED && !isPremium && memos.length >= getMemosLimit(isPremium)) {
       Alert.alert(
         t('errors.memoLimitTitle'),
         t('errors.memoLimitMsg', { count: FREE_LIMITS.memos }),
@@ -165,11 +172,21 @@ export default function MemoListScreen(): React.JSX.Element {
             onPress={() => { setImportCode(''); setImportModalVisible(true); }}>
             <Icon name="group-add" size={26} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={handleAddNewMemo}>
-            <Icon name="add" size={28} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.memoCounterWrap}>
+            {LIMITS_ENABLED && !isPremium && (
+              <Text style={[
+                styles.memoCounterText,
+                memos.length >= getMemosLimit(isPremium) && styles.memoCounterFull,
+              ]}>
+                {memos.length} / {FREE_LIMITS.memos}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={handleAddNewMemo}>
+              <Icon name="add" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -348,4 +365,7 @@ const styles = StyleSheet.create({
   modalBtnConfirm: { backgroundColor: '#4CAF50' },
   modalBtnConfirmText: { color: '#fff', fontWeight: '600' },
   modalBtnDisabled: { opacity: 0.5 },
+  memoCounterWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  memoCounterText: { fontSize: 12, color: 'rgba(255,255,255,0.9)' },
+  memoCounterFull: { color: '#FFE082', fontWeight: '600' as const },
 });
