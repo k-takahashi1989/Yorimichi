@@ -119,6 +119,18 @@ export async function updateSharedMemoItems(
     .doc(shareId)
     .update({ items, updatedAt: Date.now() });
 }
+
+// ── 共有メモの地点一覧を Firestore に即時反映する（オーナー専用）────────
+export async function updateSharedMemoLocations(
+  shareId: string,
+  locations: import('../types').MemoLocation[],
+): Promise<void> {
+  await ensureSignedIn();
+  await firestore()
+    .collection(COLLECTION)
+    .doc(shareId)
+    .update({ locations, updatedAt: Date.now() });
+}
 // ── プレゼンスをリアルタイム監視（unsubscribe 関数を返す）────
 export function subscribePresence(
   shareId: string,
