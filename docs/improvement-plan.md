@@ -1,6 +1,6 @@
 # Yorimichi 改善計画
 
-> 最終更新: 2026-03-03（versionCode 9 / versionName 1.0.8）
+> 最終更新: 2026-03-07（versionCode 9 / versionName 1.0.8）
 
 ## 1. 実装済み変更
 
@@ -71,6 +71,33 @@
 |---|---|---|
 | Snackbar がホームボタンに重なる問題を `useSafeAreaInsets` で修正。`bottom: insets.bottom + 16` にしてセーフエリアを回避 | `Snackbar.tsx` | `d6c2c6f` |
 | MMKV の `storage.delete()` は存在しないメソッド。`storage.remove()` に修正 | `geofenceService.ts` | `d6c2c6f` |
+
+### 場所検索改善 — Nominatim OSM 移行（2026-03-07）
+
+| 内容 | 対応ファイル | コミット |
+|---|---|---|
+| Google Places API → Mapbox Geocoding に移行（API キーレス化） | `LocationPickerScreen.tsx` | `b2db8b5` |
+| Mapbox は日本語 POI データが不足していたため、Nominatim OSM（`nominatim.openstreetmap.org`）に再移行 | `LocationPickerScreen.tsx` | `b2db8b5` |
+| `countrycodes=jp` + `viewbox=±1°`（現在地バイアス）+ `accept-language=ja` でクエリ精度を向上 | `LocationPickerScreen.tsx` | `b2db8b5` |
+
+### 最近の場所バグ修正（2026-03-07）
+
+| # | 内容 | 対応ファイル | コミット |
+|---|---|---|---|
+| — | `handleRecentPlacePress` 内の `if (!label)` ガードを削除。タップ毎に `label` / `address` が常に更新されるよう修正 | `LocationPickerScreen.tsx` | `9fd7a6b` |
+| — | 場所選択後に「最近の場所」リストが非表示になる問題を修正（`!picked` 条件を削除し、常に表示） | `LocationPickerScreen.tsx` | `9fd7a6b` |
+
+### プレミアムプラン画面実装（2026-03-07）
+
+| 内容 | 対応ファイル | コミット |
+|---|---|---|
+| `planLimits.ts` 新規作成。`LIMITS_ENABLED = false`（グローバルフラグ）と `FREE_LIMITS` 定数を定義。フラグを `true` にするだけで制限が有効化できる設計 | `src/config/planLimits.ts` | `97d253a` |
+| `PremiumScreen.tsx` 新規作成。無料 / プレミアムの機能比較テーブル（5行）、アップグレード CTA ボタン（準備中 Alert）、`__DEV__` のみ表示の `isPremium` トグルを実装 | `src/screens/PremiumScreen.tsx` | `97d253a` |
+| `memoStore.ts` に `setIsPremium(value: boolean)` アクションを追加 | `src/store/memoStore.ts` | `97d253a` |
+| `AppNavigator.tsx` に `Premium` スクリーンを登録 | `src/navigation/AppNavigator.tsx` | `97d253a` |
+| `SettingsScreen.tsx` に「✨ プレミアムプラン」橙色カードを追加（アプリ情報セクションの上）。タップで `PremiumScreen` に遷移 | `src/screens/SettingsScreen.tsx` | `97d253a` |
+| i18n（`ja.ts` / `en.ts`）に `premium.*` キー群を追加（20 キー超） | `src/i18n/locales/ja.ts`, `en.ts` | `97d253a` |
+| `RootStackParamList` に `Premium: undefined` を追加 | `src/types/index.ts` | `97d253a` |
 
 ---
 
@@ -144,12 +171,21 @@ const isCompleted = total > 0 && unchecked === 0;
 **設計方針:**
 - 現状: `react-native-background-actions` + 10秒ポーリング（バッテリー消費大）
 - 目標: Android `GeofencingClient` (Google Play Services) をネイティブモジュール経由で使用
-- 実装方法:
-  1. `android/app/src/main/java/.../GeofenceModule.kt` を新規作成
-  2. `addGeofence(lat, lng, radius, memoId, locationId)` / `removeGeofence` / `clearAll` のメソッドを公開
-  3. `BroadcastReceiver` で進入イベントを受け取り、JS 側に `DeviceEventEmitter` で通知
-  4. `geofenceService.ts` のポーリングロジックをネイティブモジュール呼び出しに置き換え
 - 期待効果: バッテリー消費約 80% 削減、精度向上
+
+**確定済み実装アーキテクチャ（設計フェーズ完了）:**
+
+| ファイル | 役割 |
+|----------|------|
+| `GeofenceModule.kt`（新規） | NativeModule 本体。`addGeofence` / `removeGeofence` / `clearAll` を JS に公開 |
+| `GeofenceTransitionReceiver.kt`（新規） | `BroadcastReceiver`。ジオフェンス進入時に Kotlin から直接 `NotificationCompat.Builder` で通知を発行 |
+| `GeofencePackage.kt`（新規） | `ReactPackage` 実装。`GeofenceModule` を RN へ登録 |
+| `MainApplication.kt`（更新） | `getPackages()` に `GeofencePackage()` を追加 |
+| `geofenceService.ts`（更新） | ポーリングロジックを削除し `NativeModules.GeofenceModule` の呼び出しに置き換え |
+
+**通知方式:** JS のコールバック経由ではなく、`GeofenceTransitionReceiver` 内の Kotlin コードが直接 `NotificationCompat.Builder` で通知を発行。アプリが killed 状態でも動作する。
+
+**削除対象:** `react-native-background-actions` パッケージおよび `BackgroundService.start()` 呼び出し一式。
 
 ### #36 場所検索履歴
 
@@ -181,9 +217,12 @@ const isCompleted = total > 0 && unchecked === 0;
 
 ### 5-2. 無料 / プレミアムの機能区分
 
+> **実装メモ:** `src/config/planLimits.ts` の `LIMITS_ENABLED` フラグを `true` にすると制限が有効化される（現在は `false`）。`FREE_LIMITS` の数値がここの表の値と対応している。
+
 | 機能 | 無料 | プレミアム |
 |------|------|-----------|
 | メモ数 | 5件まで | 無制限 |
+| 1メモあたりアイテム数 | 10個まで | 無制限 |
 | 1メモあたり登録地点数 | 2箇所まで | 無制限 |
 | 共有人数 | 1対1（2人）まで | 無制限 |
 | カテゴリ選択（プリセット） | ✅ | ✅ |
