@@ -43,7 +43,7 @@ const en: Translation = {
   memoDetail: {
     screenTitle: 'Memo Detail',
     notFound: 'Memo not found',
-    locationSection: '📍 Locations ({{count}} / 3)',
+    locationSection: '📍 Locations ({{count}})',
     addLocation: 'Add',
     locationEmpty: 'Add a location to get notified when you arrive nearby',
     itemSection: '🛒 Checklist',
@@ -81,6 +81,7 @@ const en: Translation = {
     radiusLabel: 'Notify radius: {{radius}}m',
     saveButton: 'Save this location',
     recentTitle: 'Recent places',
+    geocodingInProgress: 'Getting address...',
   },
 
   settings: {

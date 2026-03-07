@@ -75,6 +75,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const [radius, setRadius] = useState(defaultRadius);
   const [address, setAddress] = useState<string | null>(null);
   const [initialRegion, setInitialRegion] = useState<Region>(FALLBACK_REGION);
+  // 逆ジオコーディング中フラグ（true の間は保存ボタンを非活性）
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Mapbox 場所検索
   const [searchText, setSearchText] = useState('');
@@ -84,6 +86,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
 
   const mapRef = useRef<MapView>(null);
   const geocodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 最大待機タイマー（5秒後に強制解除）
+  const geocodingSafetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapReadyRef = useRef(false);
   const pendingRegionRef = useRef<Region | null>(null);
 
@@ -107,6 +111,10 @@ export default function LocationPickerScreen(): React.JSX.Element {
   // Nominatim のポリシーにより 1秒以下の間隔でリクエストしないようデバウンスする
   const reverseGeocode = (lat: number, lng: number) => {
     setAddress(null);
+    setIsGeocoding(true);
+    // 安全タイマー: 5秒後に強制解除（ネットワーク障害時もブロックされない）
+    if (geocodingSafetyRef.current) clearTimeout(geocodingSafetyRef.current);
+    geocodingSafetyRef.current = setTimeout(() => setIsGeocoding(false), 5000);
     if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
     geocodeTimerRef.current = setTimeout(async () => {
       try {
@@ -135,6 +143,12 @@ export default function LocationPickerScreen(): React.JSX.Element {
         }
       } catch {
         // 住所取得失敗は無視
+      } finally {
+        setIsGeocoding(false);
+        if (geocodingSafetyRef.current) {
+          clearTimeout(geocodingSafetyRef.current);
+          geocodingSafetyRef.current = null;
+        }
       }
     }, 1000);
   };
@@ -446,9 +460,15 @@ export default function LocationPickerScreen(): React.JSX.Element {
         {/* 選択済みバッジ */}
         {picked && (
           <View style={styles.pickedBadge}>
-            <Icon name="check-circle" size={14} color="#4CAF50" />
+            {isGeocoding ? (
+              <ActivityIndicator size="small" color="#4CAF50" />
+            ) : (
+              <Icon name="check-circle" size={14} color="#4CAF50" />
+            )}
             <Text style={styles.pickedBadgeText}>
-              {address ?? `${picked.latitude.toFixed(5)}, ${picked.longitude.toFixed(5)}`}
+              {isGeocoding
+                ? t('locationPicker.geocodingInProgress')
+                : (address ?? `${picked.latitude.toFixed(5)}, ${picked.longitude.toFixed(5)}`)}
             </Text>
           </View>
         )}
@@ -471,8 +491,13 @@ export default function LocationPickerScreen(): React.JSX.Element {
           </View>
         )}
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Icon name="check" size={20} color="#fff" />
+        <TouchableOpacity
+          style={[styles.saveBtn, isGeocoding && !!picked && styles.saveBtnDisabled]}
+          onPress={handleSave}
+          disabled={isGeocoding && !!picked}>
+          {isGeocoding && !!picked
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Icon name="check" size={20} color="#fff" />}
           <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
         </TouchableOpacity>
       </View>
@@ -663,4 +688,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  saveBtnDisabled: { backgroundColor: '#A5D6A7', opacity: 0.7 },
 });

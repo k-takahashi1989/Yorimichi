@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { isGeofencingActive } from '../services/geofenceService';
-import { getLocationsLimit, LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
+import { getLocationsLimit, getItemsLimit, LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
@@ -402,7 +402,15 @@ export default function MemoDetailScreen(): React.JSX.Element {
         return (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
+                <Text style={[
+                  styles.limitCounter,
+                  LIMITS_ENABLED && !isPremium && memo.items.length >= getItemsLimit(isPremium) && styles.limitCounterFull,
+                ]}>
+                  {memo.items.length}件
+                </Text>
+              </View>
               {memo.items.length > 0 && (
                 <View style={{ flexDirection: 'row', gap: 4 }}>
                   <View ref={checkAllRef} collapsable={false}>
