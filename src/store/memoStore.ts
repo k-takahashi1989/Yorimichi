@@ -6,6 +6,8 @@ import { generateId } from '../utils/helpers';
 import { clearMemoFromCache, syncGeofences, setNotifWindowNative } from '../services/geofenceService';
 import { getLocationsLimit } from '../config/planLimits';
 import { isTrialActive } from '../utils/trialUtils';
+import { redeemCouponCode } from '../services/couponService';
+import { getDeviceId } from '../utils/deviceId';
 
 // ============================================================
 // 設定ストア
@@ -27,6 +29,8 @@ export interface SettingsState {
   notifWindowEnabled: boolean;         // 時間帯限定を有効にするか
   notifWindowStart: number;            // 開始時刻 (float, 0.5刻み. 例: 8.0=8:00, 8.5=8:30)
   notifWindowEnd: number;              // 終了時刻 (float, 0.5刻み)
+  // クーポンコード
+  couponExpiry: number | null;         // クーポン有効期限 (Unix ms)。null = 未使用
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
@@ -37,6 +41,7 @@ export interface SettingsState {
   setIsPremium: (value: boolean) => void;
   startTrial: () => void;
   setNotifWindow: (enabled: boolean, start: number, end: number) => void;
+  redeemCoupon: (code: string) => Promise<'ok' | 'invalid' | 'already_used' | 'network'>;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -54,6 +59,7 @@ export const useSettingsStore = create<SettingsState>()(
       notifWindowEnabled: false,
       notifWindowStart: 8.0,
       notifWindowEnd: 22.0,
+      couponExpiry: null,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       addSharedMemoId: (shareId: string) =>
         set(state => ({
@@ -90,10 +96,19 @@ export const useSettingsStore = create<SettingsState>()(
         set({ notifWindowEnabled: enabled, notifWindowStart: start, notifWindowEnd: end });
         setNotifWindowNative(enabled, start, end);
       },
+      redeemCoupon: async (code: string) => {
+        const deviceId = getDeviceId();
+        const result = await redeemCouponCode(code, deviceId);
+        if (result.ok && result.expiryMs) {
+          set({ couponExpiry: result.expiryMs });
+          return 'ok';
+        }
+        return result.error ?? 'invalid';
+      },
     }),
     {
       name: 'settings',
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -116,6 +131,9 @@ export const useSettingsStore = create<SettingsState>()(
         if (version <= 5) {
           persisted = { ...persisted, notifWindowEnabled: false, notifWindowStart: 8.0, notifWindowEnd: 22.0 };
         }
+        if (version <= 6) {
+          persisted = { ...persisted, couponExpiry: null };
+        }
         return persisted;
       },
     },
@@ -124,10 +142,12 @@ export const useSettingsStore = create<SettingsState>()(
 
 /**
  * 有効なプレミアム判定セレクター。
- * 課金プレミアム OR 7日間トライアル中 のどちらかが true なら true を返す。
+ * 課金プレミアム OR 7日間トライアル中 OR クーポン有効期限内 のどれかが true なら true を返す。
  */
 export const selectEffectivePremium = (s: SettingsState): boolean =>
-  s.isPremium || isTrialActive(s.trialStartDate);
+  s.isPremium ||
+  isTrialActive(s.trialStartDate) ||
+  (s.couponExpiry != null && Date.now() < s.couponExpiry);
 
 // ============================================================
 // メモストア
