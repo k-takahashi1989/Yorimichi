@@ -123,7 +123,7 @@ const en: Translation = {
       version: 'Version: {{version}}',
       name: 'Nearist',
       privacyPolicy: 'Privacy Policy',
-      contact: 'Contact / Support',
+      contact: 'お問い合わせ',
     },
     alertFineLocation: {
       title: 'Location permission required',
