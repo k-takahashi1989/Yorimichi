@@ -345,6 +345,15 @@ export default function MemoDetailScreen(): React.JSX.Element {
         </TouchableOpacity>
       </View>
 
+      {/* ロールバッジ（共有メモのみ）*/}
+      {memo.shareId && (
+        <View style={[styles.roleBadge, memo.isOwner ? styles.roleBadgeOwner : styles.roleBadgeCollaborator]}>
+          <Text style={[styles.roleBadgeText, memo.isOwner ? styles.roleBadgeTextOwner : styles.roleBadgeTextCollaborator]}>
+            {memo.isOwner ? `👑 ${t('share.roleOwner')}` : `👥 ${t('share.roleCollaborator')}`}
+          </Text>
+        </View>
+      )}
+
       {/* プレゼンスバナー（他ユーザーが編集中）*/}
       {isPresenceActive(presences, deviceId) && (
         <View style={styles.presenceBanner}>
@@ -373,7 +382,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
                 {memo.locations.length} / {FREE_LIMITS.locationsPerMemo}
               </Text>
             )}
-            {memo.locations.length < getLocationsLimit(isPremium) && (
+            {memo.isOwner !== false && memo.locations.length < getLocationsLimit(isPremium) && (
               <TouchableOpacity
                 onPress={() => navigation.navigate('LocationPicker', { memoId })}
                 style={styles.addLocBtn}>
@@ -397,18 +406,24 @@ export default function MemoDetailScreen(): React.JSX.Element {
                 ) : null}
                 <Text style={styles.locChipRadius}>{t('memoDetail.radiusLabel', { radius: loc.radius })}</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('LocationPicker', { memoId, existingLocationId: loc.id })}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.locChipAction}>
-                <Icon name="edit" size={18} color="#4CAF50" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleDeleteLocation(loc)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.locChipAction}>
-                <Icon name="close" size={18} color="#9E9E9E" />
-              </TouchableOpacity>
+              {memo.isOwner !== false ? (
+                <>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('LocationPicker', { memoId, existingLocationId: loc.id })}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.locChipAction}>
+                    <Icon name="edit" size={18} color="#4CAF50" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteLocation(loc)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.locChipAction}>
+                    <Icon name="close" size={18} color="#9E9E9E" />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <Icon name="lock" size={16} color="#BDBDBD" style={styles.locChipAction} />
+              )}
             </View>
           ))
         )}
@@ -614,6 +629,18 @@ const styles = StyleSheet.create({
   locChipAddress: { fontSize: 12, color: '#616161', marginTop: 2 },
   locChipRadius: { fontSize: 12, color: '#4CAF50', marginTop: 2 },
   locChipAction: { marginLeft: 8 },
+  roleBadge: {
+    alignSelf: 'flex-start' as const,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 10,
+  },
+  roleBadgeOwner: { backgroundColor: '#E8F5E9' },
+  roleBadgeCollaborator: { backgroundColor: '#EDE7F6' },
+  roleBadgeText: { fontSize: 12, fontWeight: '600' as const },
+  roleBadgeTextOwner: { color: '#2E7D32' },
+  roleBadgeTextCollaborator: { color: '#6A1B9A' },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
