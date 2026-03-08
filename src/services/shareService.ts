@@ -2,10 +2,35 @@ import firestore, {
   FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import { Memo, SharedMemoDoc, SharePresence, ShoppingItem } from '../types';
+import { Memo, SharedMemoDoc, SharePresence, ShoppingItem, MemoLocation } from '../types';
 import { getCollaboratorsLimit } from '../config/planLimits';
 
 const COLLECTION = 'sharedMemos';
+
+// ── Firestore は undefined を拒否するため、optional フィールドをサニタイズ ──
+// undefined のフィールドを持つオブジェクトをそのまま渡すと
+// "Unsupported field value: undefined" エラーになる。
+function sanitizeItem(item: ShoppingItem): ShoppingItem {
+  const result: ShoppingItem = {
+    id: item.id,
+    name: item.name,
+    isChecked: item.isChecked,
+  };
+  if (item.checkedAt !== undefined) result.checkedAt = item.checkedAt;
+  return result;
+}
+
+function sanitizeLocation(loc: MemoLocation): MemoLocation {
+  const result: MemoLocation = {
+    id: loc.id,
+    label: loc.label,
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    radius: loc.radius,
+  };
+  if (loc.address !== undefined) result.address = loc.address;
+  return result;
+}
 
 // ── 匿名サインイン（未サインインのとき自動実行）──────────────
 export async function ensureSignedIn(): Promise<void> {
@@ -22,8 +47,8 @@ export async function uploadSharedMemo(
   await ensureSignedIn();
   const doc: SharedMemoDoc = {
     title: memo.title,
-    items: memo.items,
-    locations: memo.locations,
+    items: memo.items.map(sanitizeItem),
+    locations: memo.locations.map(sanitizeLocation),
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],
@@ -117,7 +142,7 @@ export async function updateSharedMemoItems(
   await firestore()
     .collection(COLLECTION)
     .doc(shareId)
-    .update({ items, updatedAt: Date.now() });
+    .update({ items: items.map(sanitizeItem), updatedAt: Date.now() });
 }
 
 // ── 共有メモの地点一覧を Firestore に即時反映する（オーナー専用）────────
@@ -129,7 +154,7 @@ export async function updateSharedMemoLocations(
   await firestore()
     .collection(COLLECTION)
     .doc(shareId)
-    .update({ locations, updatedAt: Date.now() });
+    .update({ locations: locations.map(sanitizeLocation), updatedAt: Date.now() });
 }
 // ── プレゼンスをリアルタイム監視（unsubscribe 関数を返す）────
 export function subscribePresence(
