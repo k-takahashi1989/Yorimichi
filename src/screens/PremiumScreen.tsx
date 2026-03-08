@@ -18,11 +18,12 @@ const FEATURE_ROWS: Array<{
   freeVal: string;
   premiumVal: string;
 }> = [
-  { icon: 'note',      label: 'featureMemos',         freeVal: 'freeVal',             premiumVal: 'premiumVal' },
-  { icon: 'list',      label: 'featureItems',         freeVal: 'freeValItems',        premiumVal: 'premiumVal' },
-  { icon: 'place',     label: 'featureLocations',     freeVal: 'freeValLocations',    premiumVal: 'premiumVal' },
-  { icon: 'people',    label: 'featureCollaborators', freeVal: 'freeValCollaborators',premiumVal: 'premiumVal' },
-  { icon: 'ads-click', label: 'featureAds',           freeVal: 'freeValAds',         premiumVal: 'premiumValAds' },
+  { icon: 'note',           label: 'featureMemos',         freeVal: 'freeVal',             premiumVal: 'premiumVal' },
+  { icon: 'list',           label: 'featureItems',         freeVal: 'freeValItems',        premiumVal: 'premiumVal' },
+  { icon: 'place',          label: 'featureLocations',     freeVal: 'freeValLocations',    premiumVal: 'premiumValLocations' },
+  { icon: 'people',         label: 'featureCollaborators', freeVal: 'freeValCollaborators',premiumVal: 'premiumVal' },
+  { icon: 'notifications',  label: 'featureAlarm',         freeVal: 'freeValAlarm',        premiumVal: 'premiumValAlarm' },
+  { icon: 'ads-click',      label: 'featureAds',           freeVal: 'freeValAds',          premiumVal: 'premiumValAds' },
 ];
 
 export default function PremiumScreen(): React.JSX.Element {

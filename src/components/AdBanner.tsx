@@ -6,6 +6,7 @@ import {
   TestIds,
 } from 'react-native-google-mobile-ads';
 import Config from 'react-native-config';
+import { useSettingsStore } from '../store/memoStore';
 
 // 広告を表示するには false → true に変更してください
 const ADS_ENABLED = true;
@@ -15,8 +16,10 @@ const AD_UNIT_ID = __DEV__
   : (Config.ADMOB_BANNER_ID || TestIds.ADAPTIVE_BANNER);
 
 export default function AdBanner(): React.JSX.Element | null {
-  // 広告無効時は何も表示しない
-  if (!ADS_ENABLED) return null;
+  const isPremium = useSettingsStore(s => s.isPremium);
+
+  // 広告無効時・プレミアムユーザーは非表示
+  if (!ADS_ENABLED || isPremium) return null;
 
   if (Platform.OS !== 'android') return null;
   return (
