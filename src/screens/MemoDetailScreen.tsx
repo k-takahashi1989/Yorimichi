@@ -173,12 +173,18 @@ export default function MemoDetailScreen(): React.JSX.Element {
         return;
       }
       // ローカルのチェック状態を保持しつつ Firestore の最新データをマージ
-      const mergedItems = doc.items.map(docItem => {
-        const localItem = memo.items.find(li => li.id === docItem.id);
-        return localItem
-          ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
-          : docItem; // 新規追加アイテムはチェックなし
-      });
+      const docItemIds = new Set(doc.items.map(di => di.id));
+      const mergedItems = [
+        // Firestore にあるアイテム: ローカルのチェック状態を上書きで保持
+        ...doc.items.map(docItem => {
+          const localItem = memo.items.find(li => li.id === docItem.id);
+          return localItem
+            ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
+            : docItem;
+        }),
+        // ローカルにのみあるアイテム（未アップロード分）: 消さずに末尾に保持
+        ...memo.items.filter(li => !docItemIds.has(li.id)),
+      ];
       // オーナーは地点変更の権限を持つためローカルを優先
       // コラボレーターはオーナーが変更した地点を Firestore から受け取る
       const mergedLocations = memo.isOwner ? memo.locations : doc.locations;

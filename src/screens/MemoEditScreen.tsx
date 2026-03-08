@@ -18,8 +18,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useMemoStore } from '../store/memoStore';
-import { useSettingsStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
@@ -50,7 +49,7 @@ export default function MemoEditScreen(): React.JSX.Element {
 
   const totalMemoRegistrations = useSettingsStore(s => s.totalMemoRegistrations);
   const incrementMemoRegistrations = useSettingsStore(s => s.incrementMemoRegistrations);
-  const isPremium = useSettingsStore(s => s.isPremium);
+  const isPremium = useSettingsStore(selectEffectivePremium);
   const { showIfReady } = useInterstitialAd();
 
   const insets = useSafeAreaInsets();

@@ -369,8 +369,9 @@ export const useMemoStore = create<MemoState>()(
         const memo: Memo = {
           id: generateId(),
           title: data.title,
-          items: data.items.map(it => ({ ...it, id: generateId() })),
-          locations: data.locations.map(loc => ({ ...loc, id: generateId() })),
+          // Firestore の ID をそのまま保持する（再発番すると sync 時にID不一致になる）
+          items: data.items.map(it => ({ ...it })),
+          locations: data.locations.map(loc => ({ ...loc })),
           notificationEnabled: true,
           createdAt: now,
           updatedAt: now,
