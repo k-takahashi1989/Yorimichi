@@ -72,6 +72,28 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
 
     private void sendNotification(Context context, String geofenceId, String memoId,
                                   String notifTitle, String notifBody, String notificationMode) {
+
+        // ── 通知許可時間帯チェック ────────────────────────────────
+        android.content.SharedPreferences windowPrefs =
+                context.getSharedPreferences(GeofenceModule.PREFS_NAME, 0);
+        if (windowPrefs.getBoolean("notif_window_enabled", false)) {
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            float currentHour = cal.get(java.util.Calendar.HOUR_OF_DAY)
+                    + cal.get(java.util.Calendar.MINUTE) / 60.0f;
+            float start = windowPrefs.getFloat("notif_window_start", 0.0f);
+            float end   = windowPrefs.getFloat("notif_window_end",   24.0f);
+            boolean inWindow;
+            if (start < end) {
+                // 通常帯（例: 8:00〜22:00）
+                inWindow = currentHour >= start && currentHour < end;
+            } else {
+                // 深夜跨ぎ（例: 22:00〜7:00）
+                inWindow = currentHour >= start || currentHour < end;
+            }
+            if (!inWindow) return; // 時間帯外は通知しない
+        }
+        // ─────────────────────────────────────────────────────────
+
         NotificationManager manager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;

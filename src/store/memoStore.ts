@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Memo, ShoppingItem, MemoLocation, RecentPlace } from '../types';
 import { mmkvStorage } from '../storage/mmkvStorage';
 import { generateId } from '../utils/helpers';
-import { clearMemoFromCache, syncGeofences } from '../services/geofenceService';
+import { clearMemoFromCache, syncGeofences, setNotifWindowNative } from '../services/geofenceService';
 import { getLocationsLimit } from '../config/planLimits';
 import { isTrialActive } from '../utils/trialUtils';
 
@@ -23,6 +23,10 @@ export interface SettingsState {
   // 7日間お試しトライアル
   trialStartDate: number | null;       // トライアル開始日時 (Unix ms)。null = 未開始
   hasUsedTrial: boolean;               // トライアル使用済みフラグ（再利用防止）
+  // 通知時間帯（プレミアム機能）
+  notifWindowEnabled: boolean;         // 時間帯限定を有効にするか
+  notifWindowStart: number;            // 開始時刻 (float, 0.5刻み. 例: 8.0=8:00, 8.5=8:30)
+  notifWindowEnd: number;              // 終了時刻 (float, 0.5刻み)
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
@@ -32,6 +36,7 @@ export interface SettingsState {
   addRecentPlace: (place: RecentPlace) => void;
   setIsPremium: (value: boolean) => void;
   startTrial: () => void;
+  setNotifWindow: (enabled: boolean, start: number, end: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -46,6 +51,9 @@ export const useSettingsStore = create<SettingsState>()(
       recentPlaces: [],
       trialStartDate: null,
       hasUsedTrial: false,
+      notifWindowEnabled: false,
+      notifWindowStart: 8.0,
+      notifWindowEnd: 22.0,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       addSharedMemoId: (shareId: string) =>
         set(state => ({
@@ -78,10 +86,14 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       setIsPremium: (value: boolean) => set({ isPremium: value }),
       startTrial: () => set({ trialStartDate: Date.now(), hasUsedTrial: true }),
+      setNotifWindow: (enabled: boolean, start: number, end: number) => {
+        set({ notifWindowEnabled: enabled, notifWindowStart: start, notifWindowEnd: end });
+        setNotifWindowNative(enabled, start, end);
+      },
     }),
     {
       name: 'settings',
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -100,6 +112,9 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (version <= 4) {
           persisted = { ...persisted, trialStartDate: null, hasUsedTrial: false };
+        }
+        if (version <= 5) {
+          persisted = { ...persisted, notifWindowEnabled: false, notifWindowStart: 8.0, notifWindowEnd: 22.0 };
         }
         return persisted;
       },
