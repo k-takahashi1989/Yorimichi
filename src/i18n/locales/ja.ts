@@ -287,6 +287,16 @@ const ja = {
     startTrialConfirm: '7日間、プレミアムプランの全機能を無料でお試しいただけます。トライアルは1回限りです。開始しますか？',
     trialActive: 'お試し中 — あと{{days}}日',
     trialExpiredMsg: 'トライアル期間が終了しました。ご利用ありがとうございました。',
+    couponLabel: 'クーポンコードをお持ちの方',
+    couponPlaceholder: 'コードを入力',
+    couponApply: '適用',
+    couponActive: 'クーポン有効中 — {{date}}まで',
+    couponSuccess: 'クーポン適用完了',
+    couponSuccessMsg: 'プレミアム機能が有効になりました。1年間お楽しみください。',
+    couponErrorTitle: 'クーポンエラー',
+    couponInvalid: 'このクーポンコードは無効です。',
+    couponAlreadyUsed: 'このクーポンコードはすでに使用されています。',
+    couponNetworkError: '通信エラーが発生しました。時間をおいて再度お試しください。',
   },
   // ── 上限エラー ────────────────────────────────────────────────────
   errors: {

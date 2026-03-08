@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
@@ -36,9 +38,19 @@ export default function PremiumScreen(): React.JSX.Element {
   const trialStartDate = useSettingsStore(s => s.trialStartDate);
   const hasUsedTrial = useSettingsStore(s => s.hasUsedTrial);
   const startTrial = useSettingsStore(s => s.startTrial);
+  const couponExpiry = useSettingsStore(s => s.couponExpiry);
+  const redeemCoupon = useSettingsStore(s => s.redeemCoupon);
+
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const isTrialCurrentlyActive = isTrialActive(trialStartDate);
   const daysLeft = trialDaysRemaining(trialStartDate);
+  const isCouponActive = couponExpiry != null && Date.now() < couponExpiry;
+
+  const couponExpiryDate = couponExpiry
+    ? new Date(couponExpiry).toLocaleDateString()
+    : null;
 
   const handleUpgrade = () => {
     Alert.alert(
@@ -56,6 +68,24 @@ export default function PremiumScreen(): React.JSX.Element {
         { text: t('common.confirm'), onPress: () => startTrial() },
       ],
     );
+  };
+
+  const handleRedeemCoupon = async () => {
+    const trimmed = couponCode.trim();
+    if (!trimmed) return;
+    setCouponLoading(true);
+    const result = await redeemCoupon(trimmed);
+    setCouponLoading(false);
+    if (result === 'ok') {
+      setCouponCode('');
+      Alert.alert(t('premium.couponSuccess'), t('premium.couponSuccessMsg'));
+    } else if (result === 'already_used') {
+      Alert.alert(t('premium.couponErrorTitle'), t('premium.couponAlreadyUsed'));
+    } else if (result === 'network') {
+      Alert.alert(t('premium.couponErrorTitle'), t('premium.couponNetworkError'));
+    } else {
+      Alert.alert(t('premium.couponErrorTitle'), t('premium.couponInvalid'));
+    }
   };
 
   return (
@@ -157,6 +187,41 @@ export default function PremiumScreen(): React.JSX.Element {
               ) : (
                 <Text style={styles.trialExpiredText}>{t('premium.trialExpiredMsg')}</Text>
               )}
+            </View>
+          )}
+
+          {/* クーポンコード入力セクション */}
+          {isCouponActive ? (
+            <View style={styles.couponActiveBadge}>
+              <Icon name="card-membership" size={16} color="#1565C0" />
+              <Text style={styles.couponActiveText}>
+                {t('premium.couponActive', { date: couponExpiryDate })}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.couponContainer}>
+              <Text style={styles.couponLabel}>{t('premium.couponLabel')}</Text>
+              <View style={styles.couponRow}>
+                <TextInput
+                  style={styles.couponInput}
+                  value={couponCode}
+                  onChangeText={setCouponCode}
+                  placeholder={t('premium.couponPlaceholder')}
+                  placeholderTextColor="#BDBDBD"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  editable={!couponLoading}
+                />
+                <TouchableOpacity
+                  style={[styles.couponBtn, (!couponCode.trim() || couponLoading) && styles.couponBtnDisabled]}
+                  onPress={handleRedeemCoupon}
+                  disabled={!couponCode.trim() || couponLoading}>
+                  {couponLoading
+                    ? <ActivityIndicator size="small" color="#FFF" />
+                    : <Text style={styles.couponBtnText}>{t('premium.couponApply')}</Text>
+                  }
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -342,4 +407,67 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   devToggleText: { fontSize: 12, color: '#80CBC4' },
+
+  // クーポンコード
+  couponContainer: {
+    marginBottom: 12,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 14,
+    elevation: 1,
+  },
+  couponLabel: {
+    fontSize: 13,
+    color: '#757575',
+    marginBottom: 8,
+  },
+  couponRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  couponInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#212121',
+    backgroundColor: '#FAFAFA',
+    letterSpacing: 1,
+  },
+  couponBtn: {
+    backgroundColor: '#1565C0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 64,
+  },
+  couponBtnDisabled: {
+    backgroundColor: '#BDBDBD',
+  },
+  couponBtnText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  couponActiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#90CAF9',
+    marginBottom: 12,
+  },
+  couponActiveText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1565C0',
+  },
 });
