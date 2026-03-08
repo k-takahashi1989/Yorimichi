@@ -8,7 +8,7 @@ import {
 import Config from 'react-native-config';
 
 // 広告を表示するには false → true に変更してください
-const ADS_ENABLED = false;
+const ADS_ENABLED = true;
 
 const AD_UNIT_ID = __DEV__
   ? TestIds.ADAPTIVE_BANNER
