@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ネットワーク -->
@@ -41,6 +41,12 @@
         android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask"
         android:foregroundServiceType="location"
         tools:node="merge" />
+
+      <!-- ネイティブジオフェンス進入イベントを受け取る BroadcastReceiver -->
+      <!-- Android 14+ (API 34+): Google Play Services が PendingIntent 経由でブロードキャストを送信するため exported=true が必要 -->
+      <receiver
+          android:name=".GeofenceTransitionReceiver"
+          android:exported="true" />
 
       <activity
         android:name=".MainActivity"
