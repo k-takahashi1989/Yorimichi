@@ -99,7 +99,51 @@
 
 **削除対象（`react-native-background-actions` ポーリング方式）:** `geofenceService.ts` から完全に除去済み。
 
-### 最近の場所バグ修正（2026-03-07）
+### プラン上限有効化・UI カウンタ・バグ修正（2026-03-08）
+
+| 内容 | 対応ファイル | コミット |
+|------|-------------|---------|
+| `planLimits.ts` の `LIMITS_ENABLED` を `true` に変更し、制限をすべて有効化 | `src/config/planLimits.ts` | `ee6368e` |
+| `getCollaboratorsLimit(isPremium)` を追加 | `src/config/planLimits.ts` | `ee6368e` |
+| `shareService.ts` — `joinSharedMemo` が `isPremium` 引数を受け取り、コラボレーター上限超過時に `'COLLABORATORS_FULL'` をスロー | `src/services/shareService.ts` | `ee6368e` |
+| `MemoListScreen` ヘッダーにメモ数カウンタ `N / 5` を表示（上限オレンジ）。`COLLABORATORS_FULL` エラーハンドリング追加 | `src/screens/MemoListScreen.tsx` | `ee6368e` |
+| `MemoEditScreen` アイテム欄ラベルに `N / 10` カウンタを表示 | `src/screens/MemoEditScreen.tsx` | `ee6368e` |
+| `MemoDetailScreen` 地点セクションに `N / 2` カウンタを表示。`handleShare` を `LIMITS_ENABLED` でゲート | `src/screens/MemoDetailScreen.tsx` | `ee6368e` |
+| i18n — `locationLimitTitle/Msg`, `collaboratorLimitTitle/Msg` を ja/en に追加 | `src/i18n/locales/ja.ts`, `en.ts` | `ee6368e` |
+| バグ修正: `locationSection` i18n キーのハードコード `/ 3` を削除し `({{count}}件)` に変更 | `src/i18n/locales/ja.ts`, `en.ts` | `f824e4a` |
+| バグ修正: `MemoDetailScreen` にアイテム数バッジ `N件`（上限でオレンジ）を追加 | `src/screens/MemoDetailScreen.tsx` | `f824e4a` |
+| バグ修正: `LocationPickerScreen` に `isGeocoding` 状態を追加。逆ジオコーディング中は保存ボタンを無効化＋スピナー表示。5秒安全タイムアウト | `src/screens/LocationPickerScreen.tsx` | `f824e4a` |
+| i18n — `locationPicker.geocodingInProgress` を ja/en に追加 | `src/i18n/locales/ja.ts`, `en.ts` | `f824e4a` |
+
+### ジオフェンス100件上限（2026-03-08）
+
+Android の `GeofencingClient` はアプリあたり最大100件という API ハードリミットがあり、超過時に無音失敗する問題に対処。
+
+| 内容 | 対応ファイル | コミット |
+|------|-------------|---------|
+| `geofenceService.ts` に `export const MAX_GEOFENCES = 100` を追加。`buildEntries()` 戻り値を `entries.slice(0, MAX_GEOFENCES)` に変更（JS 層キャップ） | `src/services/geofenceService.ts` | `87e6740` |
+| `GeofenceModule.java` に `private static final int MAX_GEOFENCES = 100` 定数を追加。`syncGeofences` の for ループ先頭に `if (geofences.size() >= MAX_GEOFENCES) break;` を追加（Java 層セーフティネット） | `android/.../GeofenceModule.java` | `87e6740` |
+
+### 共有メモ地点同期バグ修正（2026-03-08）
+
+**根本原因:** 地点の追加・編集・削除がローカルストアにのみ保存され Firestore に反映されなかったため、同期ボタンを押すと古い地点で上書きされていた。
+
+| 内容 | 対応ファイル | コミット |
+|------|-------------|---------|
+| `shareService.ts` に `updateSharedMemoLocations(shareId, locations)` を追加 | `src/services/shareService.ts` | `7e4900a` |
+| `handleSyncSharedMemo`: オーナーは `memo.locations`（ローカル優先）、コラボレーターは `doc.locations`（Firestore 優先）でマージ | `src/screens/MemoDetailScreen.tsx` | `7e4900a` |
+| `handleDeleteLocation`: オーナーの地点削除後に Firestore へ即時プッシュ | `src/screens/MemoDetailScreen.tsx` | `7e4900a` |
+| `useFocusEffect`: LocationPickerScreen から戻った際にオーナーの地点変更を Firestore へ自動プッシュ | `src/screens/MemoDetailScreen.tsx` | `7e4900a` |
+
+### オーナー/コラボレーター可視化（2026-03-08）
+
+| 内容 | 対応ファイル | コミット |
+|------|-------------|---------|
+| `MemoDetailScreen` タイトル直下に役割バッジを表示（`👑 オーナー` 緑 / `👥 コラボレーター` 紫）。共有していないメモは非表示 | `src/screens/MemoDetailScreen.tsx` | `f6c79b1` |
+| 地点セクションの追加・編集・削除ボタンをコラボレーターには非表示にし、代わりに🔒アイコンを表示（読み取り専用） | `src/screens/MemoDetailScreen.tsx` | `f6c79b1` |
+| i18n — `share.roleOwner` / `share.roleCollaborator` を ja/en に追加 | `src/i18n/locales/ja.ts`, `en.ts` | `f6c79b1` |
+
+
 
 | # | 内容 | 対応ファイル | コミット |
 |---|---|---|---|
@@ -225,7 +269,7 @@ const isCompleted = total > 0 && unchecked === 0;
 
 ### 5-2. 無料 / プレミアムの機能区分
 
-> **実装メモ:** `src/config/planLimits.ts` の `LIMITS_ENABLED` フラグを `true` にすると制限が有効化される（現在は `false`）。`FREE_LIMITS` の数値がここの表の値と対応している。
+> **実装メモ:** `src/config/planLimits.ts` の `LIMITS_ENABLED` フラグは現在 **`true`**（制限有効）。`FREE_LIMITS` の数値がここの表の値と対応している。サブスク課金実装前に `false` に戻す場合は同ファイルの定数を変更する。
 
 | 機能 | 無料 | プレミアム |
 |------|------|-----------|

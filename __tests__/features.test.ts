@@ -6,6 +6,9 @@
  * #37 全チェック解除 (uncheckAllItems)
  * Fix#3 updateMemo でアイテム一括更新（sync/checkState push 用）
  * Fix#4 pendingNotificationMemoId via MMKV
+ * Fix#GeofenceCap  MAX_GEOFENCES 定数 上限 100 件
+ * planLimits     プラン上限ゲッター・ LIMITS_ENABLED 有効化
+ * Fix#LocSync    addLocation 上限・共有メモ isOwner フラグ
  */
 import { useMemoStore, useSettingsStore } from '../src/store/memoStore';
 import { RecentPlace } from '../src/types';
@@ -289,5 +292,134 @@ describe('Fix#4 MMKV pendingNotificationMemoId', () => {
 
   it('キーが存在しない場合は getString が undefined を返す', () => {
     expect(storage.getString('pendingNotificationMemoId')).toBeUndefined();
+  });
+});
+// ============================================================
+// Fix#GeofenceCap  MAX_GEOFENCES 定数
+// ============================================================
+describe('Fix#GeofenceCap MAX_GEOFENCES 定数', () => {
+  it('MAX_GEOFENCES は 100 である', () => {
+    // Android GeofencingClient のハードリミットと一致していることを確認
+    const { MAX_GEOFENCES } = require('../src/services/geofenceService');
+    expect(MAX_GEOFENCES).toBe(100);
+  });
+});
+
+// ============================================================
+// planLimits  プラン上限ゲッター (LIMITS_ENABLED = true)
+// ============================================================
+describe('planLimits ゲッター', () => {
+  const {
+    LIMITS_ENABLED,
+    FREE_LIMITS,
+    PREMIUM_LIMITS,
+    getLocationsLimit,
+    getMemosLimit,
+    getItemsLimit,
+    getCollaboratorsLimit,
+  } = require('../src/config/planLimits');
+
+  it('LIMITS_ENABLED が true であること', () => {
+    expect(LIMITS_ENABLED).toBe(true);
+  });
+
+  it('getLocationsLimit: 無料=2, プレミアム=10', () => {
+    expect(getLocationsLimit(false)).toBe(FREE_LIMITS.locationsPerMemo);    // 2
+    expect(getLocationsLimit(true)).toBe(PREMIUM_LIMITS.locationsPerMemo);  // 10
+  });
+
+  it('getMemosLimit: 無料=5, プレミアム=1000', () => {
+    expect(getMemosLimit(false)).toBe(FREE_LIMITS.memos);    // 5
+    expect(getMemosLimit(true)).toBe(PREMIUM_LIMITS.memos);  // 1000
+  });
+
+  it('getItemsLimit: 無料=10, プレミアム=100', () => {
+    expect(getItemsLimit(false)).toBe(FREE_LIMITS.itemsPerMemo);    // 10
+    expect(getItemsLimit(true)).toBe(PREMIUM_LIMITS.itemsPerMemo);  // 100
+  });
+
+  it('getCollaboratorsLimit: 無料=1, プレミアム=20', () => {
+    expect(getCollaboratorsLimit(false)).toBe(FREE_LIMITS.collaborators);    // 1
+    expect(getCollaboratorsLimit(true)).toBe(PREMIUM_LIMITS.collaborators);  // 20
+  });
+});
+
+// ============================================================
+// Fix#LocSync  addLocation 上限 / 共有メモ isOwner フラグ
+// ============================================================
+describe('Fix#LocSync addLocation 上限チェック', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ isPremium: false } as any);
+  });
+
+  it('無料プランは地点を 2 件まで追加できる（3件目は null）', () => {
+    const memo = useMemoStore.getState().addMemo('地点テスト');
+    const loc1 = useMemoStore.getState().addLocation(memo.id, {
+      label: '場所A', latitude: 35.0, longitude: 135.0, radius: 200,
+    });
+    const loc2 = useMemoStore.getState().addLocation(memo.id, {
+      label: '場所B', latitude: 35.1, longitude: 135.1, radius: 200,
+    });
+    const loc3 = useMemoStore.getState().addLocation(memo.id, {
+      label: '場所C', latitude: 35.2, longitude: 135.2, radius: 200,
+    });
+    expect(loc1).not.toBeNull();
+    expect(loc2).not.toBeNull();
+    expect(loc3).toBeNull(); // 上限超過
+    expect(useMemoStore.getState().getMemoById(memo.id)?.locations).toHaveLength(2);
+  });
+
+  it('プレミアムプランは 3 件以上追加できる', () => {
+    useSettingsStore.setState({ isPremium: true } as any);
+    const memo = useMemoStore.getState().addMemo('プレミアム地点テスト');
+    for (let i = 0; i < 5; i++) {
+      useMemoStore.getState().addLocation(memo.id, {
+        label: `場所${i}`, latitude: 35.0 + i * 0.01, longitude: 135.0, radius: 200,
+      });
+    }
+    expect(useMemoStore.getState().getMemoById(memo.id)?.locations).toHaveLength(5);
+  });
+});
+
+describe('Fix#LocSync 共有メモ isOwner フラグ', () => {
+  it('importSharedMemo は isOwner=false を設定する', () => {
+    const memo = useMemoStore.getState().importSharedMemo(
+      { title: '共有テスト', items: [], locations: [] },
+      'share-abc-123',
+    );
+    expect(memo.isOwner).toBe(false);
+    expect(memo.shareId).toBe('share-abc-123');
+    const stored = useMemoStore.getState().getMemoById(memo.id);
+    expect(stored?.isOwner).toBe(false);
+    expect(stored?.shareId).toBe('share-abc-123');
+  });
+
+  it('setMemoShareId でオーナーフラグが true になる', () => {
+    const memo = useMemoStore.getState().addMemo('オーナーテスト');
+    useMemoStore.getState().setMemoShareId(memo.id, 'share-def-456', true);
+    const updated = useMemoStore.getState().getMemoById(memo.id);
+    expect(updated?.shareId).toBe('share-def-456');
+    expect(updated?.isOwner).toBe(true);
+  });
+
+  it('setMemoShareId でコラボレーターフラグが false になる', () => {
+    const memo = useMemoStore.getState().addMemo('コラボテスト');
+    useMemoStore.getState().setMemoShareId(memo.id, 'share-ghi-789', false);
+    const updated = useMemoStore.getState().getMemoById(memo.id);
+    expect(updated?.isOwner).toBe(false);
+  });
+
+  it('updateMemo で locations を上書きできる（sync 時の地点マージ用）', () => {
+    const memo = useMemoStore.getState().addMemo('地点syncテスト');
+    useMemoStore.getState().addLocation(memo.id, {
+      label: '旧場所', latitude: 35.0, longitude: 135.0, radius: 200,
+    });
+    const newLocs = [
+      { id: 'loc-new', label: '新場所', latitude: 36.0, longitude: 136.0, radius: 300 },
+    ];
+    useMemoStore.getState().updateMemo(memo.id, { locations: newLocs });
+    const updated = useMemoStore.getState().getMemoById(memo.id);
+    expect(updated?.locations).toHaveLength(1);
+    expect(updated?.locations[0].label).toBe('新場所');
   });
 });
