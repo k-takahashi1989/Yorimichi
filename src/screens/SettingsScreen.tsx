@@ -9,6 +9,9 @@ import {
   PermissionsAndroid,
   ScrollView,
   Linking,
+  Switch,
+  FlatList,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,7 +30,7 @@ import DeviceInfo from 'react-native-device-info';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { changeAndPersistLanguage } from '../i18n';
-import { useSettingsStore } from '../store/memoStore';
+import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import {
   startGeofenceMonitoring,
   stopGeofenceMonitoring,
@@ -68,6 +71,11 @@ export default function SettingsScreen(): React.JSX.Element {
   const setDefaultRadius = useSettingsStore(s => s.setDefaultRadius);
   const maxRadius = useSettingsStore(s => s.maxRadius);
   const setMaxRadius = useSettingsStore(s => s.setMaxRadius);
+  const notifWindowEnabled = useSettingsStore(s => s.notifWindowEnabled);
+  const notifWindowStart   = useSettingsStore(s => s.notifWindowStart);
+  const notifWindowEnd     = useSettingsStore(s => s.notifWindowEnd);
+  const setNotifWindow     = useSettingsStore(s => s.setNotifWindow);
+  const isPremium          = useSettingsStore(selectEffectivePremium);
 
   const [perms, setPerms] = useState<{
     fine: PermStatus;
@@ -79,6 +87,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
   const [isMonitoring, setIsMonitoring] = useState(isGeofencingActive());
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [notifPickerTarget, setNotifPickerTarget] = useState<'start' | 'end' | null>(null);
 
   const handleChangeLang = (lang: string) => {
     changeAndPersistLanguage(lang);
@@ -200,6 +209,14 @@ export default function SettingsScreen(): React.JSX.Element {
     }
   };
 
+  // 0:00 〜 23:30（30分刻み, 48件）
+  const HALF_HOURS = Array.from({ length: 48 }, (_, i) => i * 0.5);
+  const formatHour = (h: number) => {
+    const hh = Math.floor(h);
+    const mm = h % 1 === 0 ? '00' : '30';
+    return `${hh}:${mm}`;
+  };
+
   const allGranted =
     perms.fine === 'granted' &&
     (androidVersion < 29 || perms.background === 'granted') &&
@@ -318,6 +335,50 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </View>
 
+      {/* 通知時間帯（プレミアム機能） */}
+      <View style={[styles.card, !isPremium && styles.cardLocked]}>
+        <View style={styles.cardTitleRow}>
+          <Icon name="schedule" size={18} color={isPremium ? '#4CAF50' : '#BDBDBD'} />
+          <Text style={[styles.cardTitle, styles.cardTitleInRow, !isPremium && styles.cardTitleDimmed]}>
+            {t('settings.notifWindow.sectionTitle')}
+          </Text>
+          {!isPremium && <Icon name="lock" size={14} color="#BDBDBD" style={styles.lockBadge} />}
+        </View>
+        <Text style={[styles.cardDesc, !isPremium && styles.textDimmed]}>
+          {isPremium ? t('settings.notifWindow.description') : t('settings.notifWindow.premiumOnly')}
+        </Text>
+        {isPremium && (
+          <>
+            <View style={styles.notifWindowRow}>
+              <Text style={styles.notifWindowLabel}>{t('settings.notifWindow.enableToggle')}</Text>
+              <Switch
+                value={notifWindowEnabled}
+                onValueChange={v => setNotifWindow(v, notifWindowStart, notifWindowEnd)}
+                trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
+                thumbColor={notifWindowEnabled ? '#4CAF50' : '#F5F5F5'}
+              />
+            </View>
+            {notifWindowEnabled && (
+              <View style={styles.notifTimesRow}>
+                <TouchableOpacity
+                  style={styles.notifTimeBtn}
+                  onPress={() => setNotifPickerTarget('start')}>
+                  <Text style={styles.notifTimeBtnLabel}>{t('settings.notifWindow.startLabel')}</Text>
+                  <Text style={styles.notifTimeBtnValue}>{formatHour(notifWindowStart)}</Text>
+                </TouchableOpacity>
+                <Icon name="arrow-forward" size={16} color="#9E9E9E" />
+                <TouchableOpacity
+                  style={styles.notifTimeBtn}
+                  onPress={() => setNotifPickerTarget('end')}>
+                  <Text style={styles.notifTimeBtnLabel}>{t('settings.notifWindow.endLabel')}</Text>
+                  <Text style={styles.notifTimeBtnValue}>{formatHour(notifWindowEnd)}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        )}
+      </View>
+
       {/* プレミアムプランカード */}
       <TouchableOpacity
         style={styles.premiumCard}
@@ -347,6 +408,65 @@ export default function SettingsScreen(): React.JSX.Element {
         </TouchableOpacity>
       </View>
       <AdBanner />
+
+      {/* 通知時間帯 時刻ピッカーモーダル */}
+      <Modal
+        visible={notifPickerTarget !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setNotifPickerTarget(null)}>
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerSheet}>
+            <Text style={styles.pickerSheetTitle}>
+              {notifPickerTarget === 'start'
+                ? t('settings.notifWindow.startLabel')
+                : t('settings.notifWindow.endLabel')}
+            </Text>
+            <FlatList
+              data={HALF_HOURS}
+              keyExtractor={item => String(item)}
+              style={styles.pickerList}
+              getItemLayout={(_, index) => ({ length: 48, offset: 48 * index, index })}
+              initialScrollIndex={Math.max(
+                0,
+                HALF_HOURS.indexOf(
+                  notifPickerTarget === 'start' ? notifWindowStart : notifWindowEnd,
+                ) - 3,
+              )}
+              renderItem={({ item }) => {
+                const isSelected =
+                  item ===
+                  (notifPickerTarget === 'start' ? notifWindowStart : notifWindowEnd);
+                return (
+                  <TouchableOpacity
+                    style={[styles.pickerItem, isSelected && styles.pickerItemSelected]}
+                    onPress={() => {
+                      if (notifPickerTarget === 'start') {
+                        setNotifWindow(notifWindowEnabled, item, notifWindowEnd);
+                      } else {
+                        setNotifWindow(notifWindowEnabled, notifWindowStart, item);
+                      }
+                      setNotifPickerTarget(null);
+                    }}>
+                    <Text
+                      style={[
+                        styles.pickerItemText,
+                        isSelected && styles.pickerItemTextSel,
+                      ]}>
+                      {formatHour(item)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+            <TouchableOpacity
+              style={styles.pickerCancelBtn}
+              onPress={() => setNotifPickerTarget(null)}>
+              <Text style={styles.pickerCancelText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -491,6 +611,78 @@ const styles = StyleSheet.create({
   langBtnTextActive: {
     color: '#4CAF50',
   },
+
+  // ── 通知時間帯カード ────────────────────────────────────
+  cardLocked: { opacity: 0.75 },
+  cardTitleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginBottom: 10 },
+  cardTitleInRow: { marginBottom: 0, marginLeft: 6, flex: 1 },
+  cardTitleDimmed: { color: '#BDBDBD' },
+  lockBadge: { marginLeft: 4 },
+  textDimmed: { color: '#BDBDBD' },
+  notifWindowRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: 8,
+  },
+  notifWindowLabel: { fontSize: 14, color: '#424242', flex: 1 },
+  notifTimesRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 12,
+    paddingTop: 8,
+  },
+  notifTimeBtn: {
+    alignItems: 'center' as const,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  notifTimeBtnLabel: { fontSize: 11, color: '#9E9E9E', marginBottom: 4 },
+  notifTimeBtnValue: { fontSize: 22, fontWeight: '700' as const, color: '#212121' },
+
+  // ── 時刻ピッカーモーダル ───────────────────────────────────
+  pickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end' as const,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  pickerSheet: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 16,
+    paddingBottom: 32,
+    maxHeight: '60%',
+  },
+  pickerSheetTitle: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: '#212121',
+    textAlign: 'center' as const,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  pickerList: { maxHeight: 250 },
+  pickerItem: {
+    height: 48,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 24,
+  },
+  pickerItemSelected: { backgroundColor: '#E8F5E9' },
+  pickerItemText: { fontSize: 16, color: '#424242' },
+  pickerItemTextSel: { color: '#2E7D32', fontWeight: '700' as const },
+  pickerCancelBtn: {
+    marginTop: 8,
+    marginHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center' as const,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+  },
+  pickerCancelText: { fontSize: 14, color: '#757575', fontWeight: '600' as const },
 });
 
 

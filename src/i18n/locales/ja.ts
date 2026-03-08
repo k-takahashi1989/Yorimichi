@@ -154,6 +154,14 @@ const ja = {
     langCard: {
       title: '表示言語',
     },
+    notifWindow: {
+      sectionTitle: '通知時間帯',
+      enableToggle: '時間帯制限を有効にする',
+      startLabel: '開始時刻',
+      endLabel: '終了時刻',
+      description: '設定した時間内のみ通知します。時間外は通知されません。',
+      premiumOnly: 'プレミアム機能です。お試しまたはプレミアムプランでご利用いただけます。',
+    },
   },
 
   // ── AppNavigator ──────────────────────────────────────────
@@ -271,6 +279,9 @@ const ja = {
     premiumVal: '無制限',
     premiumValLocations: '最大100か所',
     premiumValAlarm: 'アラーム対応',
+    featureNotifHours: '通知時間帯',
+    freeValNotifHours: '制限なし',
+    premiumValNotifHours: '時間帯指定可',
     premiumValAds: 'なし',
     startTrialButton: '7日間無料お試しを開始',
     startTrialConfirm: '7日間、プレミアムプランの全機能を無料でお試しいただけます。トライアルは1回限りです。開始しますか？',

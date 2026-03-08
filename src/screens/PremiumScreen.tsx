@@ -24,6 +24,7 @@ const FEATURE_ROWS: Array<{
   { icon: 'place',          label: 'featureLocations',     freeVal: 'freeValLocations',    premiumVal: 'premiumValLocations' },
   { icon: 'people',         label: 'featureCollaborators', freeVal: 'freeValCollaborators',premiumVal: 'premiumVal' },
   { icon: 'notifications',  label: 'featureAlarm',         freeVal: 'freeValAlarm',        premiumVal: 'premiumValAlarm' },
+  { icon: 'schedule',       label: 'featureNotifHours',    freeVal: 'freeValNotifHours',   premiumVal: 'premiumValNotifHours' },
   { icon: 'ads-click',      label: 'featureAds',           freeVal: 'freeValAds',          premiumVal: 'premiumValAds' },
 ];
 

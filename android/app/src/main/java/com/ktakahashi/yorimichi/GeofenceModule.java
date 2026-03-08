@@ -181,6 +181,26 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 通知許可時間帯をグローバル設定として SharedPreferences に保存する。
+     * GeofenceTransitionReceiver がジオフェンス発火時にこの値を参照し、
+     * 時間帯外なら通知を出さずに return する。
+     *
+     * @param enabled   時間帯制限を有効にするか
+     * @param startHour 開始時刻（float, 例: 8.0=8:00, 8.5=8:30）
+     * @param endHour   終了時刻（float, 例: 22.0=22:00）
+     */
+    @ReactMethod
+    public void setNotifWindow(boolean enabled, double startHour, double endHour) {
+        getReactApplicationContext()
+                .getSharedPreferences(PREFS_NAME, 0)
+                .edit()
+                .putBoolean("notif_window_enabled", enabled)
+                .putFloat("notif_window_start", (float) startHour)
+                .putFloat("notif_window_end", (float) endHour)
+                .apply();
+    }
+
+    /**
      * 登録されているジオフェンスをすべて削除する（監視 OFF 時）。
      */
     @ReactMethod

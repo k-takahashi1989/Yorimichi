@@ -18,6 +18,7 @@ const YorimichiGeofence = NativeModules.YorimichiGeofence as {
   syncGeofences: (json: string) => Promise<void>;
   removeGeofencesForMemo: (memoId: string) => Promise<void>;
   clearAll: () => Promise<void>;
+  setNotifWindow: (enabled: boolean, startHour: number, endHour: number) => void;
 } | undefined;
 
 const MONITORING_KEY = 'geofence_monitoring_active';
@@ -125,6 +126,24 @@ export async function stopGeofenceMonitoring(): Promise<void> {
 export async function syncGeofences(): Promise<void> {
   if (!isGeofencingActive()) return;
   await startGeofenceMonitoring();
+}
+
+/**
+ * 通知許可時間帯を Android ネイティブ側に書き込む。
+ * アプリ killed 状態でも GeofenceTransitionReceiver が参照するため、
+ * 必ず SharedPreferences 経由で永続化する。
+ */
+export function setNotifWindowNative(
+  enabled: boolean,
+  startHour: number,
+  endHour: number,
+): void {
+  if (Platform.OS !== 'android' || !YorimichiGeofence) return;
+  try {
+    YorimichiGeofence.setNotifWindow(enabled, startHour, endHour);
+  } catch (e) {
+    __DEV__ && console.warn('[GeofenceService] setNotifWindowNative failed:', e);
+  }
 }
 
 /**

@@ -150,6 +150,14 @@ const en: Translation = {
     langCard: {
       title: 'Language',
     },
+    notifWindow: {
+      sectionTitle: 'Notification Hours',
+      enableToggle: 'Enable time window',
+      startLabel: 'Start time',
+      endLabel: 'End time',
+      description: 'Notifications are only sent within the set hours.',
+      premiumOnly: 'Premium feature. Try it free or upgrade to Premium.',
+    },
   },
 
   nav: {
@@ -262,6 +270,9 @@ const en: Translation = {
     premiumVal: 'Unlimited',
     premiumValLocations: 'Up to 100',
     premiumValAlarm: 'Alarm available',
+    featureNotifHours: 'Notification hours',
+    freeValNotifHours: 'Always',
+    premiumValNotifHours: 'Custom window',
     premiumValAds: 'None',
     startTrialButton: 'Start 7-day free trial',
     startTrialConfirm: 'Try all Premium features free for 7 days.\nTrials are one-time only. Start now?',
