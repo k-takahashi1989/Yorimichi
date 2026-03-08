@@ -5,20 +5,24 @@ import { mmkvStorage } from '../storage/mmkvStorage';
 import { generateId } from '../utils/helpers';
 import { clearMemoFromCache, syncGeofences } from '../services/geofenceService';
 import { getLocationsLimit } from '../config/planLimits';
+import { isTrialActive } from '../utils/trialUtils';
 
 // ============================================================
 // 設定ストア
 // ============================================================
-interface SettingsState {
+export interface SettingsState {
   defaultRadius: number;               // デフォルトのジオフェンス半径 (m)
   maxRadius: number;                   // スライダー最大値
   totalMemoRegistrations: number;      // 新規メモ登録累計（広告表示判定用）
   seenTutorials: string[];             // 表示済みチュートリアルのキー
   // 共有機能
-  isPremium: boolean;                  // TODO: リリース前に false に変更（クローズドテスト中は true）
+  isPremium: boolean;                  // 課金プレミアムフラグ
   sharedMemoIds: string[];             // 送信済み共有メモの shareId 一覧
   // 場所検索履歴
   recentPlaces: RecentPlace[];         // 最大5件
+  // 7日間お試しトライアル
+  trialStartDate: number | null;       // トライアル開始日時 (Unix ms)。null = 未開始
+  hasUsedTrial: boolean;               // トライアル使用済みフラグ（再利用防止）
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
@@ -27,6 +31,7 @@ interface SettingsState {
   removeSharedMemoId: (shareId: string) => void;
   addRecentPlace: (place: RecentPlace) => void;
   setIsPremium: (value: boolean) => void;
+  startTrial: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -36,9 +41,11 @@ export const useSettingsStore = create<SettingsState>()(
       maxRadius: 400,
       totalMemoRegistrations: 0,
       seenTutorials: [],
-      isPremium: true, // TODO: リリース前に false に変更（クローズドテスト中は true）
+      isPremium: false,
       sharedMemoIds: [],
       recentPlaces: [],
+      trialStartDate: null,
+      hasUsedTrial: false,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       addSharedMemoId: (shareId: string) =>
         set(state => ({
@@ -70,10 +77,11 @@ export const useSettingsStore = create<SettingsState>()(
           return { recentPlaces: updated };
         }),
       setIsPremium: (value: boolean) => set({ isPremium: value }),
+      startTrial: () => set({ trialStartDate: Date.now(), hasUsedTrial: true }),
     }),
     {
       name: 'settings',
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -90,11 +98,21 @@ export const useSettingsStore = create<SettingsState>()(
         if (version <= 3) {
           persisted = { ...persisted, recentPlaces: persisted.recentPlaces ?? [] };
         }
+        if (version <= 4) {
+          persisted = { ...persisted, trialStartDate: null, hasUsedTrial: false };
+        }
         return persisted;
       },
     },
   ),
 );
+
+/**
+ * 有効なプレミアム判定セレクター。
+ * 課金プレミアム OR 7日間トライアル中 のどちらかが true なら true を返す。
+ */
+export const selectEffectivePremium = (s: SettingsState): boolean =>
+  s.isPremium || isTrialActive(s.trialStartDate);
 
 // ============================================================
 // メモストア

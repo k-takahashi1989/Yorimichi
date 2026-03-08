@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useMemoStore, useSettingsStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
@@ -33,7 +33,7 @@ export default function MemoListScreen(): React.JSX.Element {
   const restoreMemo = useMemoStore(s => s.restoreMemo);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
-  const isPremium = useSettingsStore(s => s.isPremium);
+  const isPremium = useSettingsStore(selectEffectivePremium);
   const insets = useSafeAreaInsets();
 
   const memosLimit = getMemosLimit(isPremium);
