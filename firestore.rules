@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 共有メモ ──────────────────────────────────────────────────────────────
+    // 認証済みユーザー（匿名含む）のみアクセス可能
+    match /sharedMemos/{shareId} {
+      // 読み取り: 認証済みであれば誰でも可（shareId を知っている前提）
+      allow read: if request.auth != null;
+
+      // 新規作成: 認証済みユーザーのみ
+      allow create: if request.auth != null;
+
+      // 更新: 認証済みユーザーのみ（アイテム同期・チェック状態変更）
+      allow update: if request.auth != null;
+
+      // 削除: 認証済みユーザーのみ（オーナーはアプリ側で制御）
+      allow delete: if request.auth != null;
+    }
+
+    // ── クーポンコード ────────────────────────────────────────────────────────
+    // 書き込みは「used: false → true」のみ許可（トランザクションで使用）
+    match /couponCodes/{code} {
+      // 読み取り: 認証済みユーザーのみ（コードの有効性確認用）
+      allow read: if request.auth != null;
+
+      // 作成・削除: クライアントから不可（Firebase Console / Admin SDK のみ）
+      allow create, delete: if false;
+
+      // 更新: used フラグを false → true に変更する場合のみ許可
+      allow update: if request.auth != null
+        && request.resource.data.used == true
+        && resource.data.used == false
+        && request.resource.data.keys().hasOnly(resource.data.keys());
+    }
+
+    // その他のコレクションはすべて拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
