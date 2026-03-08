@@ -172,16 +172,6 @@ export default function PremiumScreen(): React.JSX.Element {
         </>
       )}
 
-      {/* DEV用トグル（本番ビルドには出ない） */}
-      {__DEV__ && (
-        <TouchableOpacity
-          style={styles.devToggleBtn}
-          onPress={() => setIsPremium(!isRealPremium)}>
-          <Text style={styles.devToggleText}>
-            {isRealPremium ? t('premium.devToggleOn') : t('premium.devToggleOff')}
-          </Text>
-        </TouchableOpacity>
-      )}
     </ScrollView>
   );
 }
