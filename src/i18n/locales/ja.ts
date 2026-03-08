@@ -49,6 +49,8 @@ const ja = {
     locationSection: '📍 場所 ({{count}}件)',
     addLocation: '追加',
     locationEmpty: '場所を追加するとそこに近づいたとき通知が来ます',
+    showMoreLocations: '他{{count}}件を表示',
+    collapseLocations: '折りたたむ',
     itemSection: '📝 チェックリスト',
     itemEmpty: '編集画面でアイテムを追加してください',
     radiusLabel: '半径 {{radius}}m',
@@ -270,6 +272,10 @@ const ja = {
     premiumValLocations: '最大100か所',
     premiumValAlarm: 'アラーム対応',
     premiumValAds: 'なし',
+    startTrialButton: '7日間無料お試しを開始',
+    startTrialConfirm: '7日間、プレミアムプランの全機能を無料でお試しいただけます。トライアルは1回限りです。開始しますか？',
+    trialActive: 'お試し中 — あと{{days}}日',
+    trialExpiredMsg: 'トライアル期間が終了しました。ご利用ありがとうございました。',
   },
   // ── 上限エラー ────────────────────────────────────────────────────
   errors: {

@@ -21,7 +21,7 @@ import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import TutorialTooltip from '../components/TutorialTooltip';
 import { useTranslation } from 'react-i18next';
-import { useMemoStore, useSettingsStore } from '../store/memoStore';
+import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useTutorial } from '../hooks/useTutorial';
 import { RootStackParamList, ShoppingItem, MemoLocation, SharePresence } from '../types';
 import { getDeviceId } from '../utils/deviceId';
@@ -51,7 +51,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const setMemoShareId = useMemoStore(s => s.setMemoShareId);
   const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
   const checkAllItems = useMemoStore(s => s.checkAllItems);
-  const isPremium = useSettingsStore(s => s.isPremium);
+  const isPremium = useSettingsStore(selectEffectivePremium);
   const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
   const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
   const seenTutorials = useSettingsStore(s => s.seenTutorials);
@@ -82,6 +82,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [isSharingLoading, setIsSharingLoading] = useState(false);
   const [isSyncLoading, setIsSyncLoading] = useState(false);
   const [hideChecked, setHideChecked] = useState(false);
+  const [locationsExpanded, setLocationsExpanded] = useState(false);
   const deviceId = getDeviceId();
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
@@ -404,35 +405,56 @@ export default function MemoDetailScreen(): React.JSX.Element {
             {t('memoDetail.locationEmpty')}
           </Text>
         ) : (
-          memo.locations.map(loc => (
-            <View key={loc.id} style={styles.locChip}>
-              <View style={styles.locChipBody}>
-                <Text style={styles.locChipLabel}>{loc.label}</Text>
-                {loc.address ? (
-                  <Text style={styles.locChipAddress}>{loc.address}</Text>
-                ) : null}
-                <Text style={styles.locChipRadius}>{t('memoDetail.radiusLabel', { radius: loc.radius })}</Text>
+          <>
+            {(locationsExpanded || memo.locations.length <= 3
+              ? memo.locations
+              : memo.locations.slice(0, 3)
+            ).map(loc => (
+              <View key={loc.id} style={styles.locChip}>
+                <View style={styles.locChipBody}>
+                  <Text style={styles.locChipLabel}>{loc.label}</Text>
+                  {loc.address ? (
+                    <Text style={styles.locChipAddress}>{loc.address}</Text>
+                  ) : null}
+                  <Text style={styles.locChipRadius}>{t('memoDetail.radiusLabel', { radius: loc.radius })}</Text>
+                </View>
+                {memo.isOwner !== false ? (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('LocationPicker', { memoId, existingLocationId: loc.id })}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={styles.locChipAction}>
+                      <Icon name="edit" size={18} color="#4CAF50" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteLocation(loc)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={styles.locChipAction}>
+                      <Icon name="close" size={18} color="#9E9E9E" />
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <Icon name="lock" size={16} color="#BDBDBD" style={styles.locChipAction} />
+                )}
               </View>
-              {memo.isOwner !== false ? (
-                <>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('LocationPicker', { memoId, existingLocationId: loc.id })}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={styles.locChipAction}>
-                    <Icon name="edit" size={18} color="#4CAF50" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteLocation(loc)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={styles.locChipAction}>
-                    <Icon name="close" size={18} color="#9E9E9E" />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Icon name="lock" size={16} color="#BDBDBD" style={styles.locChipAction} />
-              )}
-            </View>
-          ))
+            ))}
+            {memo.locations.length > 3 && (
+              <TouchableOpacity
+                onPress={() => setLocationsExpanded(v => !v)}
+                style={styles.expandLocBtn}>
+                <Text style={styles.expandLocText}>
+                  {locationsExpanded
+                    ? t('memoDetail.collapseLocations')
+                    : t('memoDetail.showMoreLocations', { count: memo.locations.length - 3 })}
+                </Text>
+                <Icon
+                  name={locationsExpanded ? 'expand-less' : 'expand-more'}
+                  size={18}
+                  color="#757575"
+                />
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
 
@@ -686,6 +708,14 @@ const styles = StyleSheet.create({
   locChipAddress: { fontSize: 12, color: '#616161', marginTop: 2 },
   locChipRadius: { fontSize: 12, color: '#4CAF50', marginTop: 2 },
   locChipAction: { marginLeft: 8 },
+  expandLocBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  expandLocText: { fontSize: 13, color: '#757575' },
   roleBadge: {
     alignSelf: 'flex-start' as const,
     borderRadius: 12,

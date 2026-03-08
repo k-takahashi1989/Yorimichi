@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-import { useSettingsStore } from '../store/memoStore';
+import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
+import { isTrialActive, trialDaysRemaining } from '../utils/trialUtils';
 
 // ── 比較テーブルの行データ ──────────────────────────────────
 const FEATURE_ROWS: Array<{
@@ -28,13 +29,31 @@ const FEATURE_ROWS: Array<{
 
 export default function PremiumScreen(): React.JSX.Element {
   const { t } = useTranslation();
-  const isPremium = useSettingsStore(s => s.isPremium);
+  const isPremium = useSettingsStore(selectEffectivePremium);
+  const isRealPremium = useSettingsStore(s => s.isPremium);
   const setIsPremium = useSettingsStore(s => s.setIsPremium);
+  const trialStartDate = useSettingsStore(s => s.trialStartDate);
+  const hasUsedTrial = useSettingsStore(s => s.hasUsedTrial);
+  const startTrial = useSettingsStore(s => s.startTrial);
+
+  const isTrialCurrentlyActive = isTrialActive(trialStartDate);
+  const daysLeft = trialDaysRemaining(trialStartDate);
 
   const handleUpgrade = () => {
     Alert.alert(
       t('premium.upgradeButton'),
       t('premium.comingSoon'),
+    );
+  };
+
+  const handleStartTrial = () => {
+    Alert.alert(
+      t('premium.startTrialButton'),
+      t('premium.startTrialConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.confirm'), onPress: () => startTrial() },
+      ],
     );
   };
 
@@ -111,30 +130,54 @@ export default function PremiumScreen(): React.JSX.Element {
         </View>
       </View>
 
-      {/* CTAボタン */}
+      {/* CTAボタン / お試しセクション */}
       {isPremium ? (
         <View style={styles.alreadyPremiumRow}>
           <Icon name="check-circle" size={20} color="#4CAF50" />
           <Text style={styles.alreadyPremiumText}>{t('premium.alreadyPremium')}</Text>
         </View>
       ) : (
-        <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade}>
-          <Icon name="star" size={20} color="#FFF" />
-          <Text style={styles.upgradeBtnText}>
-            {t('premium.upgradeButton')}
-            {'  '}
-            <Text style={styles.comingSoonText}>{t('premium.comingSoon')}</Text>
-          </Text>
-        </TouchableOpacity>
+        <>
+          {/* プレミアムお試し（課金プレミアムでない場合のみ表示） */}
+          {!isRealPremium && (
+            <View style={styles.trialContainer}>
+              {!hasUsedTrial ? (
+                <TouchableOpacity style={styles.trialBtn} onPress={handleStartTrial}>
+                  <Icon name="card-giftcard" size={20} color="#FFF" />
+                  <Text style={styles.trialBtnText}>{t('premium.startTrialButton')}</Text>
+                </TouchableOpacity>
+              ) : isTrialCurrentlyActive ? (
+                <View style={styles.trialActiveBadge}>
+                  <Icon name="timer" size={16} color="#FFA000" />
+                  <Text style={styles.trialActiveText}>
+                    {t('premium.trialActive', { days: daysLeft })}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.trialExpiredText}>{t('premium.trialExpiredMsg')}</Text>
+              )}
+            </View>
+          )}
+
+          {/* アップグレードCTA */}
+          <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade}>
+            <Icon name="star" size={20} color="#FFF" />
+            <Text style={styles.upgradeBtnText}>
+              {t('premium.upgradeButton')}
+              {'  '}
+              <Text style={styles.comingSoonText}>{t('premium.comingSoon')}</Text>
+            </Text>
+          </TouchableOpacity>
+        </>
       )}
 
       {/* DEV用トグル（本番ビルドには出ない） */}
       {__DEV__ && (
         <TouchableOpacity
           style={styles.devToggleBtn}
-          onPress={() => setIsPremium(!isPremium)}>
+          onPress={() => setIsPremium(!isRealPremium)}>
           <Text style={styles.devToggleText}>
-            {isPremium ? t('premium.devToggleOn') : t('premium.devToggleOff')}
+            {isRealPremium ? t('premium.devToggleOn') : t('premium.devToggleOff')}
           </Text>
         </TouchableOpacity>
       )}
@@ -250,6 +293,41 @@ const styles = StyleSheet.create({
   },
   upgradeBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
   comingSoonText: { fontSize: 12, fontWeight: '400', color: 'rgba(255,255,255,0.8)' },
+
+  // プレミアムお試し
+  trialContainer: {
+    marginBottom: 12,
+  },
+  trialBtn: {
+    backgroundColor: '#00897B',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+    elevation: 2,
+  },
+  trialBtnText: { fontSize: 15, fontWeight: '700' as const, color: '#FFF' },
+  trialActiveBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 6,
+    paddingVertical: 12,
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  trialActiveText: { fontSize: 14, fontWeight: '600' as const, color: '#E65100' },
+  trialExpiredText: {
+    textAlign: 'center' as const,
+    fontSize: 13,
+    color: '#9E9E9E',
+    paddingVertical: 12,
+  },
 
   // プレミアム済み表示
   alreadyPremiumRow: {
