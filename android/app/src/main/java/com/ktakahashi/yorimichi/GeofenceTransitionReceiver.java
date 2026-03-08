@@ -30,6 +30,8 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
 
     private static final String CHANNEL_ID = "shopping-reminder";
     private static final String CHANNEL_NAME = "Yorimichi";
+    private static final String CHANNEL_ID_SILENT = "shopping-reminder-silent";
+    private static final String CHANNEL_NAME_SILENT = "Yorimichi サイレント";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -59,7 +61,8 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
                         id,
                         meta.optString("memoId", ""),
                         meta.optString("notifTitle", "Yorimichi"),
-                        meta.optString("notifBody", "")
+                        meta.optString("notifBody", ""),
+                        meta.optString("notificationMode", "push")
                 );
             } catch (Exception ignored) {
                 // メタデータが破損している場合は無視
@@ -68,17 +71,28 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
     }
 
     private void sendNotification(Context context, String geofenceId, String memoId,
-                                  String notifTitle, String notifBody) {
+                                  String notifTitle, String notifBody, String notificationMode) {
         NotificationManager manager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
 
+        boolean isSilent = "silent".equals(notificationMode);
+        String channelId = isSilent ? CHANNEL_ID_SILENT : CHANNEL_ID;
+
         // Android O+ ではチャンネルが必須（notifee が作成済みなら no-op）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-            channel.enableVibration(true);
-            manager.createNotificationChannel(channel);
+            if (isSilent) {
+                NotificationChannel silentCh = new NotificationChannel(
+                        CHANNEL_ID_SILENT, CHANNEL_NAME_SILENT, NotificationManager.IMPORTANCE_LOW);
+                silentCh.enableVibration(false);
+                silentCh.setSound(null, null);
+                manager.createNotificationChannel(silentCh);
+            } else {
+                NotificationChannel channel = new NotificationChannel(
+                        CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+                channel.enableVibration(true);
+                manager.createNotificationChannel(channel);
+            }
         }
 
         // タップ時にアプリを開き、memoId を Extra として渡す
@@ -96,15 +110,19 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
         );
 
         androidx.core.app.NotificationCompat.Builder builder =
-                new NotificationCompat.Builder(context, CHANNEL_ID)
+                new NotificationCompat.Builder(context, channelId)
                         .setSmallIcon(getNotificationIcon(context))
                         .setContentTitle(notifTitle)
                         .setContentText(notifBody)
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(notifBody))
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setPriority(isSilent ? NotificationCompat.PRIORITY_LOW : NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true)
                         .setContentIntent(pi)
                         .setColor(0xFF4CAF50);
+
+        if (isSilent) {
+            builder.setSilent(true);
+        }
 
         // 通知 ID: geofenceId のハッシュ（同一場所の重複通知を防ぐ）
         manager.notify(("arrival-" + geofenceId).hashCode(), builder.build());

@@ -195,6 +195,15 @@ const en: Translation = {
     arrivalTitle: '📍 Approaching {{label}}',
     arrivalBody: '"{{title}}" checklist ({{count}} items) — tap to review',
     arrivalBodyBig: '"{{title}}" checklist ({{count}} items)\n\nTap to open the memo',
+    modeTitle: 'Notification Mode',
+    modeSilent: 'Silent',
+    modeSilentDesc: 'No sound or vibration, banner only',
+    modePush: 'Push (Default)',
+    modePushDesc: 'Sound and vibration',
+    modeAlarm: 'Alarm',
+    modeAlarmDesc: 'Screen wake-up, loud alert',
+    modeAlarmComingSoon: 'Alarm notifications are coming soon.',
+    comingSoon: '(Coming soon)',
   },
 
   share: {
