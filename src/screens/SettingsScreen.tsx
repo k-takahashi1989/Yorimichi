@@ -414,6 +414,13 @@ export default function SettingsScreen(): React.JSX.Element {
           <Text style={styles.privacyPolicyText}>{t('settings.appInfo.privacyPolicy')}</Text>
           <Icon name="open-in-new" size={14} color="#9E9E9E" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.privacyPolicyRow}
+          onPress={() => Linking.openURL('https://k-takahashi1989.github.io/Yorimichi/')}>
+          <Icon name="mail-outline" size={16} color="#4CAF50" />
+          <Text style={styles.privacyPolicyText}>{t('settings.appInfo.contact')}</Text>
+          <Icon name="open-in-new" size={14} color="#9E9E9E" />
+        </TouchableOpacity>
       </View>
       <AdBanner />
 

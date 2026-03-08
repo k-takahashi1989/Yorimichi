@@ -127,6 +127,7 @@ const ja = {
       version: 'バージョン: {{version}}',
       name: 'Yorimichi',
       privacyPolicy: 'プライバシーポリシー',
+      contact: 'お問い合わせ',
     },
     alertFineLocation: {
       title: '位置情報の許可が必要です',
