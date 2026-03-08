@@ -19,7 +19,6 @@ export interface SettingsState {
   seenTutorials: string[];             // 表示済みチュートリアルのキー
   // 共有機能
   isPremium: boolean;                  // 課金プレミアムフラグ
-  sharedMemoIds: string[];             // 送信済み共有メモの shareId 一覧
   // 場所検索履歴
   recentPlaces: RecentPlace[];         // 最大5件
   // 7日間お試しトライアル
@@ -35,8 +34,6 @@ export interface SettingsState {
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
   markTutorialSeen: (key: string) => void;
-  addSharedMemoId: (shareId: string) => void;
-  removeSharedMemoId: (shareId: string) => void;
   addRecentPlace: (place: RecentPlace) => void;
   setIsPremium: (value: boolean) => void;
   startTrial: () => void;
@@ -52,7 +49,6 @@ export const useSettingsStore = create<SettingsState>()(
       totalMemoRegistrations: 0,
       seenTutorials: [],
       isPremium: false,
-      sharedMemoIds: [],
       recentPlaces: [],
       trialStartDate: null,
       hasUsedTrial: false,
@@ -61,16 +57,6 @@ export const useSettingsStore = create<SettingsState>()(
       notifWindowEnd: 22.0,
       couponExpiry: null,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
-      addSharedMemoId: (shareId: string) =>
-        set(state => ({
-          sharedMemoIds: state.sharedMemoIds.includes(shareId)
-            ? state.sharedMemoIds
-            : [...state.sharedMemoIds, shareId],
-        })),
-      removeSharedMemoId: (shareId: string) =>
-        set(state => ({
-          sharedMemoIds: state.sharedMemoIds.filter(id => id !== shareId),
-        })),
       incrementMemoRegistrations: () =>
         set(state => ({ totalMemoRegistrations: state.totalMemoRegistrations + 1 })),
       setMaxRadius: (max: number) => set(state => ({
@@ -119,7 +105,6 @@ export const useSettingsStore = create<SettingsState>()(
           persisted = {
             ...persisted,
             isPremium: true,
-            sharedMemoIds: persisted.sharedMemoIds ?? [],
           };
         }
         if (version <= 3) {

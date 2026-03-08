@@ -52,9 +52,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
   const checkAllItems = useMemoStore(s => s.checkAllItems);
   const isPremium = useSettingsStore(selectEffectivePremium);
-  const sharedMemoIds = useSettingsStore(s => s.sharedMemoIds);
-  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
   const seenTutorials = useSettingsStore(s => s.seenTutorials);
+  // 自分がオーナーとして共有中のメモ数（memos ストアを唯一の真実源とする）
+  const ownedSharedCount = useMemoStore(s => s.memos.filter(m => !!m.shareId && m.isOwner === true).length);
 
   const bellRef = useRef<View>(null);
   const shareRef = useRef<View>(null);
@@ -140,7 +140,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   };
 
   const handleShare = async () => {
-    if (LIMITS_ENABLED && !isPremium && sharedMemoIds.length >= 1 && !memo.shareId) {
+    if (LIMITS_ENABLED && !isPremium && ownedSharedCount >= 1 && !memo.shareId) {
       Alert.alert(t('share.limitReached'), t('share.limitReachedMsg'));
       return;
     }
@@ -149,7 +149,6 @@ export default function MemoDetailScreen(): React.JSX.Element {
       const shareId = await uploadSharedMemo(memo, deviceId);
       if (!memo.shareId) {
         setMemoShareId(memoId, shareId, true);
-        addSharedMemoId(shareId);
       }
       await Share.share({
         message: `${t('share.shareMessage')}\n\n${t('share.shareCodeLabel')}: ${shareId}\n\n${t('share.shareCodeHint')}`,

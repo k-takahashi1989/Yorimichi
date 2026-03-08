@@ -32,7 +32,6 @@ export default function MemoListScreen(): React.JSX.Element {
   const deleteMemo = useMemoStore(s => s.deleteMemo);
   const restoreMemo = useMemoStore(s => s.restoreMemo);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
-  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
   const isPremium = useSettingsStore(selectEffectivePremium);
   const insets = useSafeAreaInsets();
 
@@ -71,7 +70,6 @@ export default function MemoListScreen(): React.JSX.Element {
                 { title: doc.title, items: doc.items, locations: doc.locations },
                 code,
               );
-              addSharedMemoId(code);
               setImportModalVisible(false);
               setImportCode('');
               navigation.navigate('MemoDetail', { memoId: memo.id });
@@ -93,7 +91,7 @@ export default function MemoListScreen(): React.JSX.Element {
     } finally {
       setImportLoading(false);
     }
-  }, [importCode, importSharedMemo, addSharedMemoId, navigation, t]);
+  }, [importCode, importSharedMemo, navigation, t]);
 
   const handleAddNewMemo = useCallback(() => {
     if (LIMITS_ENABLED && !isPremium && memos.length >= getMemosLimit(isPremium)) {
