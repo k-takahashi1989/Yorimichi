@@ -220,6 +220,8 @@ const en: Translation = {
     importByCodeInvalid: 'Invalid share code',
     syncButton: 'Sync',
     syncSuccess: 'Memo updated to latest version',
+    roleOwner: 'Owner',
+    roleCollaborator: 'Collaborator',
   },
   // ── Premium plan ────────────────────────────────────────
   premium: {
