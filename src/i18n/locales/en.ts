@@ -258,7 +258,7 @@ const en: Translation = {
     freeValAlarm: 'Silent / Push',
     freeValAds: 'Yes',
     premiumVal: 'Unlimited',
-    premiumValLocations: 'Up to 100\n(app-wide limit)',
+    premiumValLocations: 'Up to 100',
     premiumValAlarm: 'Alarm available',
     premiumValAds: 'None',
   },

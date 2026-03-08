@@ -142,8 +142,8 @@ export default function PremiumScreen(): React.JSX.Element {
   );
 }
 
-const COL_FREE_WIDTH = 80;
-const COL_PREMIUM_WIDTH = 88;
+const COL_FREE_WIDTH = 90;
+const COL_PREMIUM_WIDTH = 90;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5' },
