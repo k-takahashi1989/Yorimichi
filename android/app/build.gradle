@@ -2,10 +2,10 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
-// react-native-config: .env から環墁E��数を読み込む
+// react-native-config: .env 縺九ｉ迺ｰ蠅・・ｽ・ｽ謨ｰ繧定ｪｭ縺ｿ霎ｼ繧
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
-// react-native-vector-icons: フォントを assets に自動コピ�E
+// react-native-vector-icons: 繝輔か繝ｳ繝医ｒ assets 縺ｫ閾ｪ蜍輔さ繝費ｿｽE
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
 /**
@@ -51,7 +51,7 @@ react {
 
     /* Hermes Commands */
     //   The hermes compiler command to run. By default it is 'hermesc'
-    //   Windows: WSL 経由で linux64-bin/hermesc を呼び出すラチE��ーを使用
+    //   Windows: WSL 邨檎罰縺ｧ linux64-bin/hermesc 繧貞他縺ｳ蜃ｺ縺吶Λ繝・・ｽ・ｽ繝ｼ繧剃ｽｿ逕ｨ
     hermesCommand = "node ${rootDir}/../scripts/hermesc-win.js"
     //
     //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
@@ -89,15 +89,15 @@ android {
         applicationId "com.ktakahashi.yorimichi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
-        versionName "1.0.9"
-        // .env の GOOGLE_MAPS_API_KEY めEmanifestPlaceholders 経由で注入
+        versionCode 11
+        versionName "1.0.10"
+        // .env 縺ｮ GOOGLE_MAPS_API_KEY 繧・manifestPlaceholders 邨檎罰縺ｧ豕ｨ蜈･
         manifestPlaceholders = [
             GOOGLE_MAPS_API_KEY: project.env.get("GOOGLE_MAPS_API_KEY") ?: "",
             ADMOB_APP_ID: project.env.get("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"
         ]
 
-        // ABI Filter は debug で下記に設定！Eelease は全アーキチE��チャ�E�E
+        // ABI Filter 縺ｯ debug 縺ｧ荳玖ｨ倥↓險ｭ螳夲ｼ・elease 縺ｯ蜈ｨ繧｢繝ｼ繧ｭ繝・・ｽ・ｽ繝√Ε・ｽE・ｽE
     }
     signingConfigs {
         debug {
@@ -106,8 +106,8 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        // リリース署吁E keystore.properties から読み込み
-        // keystore.properties は Git 管琁E��にすること
+        // 繝ｪ繝ｪ繝ｼ繧ｹ鄂ｲ蜷・ keystore.properties 縺九ｉ隱ｭ縺ｿ霎ｼ縺ｿ
+        // keystore.properties 縺ｯ Git 邂｡逅・・ｽ・ｽ縺ｫ縺吶ｋ縺薙→
         release {
             def keystorePropertiesFile = rootProject.file('keystore.properties')
             if (keystorePropertiesFile.exists()) {
@@ -118,7 +118,7 @@ android {
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
             } else {
-                // keystore.properties がなぁE��合�E debug キーにフォールバック
+                // keystore.properties 縺後↑縺・・ｽ・ｽ蜷茨ｿｽE debug 繧ｭ繝ｼ縺ｫ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ
                 storeFile file('debug.keystore')
                 storePassword 'android'
                 keyAlias 'androiddebugkey'
@@ -129,9 +129,9 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            // Metro (cleartext HTTP) の接続を許可
+            // Metro (cleartext HTTP) 縺ｮ謗･邯壹ｒ險ｱ蜿ｯ
             manifestPlaceholders += [usesCleartextTraffic: "true"]
-            // チE��チE��は arm64 のみでビルド高速化
+            // 繝・・ｽ・ｽ繝・・ｽ・ｽ縺ｯ arm64 縺ｮ縺ｿ縺ｧ繝薙Ν繝蛾ｫ倬溷喧
             ndk {
                 abiFilters "arm64-v8a"
             }
@@ -149,7 +149,7 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
-    // Google Maps SDK�E�EapsInitializer.Renderer.LEGACY 持E���Eため明示皁E��追加�E�E
+    // Google Maps SDK・ｽE・ｽEapsInitializer.Renderer.LEGACY 謖・・ｽ・ｽ・ｽE縺溘ａ譏守､ｺ逧・・ｽ・ｽ霑ｽ蜉・ｽE・ｽE
     implementation "com.google.android.gms:play-services-maps:19.1.0"
     implementation "com.google.android.gms:play-services-location:21.3.0"
 
