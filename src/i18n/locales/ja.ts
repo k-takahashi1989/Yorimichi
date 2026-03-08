@@ -18,6 +18,7 @@ const ja = {
     noItems: 'アイテムなし',
     emptyText: 'メモがありません',
     emptySubText: '右上の + ボタンで追加しましょう',
+    memoCount: 'メモ {{current}}/{{max}}',
     deleteSwipe: '削除',
     deletedSnack: '「{{title}}」を削除しました',
     completed: '完了',

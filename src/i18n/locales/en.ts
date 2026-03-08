@@ -18,6 +18,7 @@ const en: Translation = {
     noItems: 'No items',
     emptyText: 'No memos yet',
     emptySubText: 'Tap + to add a memo',
+    memoCount: 'Memos {{current}}/{{max}}',
     deleteSwipe: 'Delete',
     deletedSnack: '"{{title}}" deleted',
     completed: 'DONE',
