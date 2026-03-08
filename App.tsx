@@ -9,7 +9,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { createNotificationChannel } from './src/services/notificationService';
-import { startGeofenceMonitoring } from './src/services/geofenceService';
+import { startGeofenceMonitoring, setNotifWindowNative } from './src/services/geofenceService';
+import { useSettingsStore } from './src/store/memoStore';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import './src/i18n'; // i18n 初期化
 
@@ -19,6 +20,12 @@ function App(): React.JSX.Element {
   useEffect(() => {
     // 通知チャンネルの作成 (Android 必須)
     createNotificationChannel();
+
+    // 起動時: notifWindow 設定を Android SharedPreferences に同期
+    // （アプリ再インストール後のズレや stale 値を防ぐ）
+    const { notifWindowEnabled, notifWindowStart, notifWindowEnd } =
+      useSettingsStore.getState();
+    setNotifWindowNative(notifWindowEnabled, notifWindowStart, notifWindowEnd);
 
     // 位置情報権限チェック → 必要なら起動時にリクエスト
     const initPermissions = async () => {
