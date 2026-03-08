@@ -36,6 +36,12 @@ export default function MemoListScreen(): React.JSX.Element {
   const isPremium = useSettingsStore(s => s.isPremium);
   const insets = useSafeAreaInsets();
 
+  const memosLimit = getMemosLimit(isPremium);
+  const memosRatio = Math.min(memos.length / memosLimit, 1);
+  const memosAtLimit = memos.length >= memosLimit;
+  const memosNearLimit = memos.length >= memosLimit - 1;
+  const limitBarColor = memosAtLimit ? '#EF5350' : memosNearLimit ? '#FFB300' : '#66BB6A';
+
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importCode, setImportCode] = useState('');
   const [importLoading, setImportLoading] = useState(false);
@@ -172,23 +178,24 @@ export default function MemoListScreen(): React.JSX.Element {
             onPress={() => { setImportCode(''); setImportModalVisible(true); }}>
             <Icon name="group-add" size={26} color="#fff" />
           </TouchableOpacity>
-          <View style={styles.memoCounterWrap}>
-            {LIMITS_ENABLED && !isPremium && (
-              <Text style={[
-                styles.memoCounterText,
-                memos.length >= getMemosLimit(isPremium) && styles.memoCounterFull,
-              ]}>
-                {memos.length} / {FREE_LIMITS.memos}
-              </Text>
-            )}
-            <TouchableOpacity
-              style={styles.addBtn}
-              onPress={handleAddNewMemo}>
-              <Icon name="add" size={28} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={handleAddNewMemo}>
+            <Icon name="add" size={28} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
+
+      {LIMITS_ENABLED && !isPremium && (
+        <View style={styles.limitStrip}>
+          <View style={styles.limitBarTrack}>
+            <View style={[styles.limitBarFill, { width: `${Math.round(memosRatio * 100)}%` as `${number}%`, backgroundColor: limitBarColor }]} />
+          </View>
+          <Text style={[styles.limitStripText, memosAtLimit && styles.limitStripFull]}>
+            {t('memoList.memoCount', { current: memos.length, max: memosLimit })}
+          </Text>
+        </View>
+      )}
 
       {memos.length === 0 ? (
         <View style={styles.empty}>
@@ -365,7 +372,32 @@ const styles = StyleSheet.create({
   modalBtnConfirm: { backgroundColor: '#4CAF50' },
   modalBtnConfirmText: { color: '#fff', fontWeight: '600' },
   modalBtnDisabled: { opacity: 0.5 },
-  memoCounterWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  memoCounterText: { fontSize: 12, color: 'rgba(255,255,255,0.9)' },
-  memoCounterFull: { color: '#FFE082', fontWeight: '600' as const },
+  limitStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    gap: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E0E0E0',
+  },
+  limitBarTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  limitBarFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  limitStripText: {
+    fontSize: 12,
+    color: '#757575',
+    minWidth: 54,
+    textAlign: 'right',
+  },
+  limitStripFull: { color: '#EF5350', fontWeight: '600' as const },
 });
