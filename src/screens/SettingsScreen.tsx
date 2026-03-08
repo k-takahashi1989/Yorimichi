@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { changeAndPersistLanguage } from '../i18n';
 import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
+import { isTrialActive, trialDaysRemaining } from '../utils/trialUtils';
 import {
   startGeofenceMonitoring,
   stopGeofenceMonitoring,
@@ -76,6 +77,9 @@ export default function SettingsScreen(): React.JSX.Element {
   const notifWindowEnd     = useSettingsStore(s => s.notifWindowEnd);
   const setNotifWindow     = useSettingsStore(s => s.setNotifWindow);
   const isPremium          = useSettingsStore(selectEffectivePremium);
+  const trialStartDate     = useSettingsStore(s => s.trialStartDate);
+  const isTrialOn          = isTrialActive(trialStartDate);
+  const daysLeft           = trialDaysRemaining(trialStartDate);
 
   const [perms, setPerms] = useState<{
     fine: PermStatus;
@@ -388,7 +392,11 @@ export default function SettingsScreen(): React.JSX.Element {
           <Text style={styles.premiumCardIcon}>✨</Text>
           <View>
             <Text style={styles.premiumCardTitle}>{t('premium.screenTitle')}</Text>
-            <Text style={styles.premiumCardSub}>{t('premium.upgradeButton')} {t('premium.comingSoon')}</Text>
+            <Text style={styles.premiumCardSub}>
+              {isTrialOn
+                ? t('premium.trialActive', { days: daysLeft })
+                : `${t('premium.upgradeButton')} ${t('premium.comingSoon')}`}
+            </Text>
           </View>
         </View>
         <Icon name="chevron-right" size={24} color="#FFF" />
