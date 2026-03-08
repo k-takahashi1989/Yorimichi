@@ -302,8 +302,8 @@ export const useMemoStore = create<MemoState>()(
       // ── 場所 ──────────────────────────────────────────────
       addLocation: (memoId, locationData): MemoLocation | null => {
         const memo = get().getMemoById(memoId);
-        const { isPremium } = useSettingsStore.getState();
-        const maxLocations = getLocationsLimit(isPremium);
+        const { isPremium, trialStartDate } = useSettingsStore.getState();
+        const maxLocations = getLocationsLimit(isPremium || isTrialActive(trialStartDate));
         if (!memo || memo.locations.length >= maxLocations) return null;
 
         const location: MemoLocation = { id: generateId(), ...locationData };
