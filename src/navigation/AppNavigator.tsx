@@ -72,7 +72,6 @@ export function AppNavigator(): React.JSX.Element {
   const { t } = useTranslation();
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
-  const addSharedMemoId = useSettingsStore(s => s.addSharedMemoId);
 
   // 共有リンクを処理するハンドラ
   const handleSharedUrl = async (url: string | null) => {
@@ -100,7 +99,6 @@ export function AppNavigator(): React.JSX.Element {
                 { title: doc.title, items: doc.items, locations: doc.locations },
                 shareId,
               );
-              addSharedMemoId(shareId);
               // navigationRef がまだ準備できていない場合は少し待つ
               setTimeout(() => {
                 navigationRef.current?.navigate('MemoDetail', { memoId: memo.id });

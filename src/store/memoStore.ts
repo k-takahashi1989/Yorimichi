@@ -104,7 +104,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (version <= 2) {
           persisted = {
             ...persisted,
-            isPremium: true,
+            isPremium: persisted.isPremium ?? false,
           };
         }
         if (version <= 3) {
