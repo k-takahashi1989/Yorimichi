@@ -148,6 +148,8 @@ describe('useMemoStore - Location CRUD', () => {
   };
 
   beforeEach(() => {
+    // isPremium:true でプレミアム上限（10か所）でテストする
+    useSettingsStore.setState({ isPremium: true } as any);
     const memo = useMemoStore.getState().addMemo('場所テスト');
     memoId = memo.id;
   });
@@ -168,7 +170,7 @@ describe('useMemoStore - Location CRUD', () => {
     expect(memo?.locations[0].label).toBe('スーパー三和');
   });
 
-  it('最大3か所以上でも追加できる（LIMITS_ENABLED=false 時は上限10）', () => {
+  it('最大3か所以上でも追加できる（isPremium=true 時は上限10）', () => {
     useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所1' });
     useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所2' });
     const result3 = useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: '場所3' });
@@ -179,7 +181,7 @@ describe('useMemoStore - Location CRUD', () => {
   });
 
   it('上限（PREMIUM_LIMITS.locationsPerMemo=10か所）を超えると null を返す', () => {
-    // LIMITS_ENABLED=false → getLocationsLimit は PREMIUM_LIMITS.locationsPerMemo = 10 を返す
+    // isPremium=true → getLocationsLimit は PREMIUM_LIMITS.locationsPerMemo = 10 を返す
     for (let i = 1; i <= 10; i++) {
       useMemoStore.getState().addLocation(memoId, { ...sampleLocation, label: `場所${i}` });
     }

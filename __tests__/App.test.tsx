@@ -43,6 +43,7 @@ jest.mock('../src/services/geofenceService', () => ({
   startGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),
   stopGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),
   clearMemoFromCache: jest.fn(),
+  setNotifWindowNative: jest.fn(),
 }));
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
