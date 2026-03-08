@@ -72,7 +72,10 @@ export default function PremiumScreen(): React.JSX.Element {
 
   const handleRedeemCoupon = async () => {
     const trimmed = couponCode.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      Alert.alert(t('premium.couponErrorTitle'), t('premium.couponEmpty'));
+      return;
+    }
     setCouponLoading(true);
     const result = await redeemCoupon(trimmed);
     setCouponLoading(false);
@@ -84,7 +87,11 @@ export default function PremiumScreen(): React.JSX.Element {
     } else if (result === 'network') {
       Alert.alert(t('premium.couponErrorTitle'), t('premium.couponNetworkError'));
     } else {
-      Alert.alert(t('premium.couponErrorTitle'), t('premium.couponInvalid'));
+      const code = trimmed.toUpperCase();
+      Alert.alert(
+        t('premium.couponErrorTitle'),
+        `${t('premium.couponInvalid')}\n\n${t('premium.couponInvalidDetail', { code })}`,
+      );
     }
   };
 

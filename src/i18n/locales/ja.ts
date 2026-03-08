@@ -295,8 +295,10 @@ const ja = {
     couponSuccess: 'クーポン適用完了',
     couponSuccessMsg: 'プレミアム機能が有効になりました。1年間お楽しみください。',
     couponErrorTitle: 'クーポンエラー',
-    couponInvalid: 'このクーポンコードは無効です。',
-    couponAlreadyUsed: 'このクーポンコードはすでに使用されています。',
+    couponEmpty: 'コードを入力してください。',
+    couponInvalid: '有効なコードとして見つかりませんでした。スペル・大文字小文字をご確認ください。',
+    couponInvalidDetail: '入力されたコード: {{code}}',
+    couponAlreadyUsed: 'このコードはすでに使用済みです。\n各コードは1台の端末のみで1回だけ利用できます。',
     couponNetworkError: '通信エラーが発生しました。時間をおいて再度お試しください。',
   },
   // ── 上限エラー ────────────────────────────────────────────────────

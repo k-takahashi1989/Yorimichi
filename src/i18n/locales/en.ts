@@ -286,8 +286,10 @@ const en: Translation = {
     couponSuccess: 'Coupon applied!',
     couponSuccessMsg: 'Premium features are now unlocked. Enjoy for 1 year!',
     couponErrorTitle: 'Coupon error',
-    couponInvalid: 'This coupon code is invalid.',
-    couponAlreadyUsed: 'This coupon code has already been used.',
+    couponEmpty: 'Please enter a coupon code.',
+    couponInvalid: 'Code not found. Please check for typos or incorrect capitalization.',
+    couponInvalidDetail: 'You entered: {{code}}',
+    couponAlreadyUsed: 'This code has already been used.\nEach code is valid for one device only.',
     couponNetworkError: 'A network error occurred. Please try again later.',
   },
   errors: {
