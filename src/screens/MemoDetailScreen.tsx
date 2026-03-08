@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Modal,
   Share,
   ActivityIndicator,
   BackHandler,
@@ -75,6 +76,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
   const [allCheckedSnackbarVisible, setAllCheckedSnackbarVisible] = useState(false);
+  const [notifModeModalVisible, setNotifModeModalVisible] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(isGeofencingActive());
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
@@ -292,10 +294,15 @@ export default function MemoDetailScreen(): React.JSX.Element {
         <View ref={bellRef} collapsable={false}>
           <TouchableOpacity
             onPress={handleToggleNotification}
+            onLongPress={() => memo.notificationEnabled && setNotifModeModalVisible(true)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.headerIcon}>
             <Icon
-              name={memo.notificationEnabled ? 'notifications' : 'notifications-off'}
+              name={
+                !memo.notificationEnabled ? 'notifications-off'
+                : memo.notificationMode === 'silent' ? 'notifications-none'
+                : 'notifications'
+              }
               size={22}
               color={
                 !memo.notificationEnabled ? '#9E9E9E'
@@ -558,6 +565,56 @@ export default function MemoDetailScreen(): React.JSX.Element {
         onDismiss={() => setAllCheckedSnackbarVisible(false)}
         duration={5000}
       />
+      <Modal
+        visible={notifModeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNotifModeModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.notifModalOverlay}
+          activeOpacity={1}
+          onPress={() => setNotifModeModalVisible(false)}>
+          <View style={styles.notifModeCard}>
+            <Text style={styles.notifModeTitle}>{t('notification.modeTitle')}</Text>
+            {(
+              [
+                { mode: 'silent', icon: '🔕', label: t('notification.modeSilent'), desc: t('notification.modeSilentDesc'), disabled: false },
+                { mode: 'push',   icon: '🔔', label: t('notification.modePush'),   desc: t('notification.modePushDesc'),   disabled: false },
+                { mode: 'alarm',  icon: '⏰', label: t('notification.modeAlarm'),  desc: t('notification.modeAlarmDesc'),  disabled: true  },
+              ] as Array<{ mode: 'silent' | 'push' | 'alarm'; icon: string; label: string; desc: string; disabled: boolean }>
+            ).map(({ mode, icon, label, desc, disabled }) => {
+              const isSelected = (memo.notificationMode ?? 'push') === mode;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.notifModeRow, isSelected && styles.notifModeRowSelected]}
+                  onPress={() => {
+                    if (disabled) {
+                      Alert.alert(label, t('notification.modeAlarmComingSoon'));
+                      return;
+                    }
+                    updateMemo(memoId, { notificationMode: mode });
+                    setNotifModeModalVisible(false);
+                  }}>
+                  <Text style={styles.notifModeEmoji}>{icon}</Text>
+                  <View style={styles.notifModeTextWrap}>
+                    <View style={styles.notifModeNameRow}>
+                      <Text style={[styles.notifModeName, disabled && styles.notifModeNameDisabled]}>
+                        {label}
+                      </Text>
+                      {disabled && (
+                        <Text style={styles.notifModeComingSoon}>{t('notification.comingSoon')}</Text>
+                      )}
+                    </View>
+                    <Text style={styles.notifModeDesc}>{desc}</Text>
+                  </View>
+                  {isSelected && !disabled && <Icon name="check-circle" size={20} color="#4CAF50" />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -652,4 +709,44 @@ const styles = StyleSheet.create({
   itemText: { fontSize: 15, color: '#212121', flex: 1 },
   itemChecked: { color: '#9E9E9E', textDecorationLine: 'line-through' },
   itemDate: { fontSize: 11, color: '#9E9E9E', marginLeft: 4 },
+  notifModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  notifModeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  notifModeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    color: '#212121',
+    marginBottom: 16,
+  },
+  notifModeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 12,
+  },
+  notifModeRowSelected: { backgroundColor: '#E8F5E9' },
+  notifModeEmoji: { fontSize: 22, width: 32, textAlign: 'center' as const },
+  notifModeTextWrap: { flex: 1 },
+  notifModeNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  notifModeName: { fontSize: 15, fontWeight: '600' as const, color: '#212121' },
+  notifModeNameDisabled: { color: '#9E9E9E' },
+  notifModeDesc: { fontSize: 12, color: '#757575', marginTop: 2 },
+  notifModeComingSoon: { fontSize: 11, color: '#FF9800', fontWeight: '500' as const },
 });

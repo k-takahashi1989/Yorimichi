@@ -204,6 +204,15 @@ const ja = {
     arrivalTitle: '📍 {{label}} に近づいています',
     arrivalBody: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう',
     arrivalBodyBig: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう\n\nタップしてメモを開く',
+    modeTitle: '通知モード',
+    modeSilent: 'サイレント',
+    modeSilentDesc: '音・バイブなし、通知バーのみ',
+    modePush: '通知（標準）',
+    modePushDesc: 'バイブ・音あり',
+    modeAlarm: 'アラーム',
+    modeAlarmDesc: '画面点灯・大音量',
+    modeAlarmComingSoon: 'アラーム通知は現在準備中です。近日公開予定です。',
+    comingSoon: '（近日公開）',
   },
   // ── 共有機能 ──────────────────────────────────────
   share: {

@@ -50,6 +50,7 @@ interface GeofenceEntry {
   memoId: string;
   notifTitle: string;
   notifBody: string;
+  notificationMode: string;
 }
 
 function buildEntries(memos: Memo[]): GeofenceEntry[] {
@@ -69,6 +70,7 @@ function buildEntries(memos: Memo[]): GeofenceEntry[] {
           title: memo.title,
           count: itemCount,
         }),
+        notificationMode: memo.notificationMode ?? 'push',
       });
     }
   }

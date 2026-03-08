@@ -104,7 +104,7 @@ interface MemoState {
 
   // CRUD
   addMemo: (title: string) => Memo;
-  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations'>>) => void;
+  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations' | 'notificationMode'>>) => void;
   deleteMemo: (id: string) => void;
   restoreMemo: (memo: Memo) => void;
   getMemoById: (id: string) => Memo | undefined;
@@ -155,8 +155,8 @@ export const useMemoStore = create<MemoState>()(
             m.id === id ? { ...m, ...partial, updatedAt: Date.now() } : m,
           ),
         }));
-        // notificationEnabled が変わったときジオフェンスを再同期
-        if ('notificationEnabled' in partial) {
+        // notificationEnabled / notificationMode が変わったときジオフェンスを再同期
+        if ('notificationEnabled' in partial || 'notificationMode' in partial) {
           syncGeofences().catch(() => {});
         }
       },

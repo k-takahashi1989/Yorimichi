@@ -25,6 +25,8 @@ export interface RecentPlace {
   address?: string;
 }
 
+export type NotificationMode = 'silent' | 'push' | 'alarm';
+
 export interface Memo {
   id: string;
   title: string;
@@ -32,6 +34,7 @@ export interface Memo {
   locations: MemoLocation[];   // 最大3か所
   notificationEnabled: boolean;
   autoDisabledNotification?: boolean; // 全チェック時に自動でOFFにした場合 true
+  notificationMode?: NotificationMode; // undefined = 'push' 相当（後方互換）
   createdAt: number;           // Unix タイムスタンプ (ms)
   updatedAt: number;
   // 共有機能
