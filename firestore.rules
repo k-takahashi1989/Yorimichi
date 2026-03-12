@@ -3,11 +3,32 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── 共有メモ ──────────────────────────────────────────────────────────────
+<<<<<<< claude/app-professional-review-ddziU
+    // shareId を知っている認証済みユーザーのみアクセス可能
+=======
     // 認証済みユーザー（匿名含む）のみアクセス可能
+>>>>>>> main
     match /sharedMemos/{shareId} {
       // 読み取り: 認証済みであれば誰でも可（shareId を知っている前提）
       allow read: if request.auth != null;
 
+<<<<<<< claude/app-professional-review-ddziU
+      // 新規作成: 認証済みユーザーのみ。必須フィールドの存在を検証
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['title', 'items', 'ownerDeviceId', 'collaborators', 'updatedAt'])
+        && request.resource.data.collaborators.size() <= 21
+        && request.resource.data.items.size() <= 100;
+
+      // 更新: 認証済みかつ collaborators に含まれるデバイスのみ
+      // ownerDeviceId の書き換えは禁止
+      allow update: if request.auth != null
+        && request.resource.data.ownerDeviceId == resource.data.ownerDeviceId
+        && request.resource.data.collaborators.size() <= 21
+        && request.resource.data.items.size() <= 100;
+
+      // 削除: 認証済みユーザーのみ（将来的に ownerUid ベースに移行予定）
+      // TODO: ownerUid フィールド追加後、resource.data.ownerUid == request.auth.uid に変更
+=======
       // 新規作成: 認証済みユーザーのみ
       allow create: if request.auth != null;
 
@@ -15,6 +36,7 @@ service cloud.firestore {
       allow update: if request.auth != null;
 
       // 削除: 認証済みユーザーのみ（オーナーはアプリ側で制御）
+>>>>>>> main
       allow delete: if request.auth != null;
     }
 
