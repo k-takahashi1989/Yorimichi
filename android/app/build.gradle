@@ -89,7 +89,7 @@ android {
         applicationId "com.ktakahashi.yorimichi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 22
+        versionCode 23
         versionName "1.0.18"
         // .env 縺�E� GOOGLE_MAPS_API_KEY 繧・manifestPlaceholders 邨檎罰縺�E�豕ｨ蜈･
         manifestPlaceholders = [
