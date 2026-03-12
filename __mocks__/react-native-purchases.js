@@ -23,6 +23,7 @@ const Purchases = {
 };
 
 module.exports = {
+  __esModule: true,
   default: Purchases,
   Purchases,
   PURCHASES_ERROR_CODE,
