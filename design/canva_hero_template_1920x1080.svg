@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Yorimichi Hero SVG template (1920x1080). Import into Canva or other editors. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#00AFAF" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#g1)" />
+
+  <!-- Card overlay -->
+  <rect x="80" y="120" width="1160" height="840" rx="28" fill="#FFFFFF" opacity="0.98" />
+
+  <!-- Left text area -->
+  <text id="headline" x="160" y="300" font-family="M PLUS Rounded 1c, Noto Sans JP, sans-serif" font-size="72" font-weight="700" fill="#0B3F3F">買い物、忘れない。</text>
+  <text id="sub" x="160" y="380" font-family="M PLUS Rounded 1c, Noto Sans JP, sans-serif" font-size="28" fill="#234747">位置で届くやさしいリマインドと共有リスト</text>
+
+  <!-- CTA button -->
+  <rect id="cta_bg" x="160" y="440" width="320" height="72" rx="18" fill="#FF8A3D" />
+  <text id="cta" x="320" y="487" font-family="M PLUS Rounded 1c, Noto Sans JP, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="middle">今すぐダウンロード</text>
+
+  <!-- Decorative icons (map pin + checklist) -->
+  <g id="icons" transform="translate(160,520)">
+    <circle cx="34" cy="34" r="32" fill="#00AFAF" opacity="0.12" />
+    <path d="M34 18c-8.8 0-16 7.2-16 16 0 11.7 14.9 25.7 15.4 26.1.4.3 1 .3 1.4 0C35.1 59.7 50 45.7 50 34c0-8.8-7.2-16-16-16z" fill="#00AFAF" opacity="0.2" />
+  </g>
+
+  <!-- Right phone mockup (placeholder for transparent screen) -->
+  <g id="phone_mock" transform="translate(1320,120)">
+    <rect x="0" y="0" width="420" height="840" rx="40" fill="#F6F8F8" stroke="#DDEDED" stroke-width="2"/>
+    <!-- notch / camera area -->
+    <rect x="168" y="12" width="84" height="6" rx="3" fill="#EDEDED" />
+    <!-- screen placeholder (transparent area) -->
+    <rect id="screen_placeholder" x="22" y="40" width="376" height="760" rx="28" fill="#FFFFFF" fill-opacity="0.0" stroke="#AAAAAA" stroke-dasharray="6 6" />
+    <text x="210" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#AAAAAA">スクリーンを差し替えてください</text>
+  </g>
+
+  <!-- Safe zone guides (non-printing hint) -->
+  <rect x="140" y="140" width="1120" height="800" fill="none" stroke="#000000" stroke-opacity="0.06" stroke-width="1" rx="20" />
+
+  <!-- Credits (small) -->
+  <text x="1600" y="1020" font-family="Arial, sans-serif" font-size="12" fill="#234747" opacity="0.5">Yorimichi — Hero template</text>
+</svg>
