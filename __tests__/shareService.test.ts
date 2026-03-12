@@ -23,6 +23,8 @@ beforeEach(() => {
   (authMock as jest.Mock).mockReturnValue({
     currentUser: { uid: 'test-uid' },
     signInAnonymously: jest.fn(),
+    // waitForAuthReady() が onAuthStateChanged を呼ぶため、即時コールバックを返す
+    onAuthStateChanged: jest.fn(cb => { cb({ uid: 'test-uid' }); return () => {}; }),
   });
 });
 

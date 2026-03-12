@@ -33,10 +33,47 @@ function sanitizeLocation(loc: MemoLocation): MemoLocation {
 }
 
 // ── 匿名サインイン（未サインインのとき自動実行）──────────────
-export async function ensureSignedIn(): Promise<void> {
-  if (!auth().currentUser) {
-    await auth().signInAnonymously();
+
+/**
+ * Firebase Auth が起動時の永続化セッション復元を終えるまで待つ Promise。
+ * onAuthStateChanged は初回起動時に必ず 1 回発火する（currentUser が null でも）。
+ * これを待たずに signInAnonymously を呼ぶと、前回セッションの復元と競合して
+ * 起動時クラッシュが起きることがあった。
+ */
+let _authReady: Promise<void> | null = null;
+function waitForAuthReady(): Promise<void> {
+  if (!_authReady) {
+    _authReady = new Promise<void>(resolve => {
+      // let で宣言することで、コールバックが同期的に呼ばれても TDZ エラーを回避
+      let unsubscribe: (() => void) | undefined;
+      const cb = () => {
+        if (unsubscribe) unsubscribe();
+        resolve();
+      };
+      unsubscribe = auth().onAuthStateChanged(cb);
+    });
   }
+  return _authReady;
+}
+
+/**
+ * 同時多発 signInAnonymously を防ぐシングルトン。
+ * 複数箇所が同時に currentUser === null を確認すると全員が
+ * signInAnonymously を呼ぶ競合が発生するため、1 本化する。
+ */
+let _signingIn: Promise<void> | null = null;
+
+export async function ensureSignedIn(): Promise<void> {
+  // Firebase Auth の初期化完了（セッション復元）を待ってから判定する
+  await waitForAuthReady();
+  if (auth().currentUser) return;
+  if (!_signingIn) {
+    _signingIn = auth()
+      .signInAnonymously()
+      .then(() => { _signingIn = null; })
+      .catch(e => { _signingIn = null; throw e; });
+  }
+  return _signingIn;
 }
 
 // ── メモを Firestore にアップロードして shareId を返す ────────
@@ -72,6 +109,25 @@ export async function syncSharedMemo(
   const data = snap.data() as SharedMemoDoc | undefined;
   if (!snap.exists || !data) return null;
   return data;
+}
+
+// ── 複数の共有メモを一括取得（一覧遷移時に使用）────────────────
+export async function syncAllSharedMemos(
+  shareIds: string[],
+): Promise<Record<string, SharedMemoDoc>> {
+  if (shareIds.length === 0) return {};
+  await ensureSignedIn();
+  const snaps = await Promise.all(
+    shareIds.map(id => firestore().collection(COLLECTION).doc(id).get()),
+  );
+  const result: Record<string, SharedMemoDoc> = {};
+  snaps.forEach((snap, idx) => {
+    const data = snap.data() as SharedMemoDoc | undefined;
+    if (snap.exists && data) {
+      result[shareIds[idx]] = data;
+    }
+  });
+  return result;
 }
 
 // ── 受信者として memodoc に自デバイス ID を追記しデータを返す ─
@@ -174,6 +230,27 @@ export function subscribePresence(
         callback(data.presences ?? {});
       },
       () => callback({}),
+    );
+  return unsubscribe;
+}
+
+// ── 共有メモ全体をリアルタイム監視（プレミアム機能）────────────────────
+export function subscribeSharedMemo(
+  shareId: string,
+  callback: (doc: SharedMemoDoc | null) => void,
+): () => void {
+  const unsubscribe = firestore()
+    .collection(COLLECTION)
+    .doc(shareId)
+    .onSnapshot(
+      (snap: FirebaseFirestoreTypes.DocumentSnapshot) => {
+        if (!snap.exists) {
+          callback(null);
+          return;
+        }
+        callback(snap.data() as SharedMemoDoc);
+      },
+      () => callback(null),
     );
   return unsubscribe;
 }
