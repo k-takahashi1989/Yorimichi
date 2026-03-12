@@ -8,6 +8,7 @@ import { getLocationsLimit } from '../config/planLimits';
 import { isTrialActive } from '../utils/trialUtils';
 import { redeemCouponCode } from '../services/couponService';
 import { getDeviceId } from '../utils/deviceId';
+import { recordError } from '../services/crashlyticsService';
 
 // ============================================================
 // 設定ストア
@@ -220,7 +221,7 @@ export const useMemoStore = create<MemoState>()(
         }));
         // notificationEnabled / notificationMode が変わったときジオフェンスを再同期
         if ('notificationEnabled' in partial || 'notificationMode' in partial) {
-          syncGeofences().catch(() => {});
+          syncGeofences().catch(e => recordError(e, '[memoStore] syncGeofences'));
         }
       },
 
@@ -347,7 +348,7 @@ export const useMemoStore = create<MemoState>()(
             };
           }),
         }));
-        syncGeofences().catch(() => {});
+        syncGeofences().catch(e => recordError(e, '[memoStore] syncGeofences'));
         return location;
       },
 
@@ -364,7 +365,7 @@ export const useMemoStore = create<MemoState>()(
             };
           }),
         }));
-        syncGeofences().catch(() => {});
+        syncGeofences().catch(e => recordError(e, '[memoStore] syncGeofences'));
       },
 
       deleteLocation: (memoId, locationId) => {
@@ -378,7 +379,7 @@ export const useMemoStore = create<MemoState>()(
             };
           }),
         }));
-        syncGeofences().catch(() => {});
+        syncGeofences().catch(e => recordError(e, '[memoStore] syncGeofences'));
       },
 
       // ── 共有機能 ──────────────────────────────────────────────

@@ -16,14 +16,20 @@ import './src/i18n'; // i18n 初期化
 import { initPurchases } from './src/services/purchaseService';
 import { backupAllMemos, shouldAutoBackup } from './src/services/backupService';
 import { getDeviceId } from './src/utils/deviceId';
+import { initCrashlytics, recordError } from './src/services/crashlyticsService';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   useEffect(() => {
+    // Crashlytics 初期化（__DEV__ 時は収集無効）
+    initCrashlytics();
+
     // RevenueCat 初期化 → 起動時にエンタイトルメントを同期
     initPurchases();
-    useSettingsStore.getState().syncPurchaseStatus().catch(() => {});
+    useSettingsStore.getState().syncPurchaseStatus().catch(e => {
+      recordError(e, '[App] syncPurchaseStatus');
+    });
 
     // 通知チャンネルの作成 (Android 必須)
     createNotificationChannel();

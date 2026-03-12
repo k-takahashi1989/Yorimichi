@@ -82,6 +82,7 @@ export async function uploadSharedMemo(
   deviceId: string,
 ): Promise<string> {
   await ensureSignedIn();
+  const uid = auth().currentUser!.uid;
   const doc: SharedMemoDoc = {
     title: memo.title,
     items: memo.items.map(sanitizeItem),
@@ -89,6 +90,8 @@ export async function uploadSharedMemo(
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],
+    ownerUid: uid,
+    collaboratorUids: [uid],
     presences: {},
   };
   if (memo.shareId) {
@@ -150,8 +153,10 @@ export async function joinSharedMemo(
       throw new Error('COLLABORATORS_FULL');
     }
     try {
+      const uid = auth().currentUser!.uid;
       await ref.update({
         collaborators: firestore.FieldValue.arrayUnion(deviceId),
+        collaboratorUids: firestore.FieldValue.arrayUnion(uid),
       });
     } catch (e) {
       console.warn('[joinSharedMemo] could not update collaborators:', e);

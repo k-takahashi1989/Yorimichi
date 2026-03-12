@@ -3,41 +3,48 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── 共有メモ ──────────────────────────────────────────────────────────────
-<<<<<<< claude/app-professional-review-ddziU
-    // shareId を知っている認証済みユーザーのみアクセス可能
-=======
-    // 認証済みユーザー（匿名含む）のみアクセス可能
->>>>>>> main
+    // ownerUid / collaboratorUids による Firebase Auth UID ベースのアクセス制御。
+    // 移行期間中: ownerUid が未設定の既存ドキュメントは従来通り認証済みユーザーに許可。
     match /sharedMemos/{shareId} {
-      // 読み取り: 認証済みであれば誰でも可（shareId を知っている前提）
-      allow read: if request.auth != null;
 
-<<<<<<< claude/app-professional-review-ddziU
-      // 新規作成: 認証済みユーザーのみ。必須フィールドの存在を検証
+      // 移行期間ヘルパー: ownerUid がまだ設定されていない既存ドキュメント
+      function isLegacyDoc() {
+        return !('ownerUid' in resource.data);
+      }
+
+      // 読み取り: オーナーまたは参加者（移行期間中は認証済みユーザー全員）
+      allow read: if request.auth != null
+        && (isLegacyDoc()
+            || resource.data.ownerUid == request.auth.uid
+            || (resource.data.collaboratorUids is list
+                && request.auth.uid in resource.data.collaboratorUids));
+
+      // 新規作成: ownerUid が自分の UID と一致すること + 必須フィールド検証
       allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['title', 'items', 'ownerDeviceId', 'collaborators', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['title', 'items', 'ownerDeviceId', 'collaborators', 'updatedAt', 'ownerUid', 'collaboratorUids'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.auth.uid in request.resource.data.collaboratorUids
+        && request.resource.data.collaboratorUids.size() <= 21
         && request.resource.data.collaborators.size() <= 21
         && request.resource.data.items.size() <= 100;
 
-      // 更新: 認証済みかつ collaborators に含まれるデバイスのみ
-      // ownerDeviceId の書き換えは禁止
+      // 更新: オーナーまたは参加者（移行期間中は認証済みユーザー）
+      // ownerDeviceId と ownerUid の書き換えは禁止
       allow update: if request.auth != null
+        && (isLegacyDoc()
+            || resource.data.ownerUid == request.auth.uid
+            || (resource.data.collaboratorUids is list
+                && request.auth.uid in resource.data.collaboratorUids))
         && request.resource.data.ownerDeviceId == resource.data.ownerDeviceId
+        && (!('ownerUid' in resource.data) || request.resource.data.ownerUid == resource.data.ownerUid)
         && request.resource.data.collaborators.size() <= 21
+        && (!('collaboratorUids' in request.resource.data) || request.resource.data.collaboratorUids.size() <= 21)
         && request.resource.data.items.size() <= 100;
 
-      // 削除: 認証済みユーザーのみ（将来的に ownerUid ベースに移行予定）
-      // TODO: ownerUid フィールド追加後、resource.data.ownerUid == request.auth.uid に変更
-=======
-      // 新規作成: 認証済みユーザーのみ
-      allow create: if request.auth != null;
-
-      // 更新: 認証済みユーザーのみ（アイテム同期・チェック状態変更）
-      allow update: if request.auth != null;
-
-      // 削除: 認証済みユーザーのみ（オーナーはアプリ側で制御）
->>>>>>> main
-      allow delete: if request.auth != null;
+      // 削除: オーナーのみ（移行期間中は認証済みユーザー）
+      allow delete: if request.auth != null
+        && (isLegacyDoc()
+            || resource.data.ownerUid == request.auth.uid);
     }
 
     // ── クーポンコード ────────────────────────────────────────────────────────

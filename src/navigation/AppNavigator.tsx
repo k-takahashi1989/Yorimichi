@@ -6,13 +6,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import notifee from '@notifee/react-native';
 import { useInterstitialAd } from '../hooks/useInterstitialAd';
-import { useSettingsStore } from '../store/memoStore';
+import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { useForegroundNotificationHandler } from '../services/notificationService';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
+import { recordError } from '../services/crashlyticsService';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import MemoListScreen from '../screens/MemoListScreen';
@@ -29,6 +30,7 @@ function MainTabs(): React.JSX.Element {
   const { t } = useTranslation();
   const { showIfReady } = useInterstitialAd();
   const totalMemoRegistrations = useSettingsStore(s => s.totalMemoRegistrations);
+  const isPremium = useSettingsStore(selectEffectivePremium);
 
   return (
     <Tab.Navigator
@@ -52,7 +54,7 @@ function MainTabs(): React.JSX.Element {
         component={SettingsScreen}
         listeners={{
           tabPress: () => {
-            if (totalMemoRegistrations >= 5) {
+            if (!isPremium && totalMemoRegistrations >= 5) {
               showIfReady();
             }
           },
@@ -132,7 +134,7 @@ export function AppNavigator(): React.JSX.Element {
     <NavigationContainer
       ref={navigationRef}
       onStateChange={() => {
-        useSettingsStore.getState().syncPurchaseStatus().catch(() => {});
+        useSettingsStore.getState().syncPurchaseStatus().catch(e => recordError(e, '[AppNavigator] syncPurchaseStatus'));
       }}
       onReady={() => {
         // killed 状態から通知タップで起動した場合: getInitialNotification で memoId を取得し遷移
@@ -141,7 +143,7 @@ export function AppNavigator(): React.JSX.Element {
           if (memoId) {
             navigationRef.current?.navigate('MemoDetail', { memoId });
           }
-        }).catch(() => {});
+        }).catch(e => recordError(e, '[AppNavigator] getInitialNotification'));
 
         // MMKV 経由のブックマーク（バックグラウンドからのフォールバック）
         const pending = storage.getString('pendingNotificationMemoId');

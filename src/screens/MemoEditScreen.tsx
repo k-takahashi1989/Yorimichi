@@ -238,8 +238,8 @@ export default function MemoEditScreen(): React.JSX.Element {
     if (isNew) {
       incrementMemoRegistrations();
       // totalMemoRegistrations は increment 前の値。
-      // 5回目 (index 4) 以降からインタースティシャルを表示する
-      if (totalMemoRegistrations >= 4) {
+      // 5回目 (index 4) 以降からインタースティシャルを表示する（プレミアムユーザーには表示しない）
+      if (!isPremium && totalMemoRegistrations >= 4) {
         showIfReady(doNavigate) || doNavigate();
         return;
       }

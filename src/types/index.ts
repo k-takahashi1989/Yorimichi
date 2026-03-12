@@ -54,6 +54,9 @@ export interface SharedMemoDoc {
   updatedAt: number;
   ownerDeviceId: string;
   collaborators: string[];
+  // Firebase Auth UID ベースの所有者・参加者（セキュリティルール検証用）
+  ownerUid?: string;
+  collaboratorUids?: string[];
   // deviceId をキーとするプレゼンスマップ（複数人対応）
   presences: Record<string, SharePresence>;
 }
