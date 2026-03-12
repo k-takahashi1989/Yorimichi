@@ -51,9 +51,9 @@ function App(): React.JSX.Element {
         const deviceId = getDeviceId();
         const ts = await backupAllMemos(memos, deviceId);
         useSettingsStore.getState().setLastCloudBackupAt(ts);
-        console.log('[App] auto cloud backup completed');
+        if (__DEV__) console.log('[App] auto cloud backup completed');
       } catch (e) {
-        console.warn('[App] auto cloud backup failed:', e);
+        recordError(e, '[App] autoCloudBackup');
       }
     };
     // 少し遅延して実行（起動直後の負荷を避ける）

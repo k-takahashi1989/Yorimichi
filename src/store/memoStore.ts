@@ -105,7 +105,7 @@ export const useSettingsStore = create<SettingsState>()(
         } catch (e) {
           // RevenueCat 認証エラーなどの場合は既存の isPremium フラグを維持する
           // （エラーで false に上書きしてしまうのを防ぐ）
-          console.warn('[syncPurchaseStatus] getCustomerInfo エラー。isPremium を維持します:', e);
+          recordError(e, '[memoStore] syncPurchaseStatus');
         }
       },
       setLastCloudBackupAt: (ts: number) => set({ lastCloudBackupAt: ts }),

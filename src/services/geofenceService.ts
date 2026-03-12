@@ -12,6 +12,7 @@ import { NativeModules, Platform } from 'react-native';
 import i18n from '../i18n';
 import { Memo } from '../types';
 import { storage } from '../storage/mmkvStorage';
+import { recordError } from './crashlyticsService';
 
 // NativeModule: YorimichiGeofence (GeofenceModule.kt の getName() と一致)
 const YorimichiGeofence = NativeModules.YorimichiGeofence as {
@@ -152,5 +153,5 @@ export function setNotifWindowNative(
  */
 export function clearMemoFromCache(memoId: string): void {
   if (Platform.OS !== 'android' || !YorimichiGeofence) return;
-  YorimichiGeofence.removeGeofencesForMemo(memoId).catch(() => {});
+  YorimichiGeofence.removeGeofencesForMemo(memoId).catch(e => recordError(e, '[geofenceService] removeGeofences'));
 }

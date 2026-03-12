@@ -28,6 +28,7 @@ import { useTutorial } from '../hooks/useTutorial';
 import { getDeviceId } from '../utils/deviceId';
 import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
 import { LIMITS_ENABLED, FREE_LIMITS, getItemsLimit } from '../config/planLimits';
+import { recordError } from '../services/crashlyticsService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoEdit'>;
@@ -79,9 +80,9 @@ export default function MemoEditScreen(): React.JSX.Element {
     const shareId = existingMemo?.shareId;
     if (!shareId) return;
     const deviceId = getDeviceId();
-    setPresence(shareId, deviceId).catch(() => {});
+    setPresence(shareId, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     return () => {
-      clearPresence(shareId, deviceId).catch(() => {});
+      clearPresence(shareId, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingMemo?.shareId]);
@@ -223,7 +224,7 @@ export default function MemoEditScreen(): React.JSX.Element {
     const savedMemo = getMemoById(finalId);
     if (savedMemo?.shareId) {
       const deviceId = getDeviceId();
-      uploadSharedMemo(savedMemo, deviceId).catch(() => {});
+      uploadSharedMemo(savedMemo, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     }
     // MemoDetail から編集した場合は replace ではなく goBack
     // (replace を使うと MemoDetail がスタックに重複して積まれ、戻るボタンが余分に必要になる)

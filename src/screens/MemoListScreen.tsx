@@ -22,6 +22,7 @@ import Snackbar from '../components/Snackbar';
 import { joinSharedMemo, syncAllSharedMemos } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
+import { recordError } from '../services/crashlyticsService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -63,7 +64,7 @@ export default function MemoListScreen(): React.JSX.Element {
             updateMemoFn(memo.id, { title: doc.title, items: mergedItems, locations: doc.locations });
           });
         })
-        .catch(() => {});
+        .catch(e => recordError(e, '[MemoList] syncSharedMemos'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
@@ -113,7 +114,7 @@ export default function MemoListScreen(): React.JSX.Element {
         );
         return;
       }
-      console.error('[importByCode] error:', msg);
+      recordError(e, '[MemoList] importByCode');
       Alert.alert(t('common.error'), msg || t('share.importError'));
     } finally {
       setImportLoading(false);

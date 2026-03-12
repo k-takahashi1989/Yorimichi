@@ -34,6 +34,7 @@ import {
   updateSharedMemoItems,
   updateSharedMemoLocations,
 } from '../services/shareService';
+import { recordError } from '../services/crashlyticsService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoDetail'>;
@@ -122,7 +123,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
       // 無料: 画面を開いたときだけ 1 回同期
       syncSharedMemo(shareId).then(doc => {
         if (doc) mergeSharedDoc(doc);
-      }).catch(() => {});
+      }).catch(e => recordError(e, '[MemoDetail] shareSync'));
       // プレゼンスのみリアルタイム監視
       unsubs.push(subscribePresence(shareId, setPresences));
     }
@@ -146,7 +147,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
       if (!isFirstFocus.current) {
         const currentMemo = useMemoStore.getState().memos.find(m => m.id === memoId);
         if (currentMemo?.shareId && currentMemo.isOwner) {
-          updateSharedMemoLocations(currentMemo.shareId, currentMemo.locations).catch(() => {});
+          updateSharedMemoLocations(currentMemo.shareId, currentMemo.locations).catch(e => recordError(e, '[MemoDetail] shareSync'));
         }
       }
       isFirstFocus.current = false;
@@ -185,8 +186,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         title: t('share.shareTitle'),
       });
     } catch (e: unknown) {
+      recordError(e, '[MemoDetail] handleShare');
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[handleShare] error:', msg);
       Alert.alert(t('common.error'), msg || t('share.uploadError'));
     } finally {
       setIsSharingLoading(false);
@@ -222,7 +223,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
           // 共有メモのオーナーの場合: 地点削除を Firestore に即時反映
           if (memo?.shareId && memo.isOwner) {
             const updatedLocations = useMemoStore.getState().memos.find(m => m.id === memoId)?.locations ?? [];
-            updateSharedMemoLocations(memo.shareId, updatedLocations).catch(() => {});
+            updateSharedMemoLocations(memo.shareId, updatedLocations).catch(e => recordError(e, '[MemoDetail] shareSync'));
           }
         },
       },
@@ -234,7 +235,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
     // 共有メモの場合: チェック状態を Firestore に即時反映（fire-and-forget）
     if (memo?.shareId) {
       const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
-      updateSharedMemoItems(memo.shareId, updatedItems).catch(() => {});
+      updateSharedMemoItems(memo.shareId, updatedItems).catch(e => recordError(e, '[MemoDetail] shareSync'));
     }
     if (item.isChecked) {
       // チェック解除時: 即座に実行して Snackbar で元に戻せる
@@ -264,7 +265,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
     }
     if (memo.shareId) {
       const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
-      updateSharedMemoItems(memo.shareId, updatedItems).catch(() => {});
+      updateSharedMemoItems(memo.shareId, updatedItems).catch(e => recordError(e, '[MemoDetail] shareSync'));
     }
   }, [memoId, memo, checkAllItems, uncheckAllItems]);
 

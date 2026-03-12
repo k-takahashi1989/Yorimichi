@@ -28,7 +28,9 @@ export async function backupAllMemos(
   const backupAt = Date.now();
   // Firestore は undefined を拒否するため、JSON ラウンドトリップで undefined フィールドを除去する
   const sanitizedMemos = JSON.parse(JSON.stringify(memos)) as Memo[];
-  const ownerUid = auth().currentUser!.uid;
+  const user = auth().currentUser;
+  if (!user) throw new Error('Not signed in');
+  const ownerUid = user.uid;
   const doc: BackupDoc = {
     memos: sanitizedMemos,
     backupAt,
