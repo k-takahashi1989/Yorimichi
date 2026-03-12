@@ -131,6 +131,9 @@ export function AppNavigator(): React.JSX.Element {
   return (
     <NavigationContainer
       ref={navigationRef}
+      onStateChange={() => {
+        useSettingsStore.getState().syncPurchaseStatus().catch(() => {});
+      }}
       onReady={() => {
         // killed 状態から通知タップで起動した場合: getInitialNotification で memoId を取得し遷移
         notifee.getInitialNotification().then(initial => {

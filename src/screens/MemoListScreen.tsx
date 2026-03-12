@@ -10,7 +10,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
-import { joinSharedMemo } from '../services/shareService';
+import { joinSharedMemo, syncAllSharedMemos } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
 
@@ -40,6 +40,33 @@ export default function MemoListScreen(): React.JSX.Element {
   const memosAtLimit = memos.length >= memosLimit;
   const memosNearLimit = memos.length >= memosLimit - 1;
   const limitBarColor = memosAtLimit ? '#EF5350' : memosNearLimit ? '#FFB300' : '#66BB6A';
+
+  // 一覧遷移時: 共有メモを一括 pull してローカルキャッシュを最新化
+  useFocusEffect(
+    useCallback(() => {
+      const allMemos = useMemoStore.getState().memos;
+      const sharedMemos = allMemos.filter(m => m.shareId);
+      if (sharedMemos.length === 0) return;
+      const updateMemoFn = useMemoStore.getState().updateMemo;
+      syncAllSharedMemos(sharedMemos.map(m => m.shareId!))
+        .then(docs => {
+          sharedMemos.forEach(memo => {
+            const doc = memo.shareId ? docs[memo.shareId] : undefined;
+            if (!doc) return;
+            // isChecked / checkedAt はローカル優先で保持しつつ title・items 構造・locations をマージ
+            const mergedItems = doc.items.map(remoteItem => {
+              const local = memo.items.find(li => li.id === remoteItem.id);
+              return local
+                ? { ...remoteItem, isChecked: local.isChecked, checkedAt: local.checkedAt }
+                : remoteItem;
+            });
+            updateMemoFn(memo.id, { title: doc.title, items: mergedItems, locations: doc.locations });
+          });
+        })
+        .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importCode, setImportCode] = useState('');

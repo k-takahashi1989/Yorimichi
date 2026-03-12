@@ -30,6 +30,8 @@ export interface SettingsState {
   notifWindowEnd: number;              // 終了時刻 (float, 0.5刻み)
   // クーポンコード
   couponExpiry: number | null;         // クーポン有効期限 (Unix ms)。null = 未使用
+  // クラウドバックアップ（プレミアム機能）
+  lastCloudBackupAt: number | null;    // 最後にクラウドバックアップした日時 (Unix ms)
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
@@ -39,6 +41,8 @@ export interface SettingsState {
   startTrial: () => void;
   setNotifWindow: (enabled: boolean, start: number, end: number) => void;
   redeemCoupon: (code: string) => Promise<'ok' | 'invalid' | 'already_used' | 'network'>;
+  syncPurchaseStatus: () => Promise<void>;
+  setLastCloudBackupAt: (ts: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -56,6 +60,7 @@ export const useSettingsStore = create<SettingsState>()(
       notifWindowStart: 8.0,
       notifWindowEnd: 22.0,
       couponExpiry: null,
+      lastCloudBackupAt: null,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       incrementMemoRegistrations: () =>
         set(state => ({ totalMemoRegistrations: state.totalMemoRegistrations + 1 })),
@@ -91,10 +96,22 @@ export const useSettingsStore = create<SettingsState>()(
         }
         return result.error ?? 'invalid';
       },
+      syncPurchaseStatus: async () => {
+        const { checkEntitlementActive } = await import('../services/purchaseService');
+        try {
+          const active = await checkEntitlementActive();
+          set({ isPremium: active });
+        } catch (e) {
+          // RevenueCat 認証エラーなどの場合は既存の isPremium フラグを維持する
+          // （エラーで false に上書きしてしまうのを防ぐ）
+          console.warn('[syncPurchaseStatus] getCustomerInfo エラー。isPremium を維持します:', e);
+        }
+      },
+      setLastCloudBackupAt: (ts: number) => set({ lastCloudBackupAt: ts }),
     }),
     {
       name: 'settings',
-      version: 7,
+      version: 9,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -118,6 +135,14 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (version <= 6) {
           persisted = { ...persisted, couponExpiry: null };
+        }
+        if (version <= 7) {
+          persisted = { ...persisted, lastCloudBackupAt: null };
+        }
+        if (version <= 8) {
+          // 旧マイグレーションバグで isPremium: true が保存されていたユーザーをリセット。
+          // アプリ起動時の syncPurchaseStatus() で実際の購入者は true に戻る。
+          persisted = { ...persisted, isPremium: false };
         }
         return persisted;
       },
