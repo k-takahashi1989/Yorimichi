@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,16 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
+import { useSettingsStore, useMemoStore, selectEffectivePremium } from '../store/memoStore';
 import { isTrialActive, trialDaysRemaining } from '../utils/trialUtils';
+import {
+  getPremiumOffering,
+  purchasePackage,
+  restorePurchases,
+  PremiumOffering,
+} from '../services/purchaseService';
+import { backupAllMemos, restoreFromBackup } from '../services/backupService';
+import { getDeviceId } from '../utils/deviceId';
 
 // ── 比較テーブルの行データ ──────────────────────────────────
 const FEATURE_ROWS: Array<{
@@ -20,13 +28,15 @@ const FEATURE_ROWS: Array<{
   label: string;
   freeVal: string;
   premiumVal: string;
+  comingSoon?: boolean;
 }> = [
   { icon: 'note',           label: 'featureMemos',         freeVal: 'freeVal',             premiumVal: 'premiumVal' },
   { icon: 'list',           label: 'featureItems',         freeVal: 'freeValItems',        premiumVal: 'premiumVal' },
   { icon: 'place',          label: 'featureLocations',     freeVal: 'freeValLocations',    premiumVal: 'premiumValLocations' },
   { icon: 'people',         label: 'featureCollaborators', freeVal: 'freeValCollaborators',premiumVal: 'premiumVal' },
-  { icon: 'notifications',  label: 'featureAlarm',         freeVal: 'freeValAlarm',        premiumVal: 'premiumValAlarm' },
-  { icon: 'schedule',       label: 'featureNotifHours',    freeVal: 'freeValNotifHours',   premiumVal: 'premiumValNotifHours' },
+  { icon: 'notifications',  label: 'featureAlarm',         freeVal: 'freeValAlarm',        premiumVal: 'premiumValAlarm',       comingSoon: true },
+  { icon: 'sync',            label: 'featureRealtimeSync',  freeVal: 'freeValRealtimeSync',  premiumVal: 'premiumValRealtimeSync' },
+  { icon: 'cloud-upload',    label: 'featureCloudBackup',   freeVal: 'freeValCloudBackup',   premiumVal: 'premiumValCloudBackup' },
   { icon: 'ads-click',      label: 'featureAds',           freeVal: 'freeValAds',          premiumVal: 'premiumValAds' },
 ];
 
@@ -41,8 +51,29 @@ export default function PremiumScreen(): React.JSX.Element {
   const couponExpiry = useSettingsStore(s => s.couponExpiry);
   const redeemCoupon = useSettingsStore(s => s.redeemCoupon);
 
+  const lastCloudBackupAt = useSettingsStore(s => s.lastCloudBackupAt);
+  const setLastCloudBackupAt = useSettingsStore(s => s.setLastCloudBackupAt);
+  const memos = useMemoStore(s => s.memos);
+  const restoreMemo = useMemoStore(s => s.restoreMemo);
+
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreCloudLoading, setRestoreCloudLoading] = useState(false);
+
+  // サブスクオファリング
+  const [offering, setOffering] = useState<PremiumOffering | null>(null);
+  const [offeringLoading, setOfferingLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  useEffect(() => {
+    getPremiumOffering().then(o => {
+      setOffering(o);
+      setOfferingLoading(false);
+    });
+  }, []);
 
   const isTrialCurrentlyActive = isTrialActive(trialStartDate);
   const daysLeft = trialDaysRemaining(trialStartDate);
@@ -52,11 +83,43 @@ export default function PremiumScreen(): React.JSX.Element {
     ? new Date(couponExpiry).toLocaleDateString()
     : null;
 
-  const handleUpgrade = () => {
-    Alert.alert(
-      t('premium.upgradeButton'),
-      t('premium.comingSoon'),
-    );
+  const handleUpgrade = async () => {
+    const pkg = selectedPlan === 'monthly' ? offering?.monthly : offering?.annual;
+    if (!pkg) {
+      Alert.alert(t('premium.purchaseErrorTitle'), t('premium.purchaseUnavailable'));
+      return;
+    }
+    setPurchasing(true);
+    const result = await purchasePackage(pkg);
+    setPurchasing(false);
+    if (result.success) {
+      // 購入レスポンスの customerInfo から直接フラグを設定（getCustomerInfo のキャッシュ遅延を回避）
+      if (result.hasPremium) {
+        useSettingsStore.getState().setIsPremium(true);
+      } else {
+        // フォールバック: customerInfo に反映されていない場合は従来の同期
+        await useSettingsStore.getState().syncPurchaseStatus();
+      }
+      Alert.alert(t('premium.purchaseSuccessTitle'), t('premium.purchaseSuccessMsg'));
+    } else if (!result.cancelled) {
+      Alert.alert(t('premium.purchaseErrorTitle'), result.error);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    const result = await restorePurchases();
+    setRestoring(false);
+    if (result.success) {
+      await useSettingsStore.getState().syncPurchaseStatus();
+      if (result.hasPremium) {
+        Alert.alert(t('premium.restoreSuccessTitle'), t('premium.restoreSuccessMsg'));
+      } else {
+        Alert.alert(t('premium.restoreNoneTitle'), t('premium.restoreNoneMsg'));
+      }
+    } else {
+      Alert.alert(t('premium.purchaseErrorTitle'), result.error);
+    }
   };
 
   const handleStartTrial = () => {
@@ -66,6 +129,61 @@ export default function PremiumScreen(): React.JSX.Element {
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.confirm'), onPress: () => startTrial() },
+      ],
+    );
+  };
+
+  // ── クラウドバックアップ ──────────────────────────────────────────
+  const handleBackupNow = async () => {
+    setBackupLoading(true);
+    try {
+      const deviceId = getDeviceId();
+      const ts = await backupAllMemos(memos, deviceId);
+      setLastCloudBackupAt(ts);
+      Alert.alert(t('premium.backupSuccess'), t('premium.backupSuccessMsg'));
+    } catch {
+      Alert.alert(t('premium.backupError'), t('premium.backupErrorMsg'));
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleRestoreFromCloud = () => {
+    Alert.alert(
+      t('premium.restoreFromCloud'),
+      t('premium.restoreCloudConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          onPress: async () => {
+            setRestoreCloudLoading(true);
+            try {
+              const deviceId = getDeviceId();
+              const backup = await restoreFromBackup(deviceId);
+              if (!backup) {
+                Alert.alert(t('premium.restoreCloudNone'), t('premium.restoreCloudNoneMsg'));
+                return;
+              }
+              const existingIds = new Set(memos.map(m => m.id));
+              let imported = 0;
+              for (const m of backup.memos) {
+                if (!existingIds.has(m.id)) {
+                  restoreMemo(m);
+                  imported++;
+                }
+              }
+              Alert.alert(
+                t('premium.restoreCloudSuccess'),
+                t('premium.restoreCloudSuccessMsg', { count: imported }),
+              );
+            } catch {
+              Alert.alert(t('premium.backupError'), t('premium.backupErrorMsg'));
+            } finally {
+              setRestoreCloudLoading(false);
+            }
+          },
+        },
       ],
     );
   };
@@ -127,25 +245,31 @@ export default function PremiumScreen(): React.JSX.Element {
         {FEATURE_ROWS.map((row, idx) => (
           <View
             key={row.label}
-            style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+            style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt, row.comingSoon && styles.tableRowComingSoon]}>
             {/* 機能名 */}
             <View style={styles.tableFeatureCell}>
-              <Icon name={row.icon} size={18} color="#4CAF50" style={styles.featureIcon} />
-              <Text style={styles.tableFeatureText}>
+              <Icon name={row.icon} size={18} color={row.comingSoon ? '#BDBDBD' : '#4CAF50'} style={styles.featureIcon} />
+              <Text style={[styles.tableFeatureText, row.comingSoon && styles.tableFeatureTextDimmed]}>
                 {t(('premium.' + row.label) as any)}
               </Text>
             </View>
             {/* 無料プラン値 */}
             <View style={styles.tableValCell}>
-              <Text style={[styles.tableValText, styles.tableValFree]}>
-                {t(('premium.' + row.freeVal) as any)}
+              <Text style={[styles.tableValText, row.comingSoon ? styles.tableValDimmed : styles.tableValFree]}>
+                {row.comingSoon ? '-' : t(('premium.' + row.freeVal) as any)}
               </Text>
             </View>
             {/* プレミアム値 */}
             <View style={styles.tableValCell}>
-              <Text style={[styles.tableValText, styles.tableValPremium]}>
-                {t(('premium.' + row.premiumVal) as any)}
-              </Text>
+              {row.comingSoon ? (
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>{t('premium.comingSoonApril')}</Text>
+                </View>
+              ) : (
+                <Text style={[styles.tableValText, styles.tableValPremium]}>
+                  {t(('premium.' + row.premiumVal) as any)}
+                </Text>
+              )}
             </View>
           </View>
         ))}
@@ -170,10 +294,57 @@ export default function PremiumScreen(): React.JSX.Element {
 
       {/* CTAボタン / お試しセクション */}
       {isPremium ? (
-        <View style={styles.alreadyPremiumRow}>
-          <Icon name="check-circle" size={20} color="#4CAF50" />
-          <Text style={styles.alreadyPremiumText}>{t('premium.alreadyPremium')}</Text>
-        </View>
+        <>
+          <View style={styles.alreadyPremiumRow}>
+            <Icon name="check-circle" size={20} color="#4CAF50" />
+            <Text style={styles.alreadyPremiumText}>{t('premium.alreadyPremium')}</Text>
+          </View>
+
+          {/* クラウドバックアップセクション（プレミアムのみ） */}
+          <View style={styles.backupSection}>
+            <View style={styles.backupHeader}>
+              <Icon name="cloud-upload" size={20} color="#1565C0" />
+              <Text style={styles.backupTitle}>{t('premium.backupTitle')}</Text>
+            </View>
+
+            <Text style={styles.backupStatus}>
+              {lastCloudBackupAt
+                ? t('premium.lastBackup', {
+                    date: new Date(lastCloudBackupAt).toLocaleString(),
+                  })
+                : t('premium.noBackupYet')}
+            </Text>
+
+            <View style={styles.backupBtnRow}>
+              <TouchableOpacity
+                style={[styles.backupBtn, backupLoading && styles.backupBtnDisabled]}
+                onPress={handleBackupNow}
+                disabled={backupLoading || restoreCloudLoading}>
+                {backupLoading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Icon name="backup" size={18} color="#FFF" />
+                )}
+                <Text style={styles.backupBtnText}>{t('premium.backupNow')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.restoreCloudBtn,
+                  restoreCloudLoading && styles.backupBtnDisabled,
+                ]}
+                onPress={handleRestoreFromCloud}
+                disabled={backupLoading || restoreCloudLoading}>
+                {restoreCloudLoading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Icon name="cloud-download" size={18} color="#FFF" />
+                )}
+                <Text style={styles.backupBtnText}>{t('premium.restoreFromCloud')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
       ) : (
         <>
           {/* プレミアムお試し（課金プレミアムでない場合のみ表示） */}
@@ -232,14 +403,61 @@ export default function PremiumScreen(): React.JSX.Element {
             </View>
           )}
 
+          {/* プラン選択カード */}
+          <View style={styles.planCardsRow}>
+            {/* 月額プラン */}
+            <TouchableOpacity
+              style={[styles.planCard, selectedPlan === 'monthly' && styles.planCardSelected]}
+              onPress={() => setSelectedPlan('monthly')}
+              disabled={purchasing}>
+              <Text style={styles.planCardTitle}>{t('premium.planMonthly')}</Text>
+              {offeringLoading ? (
+                <ActivityIndicator size="small" color="#E65100" />
+              ) : (
+                <Text style={styles.planCardPrice}>
+                  {offering?.monthly?.product.priceString ?? t('premium.planPriceUnavailable')}
+                </Text>
+              )}
+              <Text style={styles.planCardPer}>{t('premium.planPerMonth')}</Text>
+            </TouchableOpacity>
+
+            {/* 年額プラン */}
+            <TouchableOpacity
+              style={[styles.planCard, styles.planCardAnnual, selectedPlan === 'annual' && styles.planCardSelected]}
+              onPress={() => setSelectedPlan('annual')}
+              disabled={purchasing}>
+              <View style={styles.planCardBestBadge}>
+                <Text style={styles.planCardBestText}>{t('premium.planBestValue')}</Text>
+              </View>
+              <Text style={styles.planCardTitle}>{t('premium.planAnnual')}</Text>
+              {offeringLoading ? (
+                <ActivityIndicator size="small" color="#E65100" />
+              ) : (
+                <Text style={styles.planCardPrice}>
+                  {offering?.annual?.product.priceString ?? t('premium.planPriceUnavailable')}
+                </Text>
+              )}
+              <Text style={styles.planCardPer}>{t('premium.planPerYear')}</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* アップグレードCTA */}
-          <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade}>
-            <Icon name="star" size={20} color="#FFF" />
-            <Text style={styles.upgradeBtnText}>
-              {t('premium.upgradeButton')}
-              {'  '}
-              <Text style={styles.comingSoonText}>{t('premium.comingSoon')}</Text>
-            </Text>
+          <TouchableOpacity
+            style={[styles.upgradeBtn, purchasing && styles.upgradeBtnDisabled]}
+            onPress={handleUpgrade}
+            disabled={purchasing || offeringLoading}>
+            {purchasing
+              ? <ActivityIndicator size="small" color="#FFF" />
+              : <Icon name="star" size={20} color="#FFF" />}
+            <Text style={styles.upgradeBtnText}>{t('premium.upgradeButton')}</Text>
+          </TouchableOpacity>
+
+          {/* 購入を復元 */}
+          <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore} disabled={restoring}>
+            {restoring
+              ? <ActivityIndicator size="small" color="#9E9E9E" />
+              : <Text style={styles.restoreBtnText}>{t('premium.restoreButton')}</Text>
+            }
           </TouchableOpacity>
         </>
       )}
@@ -307,6 +525,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   tableRowAlt: { backgroundColor: '#FAFAFA' },
+  tableRowComingSoon: { opacity: 0.55 },
 
   // 機能名セル
   tableFeatureCell: {
@@ -317,6 +536,7 @@ const styles = StyleSheet.create({
   },
   featureIcon: { marginRight: 2 },
   tableFeatureText: { fontSize: 14, color: '#424242', flexShrink: 1 },
+  tableFeatureTextDimmed: { color: '#9E9E9E' },
 
   // 値セル
   tableValCell: {
@@ -326,6 +546,16 @@ const styles = StyleSheet.create({
   tableValText: { fontSize: 13, fontWeight: '600' },
   tableValFree: { color: '#9E9E9E' },
   tableValPremium: { color: '#E65100' },
+  tableValDimmed: { color: '#BDBDBD', fontWeight: '400' as const },
+
+  // Coming Soon バッジ
+  comingSoonBadge: {
+    backgroundColor: '#F3E5F5',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  comingSoonText: { fontSize: 11, fontWeight: '700' as const, color: '#7B1FA2' },
 
   // 現在選択中表示
   currentPlanRow: {
@@ -355,7 +585,53 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   upgradeBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
-  comingSoonText: { fontSize: 12, fontWeight: '400', color: 'rgba(255,255,255,0.8)' },
+
+  // プラン選択カード
+  planCardsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
+  planCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    elevation: 1,
+    position: 'relative',
+  },
+  planCardAnnual: {},
+  planCardSelected: {
+    borderColor: '#E65100',
+    backgroundColor: '#FFF8F5',
+  },
+  planCardTitle: { fontSize: 13, fontWeight: '700', color: '#424242', marginBottom: 4 },
+  planCardPrice: { fontSize: 20, fontWeight: '800', color: '#E65100', marginBottom: 2 },
+  planCardPer: { fontSize: 11, color: '#9E9E9E' },
+  planCardBestBadge: {
+    position: 'absolute',
+    top: -10,
+    backgroundColor: '#E65100',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  planCardBestText: { fontSize: 10, fontWeight: '700', color: '#FFF' },
+
+  // アップグレードボタン無効状態
+  upgradeBtnDisabled: { backgroundColor: '#BDBDBD', elevation: 0 },
+
+  // 復元ボタン
+  restoreBtn: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 4,
+  },
+  restoreBtnText: { fontSize: 13, color: '#9E9E9E', textDecorationLine: 'underline' },
 
   // プレミアムお試し
   trialContainer: {
@@ -476,5 +752,65 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#1565C0',
+  },
+
+  // クラウドバックアップセクション
+  backupSection: {
+    marginTop: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 1,
+  },
+  backupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  backupTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1565C0',
+  },
+  backupStatus: {
+    fontSize: 13,
+    color: '#757575',
+    marginBottom: 12,
+  },
+  backupBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  backupBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#1565C0',
+    borderRadius: 10,
+    paddingVertical: 12,
+    elevation: 1,
+  },
+  restoreCloudBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#00897B',
+    borderRadius: 10,
+    paddingVertical: 12,
+    elevation: 1,
+  },
+  backupBtnDisabled: {
+    backgroundColor: '#BDBDBD',
+    elevation: 0,
+  },
+  backupBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFF',
   },
 });

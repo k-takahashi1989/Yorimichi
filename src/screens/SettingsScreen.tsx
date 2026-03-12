@@ -290,7 +290,7 @@ export default function SettingsScreen(): React.JSX.Element {
         <Text style={styles.radiusValue}>{displayRadius} m</Text>
         <Slider
           style={styles.slider}
-          minimumValue={50}
+          minimumValue={100}
           maximumValue={maxRadius}
           step={10}
           value={defaultRadius}
@@ -301,7 +301,7 @@ export default function SettingsScreen(): React.JSX.Element {
           thumbTintColor="#4CAF50"
         />
         <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabel}>50m</Text>
+          <Text style={styles.sliderLabel}>100m</Text>
           <Text style={styles.sliderLabel}>{maxRadius}m</Text>
         </View>
       </View>
@@ -339,47 +339,42 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </View>
 
-      {/* 通知時間帯（プレミアム機能） */}
-      <View style={[styles.card, !isPremium && styles.cardLocked]}>
+      {/* 通知時間帯 */}
+      <View style={styles.card}>
         <View style={styles.cardTitleRow}>
-          <Icon name="schedule" size={18} color={isPremium ? '#4CAF50' : '#BDBDBD'} />
-          <Text style={[styles.cardTitle, styles.cardTitleInRow, !isPremium && styles.cardTitleDimmed]}>
+          <Icon name="schedule" size={18} color="#4CAF50" />
+          <Text style={[styles.cardTitle, styles.cardTitleInRow]}>
             {t('settings.notifWindow.sectionTitle')}
           </Text>
-          {!isPremium && <Icon name="lock" size={14} color="#BDBDBD" style={styles.lockBadge} />}
         </View>
-        <Text style={[styles.cardDesc, !isPremium && styles.textDimmed]}>
-          {isPremium ? t('settings.notifWindow.description') : t('settings.notifWindow.premiumOnly')}
+        <Text style={styles.cardDesc}>
+          {t('settings.notifWindow.description')}
         </Text>
-        {isPremium && (
-          <>
-            <View style={styles.notifWindowRow}>
-              <Text style={styles.notifWindowLabel}>{t('settings.notifWindow.enableToggle')}</Text>
-              <Switch
-                value={notifWindowEnabled}
-                onValueChange={v => setNotifWindow(v, notifWindowStart, notifWindowEnd)}
-                trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
-                thumbColor={notifWindowEnabled ? '#4CAF50' : '#F5F5F5'}
-              />
-            </View>
-            {notifWindowEnabled && (
-              <View style={styles.notifTimesRow}>
-                <TouchableOpacity
-                  style={styles.notifTimeBtn}
-                  onPress={() => setNotifPickerTarget('start')}>
-                  <Text style={styles.notifTimeBtnLabel}>{t('settings.notifWindow.startLabel')}</Text>
-                  <Text style={styles.notifTimeBtnValue}>{formatHour(notifWindowStart)}</Text>
-                </TouchableOpacity>
-                <Icon name="arrow-forward" size={16} color="#9E9E9E" />
-                <TouchableOpacity
-                  style={styles.notifTimeBtn}
-                  onPress={() => setNotifPickerTarget('end')}>
-                  <Text style={styles.notifTimeBtnLabel}>{t('settings.notifWindow.endLabel')}</Text>
-                  <Text style={styles.notifTimeBtnValue}>{formatHour(notifWindowEnd)}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </>
+        <View style={styles.notifWindowRow}>
+          <Text style={styles.notifWindowLabel}>{t('settings.notifWindow.enableToggle')}</Text>
+          <Switch
+            value={notifWindowEnabled}
+            onValueChange={v => setNotifWindow(v, notifWindowStart, notifWindowEnd)}
+            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
+            thumbColor={notifWindowEnabled ? '#4CAF50' : '#F5F5F5'}
+          />
+        </View>
+        {notifWindowEnabled && (
+          <View style={styles.notifTimesRow}>
+            <TouchableOpacity
+              style={styles.notifTimeBtn}
+              onPress={() => setNotifPickerTarget('start')}>
+              <Text style={styles.notifTimeBtnLabel}>{t('settings.notifWindow.startLabel')}</Text>
+              <Text style={styles.notifTimeBtnValue}>{formatHour(notifWindowStart)}</Text>
+            </TouchableOpacity>
+            <Icon name="arrow-forward" size={16} color="#9E9E9E" />
+            <TouchableOpacity
+              style={styles.notifTimeBtn}
+              onPress={() => setNotifPickerTarget('end')}>
+              <Text style={styles.notifTimeBtnLabel}>{t('settings.notifWindow.endLabel')}</Text>
+              <Text style={styles.notifTimeBtnValue}>{formatHour(notifWindowEnd)}</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -393,9 +388,11 @@ export default function SettingsScreen(): React.JSX.Element {
           <View>
             <Text style={styles.premiumCardTitle}>{t('premium.screenTitle')}</Text>
             <Text style={styles.premiumCardSub}>
-              {isTrialOn
+              {isPremium
+                ? t('premium.currentPremium')
+                : isTrialOn
                 ? t('premium.trialActive', { days: daysLeft })
-                : `${t('premium.upgradeButton')} ${t('premium.comingSoon')}`}
+                : t('premium.upgradeButton')}
             </Text>
           </View>
         </View>

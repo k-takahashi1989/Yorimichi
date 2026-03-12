@@ -442,7 +442,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
           <Text style={styles.inputLabel}>{t('locationPicker.radiusLabel', { radius })}</Text>
           <Slider
             style={styles.slider}
-            minimumValue={50}
+            minimumValue={100}
             maximumValue={maxRadius}
             step={10}
             value={radius}
@@ -452,7 +452,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
             thumbTintColor="#4CAF50"
           />
           <View style={styles.sliderLabels}>
-            <Text style={styles.sliderLabel}>50m</Text>
+            <Text style={styles.sliderLabel}>100m</Text>
             <Text style={styles.sliderLabel}>{maxRadius}m</Text>
           </View>
         </View>
