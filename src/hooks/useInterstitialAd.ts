@@ -6,12 +6,12 @@ import {
 } from 'react-native-google-mobile-ads';
 import Config from 'react-native-config';
 
-// インタースティシャル広告の有効/無効フラグ
-const ADS_ENABLED = true;
-
+// 本番で広告IDが未設定の場合はテストIDを使わず無効化する（AdMobポリシー違反防止）
 const AD_UNIT_ID = __DEV__
   ? TestIds.INTERSTITIAL
-  : (Config.ADMOB_INTERSTITIAL_ID || TestIds.INTERSTITIAL);
+  : Config.ADMOB_INTERSTITIAL_ID || null;
+
+const ADS_ENABLED = AD_UNIT_ID != null;
 
 /**
  * インタースティシャル広告フック
@@ -27,7 +27,7 @@ export function useInterstitialAd() {
     // 広告を有効にするには ADS_ENABLED を true にしてください
     if (!ADS_ENABLED) return;
 
-    const ad = InterstitialAd.createForAdRequest(AD_UNIT_ID);
+    const ad = InterstitialAd.createForAdRequest(AD_UNIT_ID!);
     adRef.current = ad;
 
     const unsubLoad = ad.addAdEventListener(AdEventType.LOADED, () => {

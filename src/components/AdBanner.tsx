@@ -8,12 +8,12 @@ import {
 import Config from 'react-native-config';
 import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 
-// 広告を表示するには false → true に変更してください
-const ADS_ENABLED = true;
-
+// 本番で広告IDが未設定の場合はテストIDを使わず無効化する（AdMobポリシー違反防止）
 const AD_UNIT_ID = __DEV__
   ? TestIds.ADAPTIVE_BANNER
-  : (Config.ADMOB_BANNER_ID || TestIds.ADAPTIVE_BANNER);
+  : Config.ADMOB_BANNER_ID || null;
+
+const ADS_ENABLED = AD_UNIT_ID != null;
 
 export default function AdBanner(): React.JSX.Element | null {
   const isPremium = useSettingsStore(selectEffectivePremium);
@@ -24,7 +24,7 @@ export default function AdBanner(): React.JSX.Element | null {
   if (Platform.OS !== 'android') return null;
   return (
     <BannerAd
-      unitId={AD_UNIT_ID}
+      unitId={AD_UNIT_ID!}
       size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
       onAdFailedToLoad={(error) => __DEV__ && console.warn('AdBanner failed:', error)}
     />

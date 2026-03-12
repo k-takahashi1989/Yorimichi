@@ -242,6 +242,7 @@ const ja = {
     presenceWarning: '他のユーザーが編集中です。上書きされる場合があります',
     syncError: '同期に失敗しました',
     uploadError: '共有の登録に失敗しました',
+    invalidLink: '無効な共有リンクです',
     importByCode: '共有コードでインポート',
     importByCodePrompt: '共有コードを入力してください',
     shareCodeLabel: '共有コード',

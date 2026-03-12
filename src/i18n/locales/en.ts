@@ -123,7 +123,7 @@ const en: Translation = {
       version: 'Version: {{version}}',
       name: 'Nearist',
       privacyPolicy: 'Privacy Policy',
-      contact: 'お問い合わせ',
+      contact: 'Contact Us',
     },
     alertFineLocation: {
       title: 'Location permission required',
@@ -233,6 +233,7 @@ const en: Translation = {
     presenceWarning: 'Another user is editing. Your changes may be overwritten.',
     syncError: 'Failed to sync memo',
     uploadError: 'Failed to register share',
+    invalidLink: 'Invalid share link',
     importByCode: 'Import by Share Code',
     importByCodePrompt: 'Enter the share code',
     shareCodeLabel: 'Share Code',

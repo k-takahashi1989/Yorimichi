@@ -9,7 +9,7 @@ import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
-import { useForegroundNotificationHandler } from '../services/notificationService';
+import { handleForegroundNotification } from '../services/notificationService';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
@@ -82,7 +82,10 @@ export function AppNavigator(): React.JSX.Element {
       // new URL() はカスタムスキームで失敗することがある → 正規表現でパース
       const match = url.match(/[?&]shareId=([^&]+)/);
       const shareId = match ? match[1] : null;
-      if (!shareId) return;
+      if (!shareId) {
+        Alert.alert(t('common.error'), t('share.invalidLink'));
+        return;
+      }
       const deviceId = getDeviceId();
       const doc = await joinSharedMemo(shareId, deviceId);
       if (!doc) {
@@ -110,14 +113,14 @@ export function AppNavigator(): React.JSX.Element {
         ],
       );
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('[handleSharedUrl] error:', msg);
+      recordError(e, '[AppNavigator] handleSharedUrl');
+      Alert.alert(t('common.error'), t('share.importError'));
     }
   };
 
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
-    useForegroundNotificationHandler((memoId: string) => {
+    handleForegroundNotification((memoId: string) => {
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
   }, []);

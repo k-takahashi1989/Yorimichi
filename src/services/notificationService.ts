@@ -74,7 +74,7 @@ export function registerBackgroundNotificationHandler(
  * フォアグラウンドの通知イベントリスナーを登録する
  * (NavigationContainer 内で呼び出す)
  */
-export function useForegroundNotificationHandler(
+export function handleForegroundNotification(
   onOpenMemo: (memoId: string) => void,
 ): void {
   notifee.onForegroundEvent(({ type, detail }) => {

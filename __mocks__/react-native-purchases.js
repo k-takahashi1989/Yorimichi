@@ -23,10 +23,7 @@ const Purchases = {
 };
 
 module.exports = {
-<<<<<<< claude/app-professional-review-ddziU
   __esModule: true,
-=======
->>>>>>> main
   default: Purchases,
   Purchases,
   PURCHASES_ERROR_CODE,
