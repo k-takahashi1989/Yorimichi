@@ -34,6 +34,18 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(resource.data.keys());
     }
 
+    // ── クラウドバックアップ（プレミアム機能）──────────────────────────────────
+    // ownerUid で所有者を検証し、自分のバックアップのみアクセス可能
+    match /backups/{deviceId} {
+      // 新規作成: ownerUid が自分の UID と一致すること
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // 読み取り・更新・削除: 既存ドキュメントの ownerUid が自分の UID と一致すること
+      allow read, update, delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
     // その他のコレクションはすべて拒否
     match /{document=**} {
       allow read, write: if false;

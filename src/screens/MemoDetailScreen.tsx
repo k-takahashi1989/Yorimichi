@@ -29,6 +29,7 @@ import {
   uploadSharedMemo,
   syncSharedMemo,
   subscribePresence,
+  subscribeSharedMemo,
   isPresenceActive,
   updateSharedMemoItems,
   updateSharedMemoLocations,
@@ -85,20 +86,49 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const deviceId = getDeviceId();
 
+  // ローカルのチェック状態を保持しつつ Firestore の最新データをマージするヘルパー
+  // Firestore を items の存在源（追加・削除）の真実源とし、
+  // isChecked / checkedAt のみローカル値を優先する。
+  // ※ ローカル専有アイテムを残す実装は、リモート削除を誤って復活させるため廃止。
+  const mergeSharedDoc = useCallback((doc: import('../types').SharedMemoDoc) => {
+    const currentMemo = useMemoStore.getState().memos.find(m => m.id === memoId);
+    if (!currentMemo) return;
+    const mergedItems = doc.items.map(docItem => {
+      const localItem = currentMemo.items.find(li => li.id === docItem.id);
+      return localItem
+        ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
+        : docItem;
+    });
+    // オーナーもコラボレーターも Firestore を真実源として locations を取得
+    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations });
+  }, [memoId, updateMemo]);
+
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
+  // プレミアム: onSnapshot でリアルタイム反映 / 無料: pull-on-open のみ
   useEffect(() => {
     if (!memo?.shareId) return;
     const shareId = memo.shareId;
-    // Pull-on-open: Firestore から最新内容を取得
-    syncSharedMemo(shareId).then(doc => {
-      if (!doc) return;
-      updateMemo(memoId, { title: doc.title });
-    }).catch(() => {});
-    // プレゼンスをリアルタイム監視
-    const unsubscribe = subscribePresence(shareId, setPresences);
-    return () => unsubscribe();
+    const unsubs: (() => void)[] = [];
+
+    if (isPremium) {
+      // プレミアム: Firestore の変更をリアルタイムで受信しマージ
+      unsubs.push(subscribeSharedMemo(shareId, doc => {
+        if (doc) {
+          mergeSharedDoc(doc);
+          setPresences(doc.presences ?? {});
+        }
+      }));
+    } else {
+      // 無料: 画面を開いたときだけ 1 回同期
+      syncSharedMemo(shareId).then(doc => {
+        if (doc) mergeSharedDoc(doc);
+      }).catch(() => {});
+      // プレゼンスのみリアルタイム監視
+      unsubs.push(subscribePresence(shareId, setPresences));
+    }
+    return () => unsubs.forEach(u => u());
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memo?.shareId]);
+  }, [memo?.shareId, isPremium]);
 
   // フォアグラウンド復帰時に監視状態を再チェック（フォーカス中のみ: 遷移アニメーション中の再レンダリングを防ぐ）
   useFocusEffect(
@@ -172,23 +202,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         Alert.alert(t('common.error'), t('share.notFound'));
         return;
       }
-      // ローカルのチェック状態を保持しつつ Firestore の最新データをマージ
-      const docItemIds = new Set(doc.items.map(di => di.id));
-      const mergedItems = [
-        // Firestore にあるアイテム: ローカルのチェック状態を上書きで保持
-        ...doc.items.map(docItem => {
-          const localItem = memo.items.find(li => li.id === docItem.id);
-          return localItem
-            ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
-            : docItem;
-        }),
-        // ローカルにのみあるアイテム（未アップロード分）: 消さずに末尾に保持
-        ...memo.items.filter(li => !docItemIds.has(li.id)),
-      ];
-      // オーナーは地点変更の権限を持つためローカルを優先
-      // コラボレーターはオーナーが変更した地点を Firestore から受け取る
-      const mergedLocations = memo.isOwner ? memo.locations : doc.locations;
-      updateMemo(memoId, { title: doc.title, items: mergedItems, locations: mergedLocations });
+      mergeSharedDoc(doc);
       Alert.alert(t('share.syncSuccess'));
     } catch {
       Alert.alert(t('common.error'), t('share.syncError'));

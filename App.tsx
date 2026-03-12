@@ -10,14 +10,21 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { createNotificationChannel } from './src/services/notificationService';
 import { startGeofenceMonitoring, setNotifWindowNative } from './src/services/geofenceService';
-import { useSettingsStore } from './src/store/memoStore';
+import { useSettingsStore, useMemoStore, selectEffectivePremium } from './src/store/memoStore';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import './src/i18n'; // i18n 初期化
+import { initPurchases } from './src/services/purchaseService';
+import { backupAllMemos, shouldAutoBackup } from './src/services/backupService';
+import { getDeviceId } from './src/utils/deviceId';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   useEffect(() => {
+    // RevenueCat 初期化 → 起動時にエンタイトルメントを同期
+    initPurchases();
+    useSettingsStore.getState().syncPurchaseStatus().catch(() => {});
+
     // 通知チャンネルの作成 (Android 必須)
     createNotificationChannel();
 
@@ -26,6 +33,25 @@ function App(): React.JSX.Element {
     const { notifWindowEnabled, notifWindowStart, notifWindowEnd } =
       useSettingsStore.getState();
     setNotifWindowNative(notifWindowEnabled, notifWindowStart, notifWindowEnd);
+
+    // プレミアム日次クラウドバックアップ（起動時に自動実行）
+    const runAutoBackup = async () => {
+      const settings = useSettingsStore.getState();
+      const isEffectivePremium = selectEffectivePremium(settings);
+      if (!isEffectivePremium) return;
+      if (!shouldAutoBackup(settings.lastCloudBackupAt)) return;
+      try {
+        const memos = useMemoStore.getState().memos;
+        const deviceId = getDeviceId();
+        const ts = await backupAllMemos(memos, deviceId);
+        useSettingsStore.getState().setLastCloudBackupAt(ts);
+        console.log('[App] auto cloud backup completed');
+      } catch (e) {
+        console.warn('[App] auto cloud backup failed:', e);
+      }
+    };
+    // 少し遅延して実行（起動直後の負荷を避ける）
+    setTimeout(() => runAutoBackup(), 3000);
 
     // 位置情報権限チェック → 必要なら起動時にリクエスト
     const initPermissions = async () => {
