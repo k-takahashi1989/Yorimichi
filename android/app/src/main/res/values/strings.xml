@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Nearist</string>
+    <string name="widget_title">📍 Yorimichi</string>
+    <string name="widget_empty">No memos</string>
+    <string name="widget_description">Show your memo list on the home screen</string>
+    <string name="widget_due_overdue">📅 Overdue (%s)</string>
+    <string name="widget_due_today">📅 Due today</string>
 </resources>

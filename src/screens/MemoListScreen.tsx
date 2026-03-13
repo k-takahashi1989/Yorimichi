@@ -19,6 +19,7 @@ import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
+import { LimitModal } from '../components/LimitModal';
 import { joinSharedMemo, syncAllSharedMemos } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
@@ -74,6 +75,7 @@ export default function MemoListScreen(): React.JSX.Element {
   const [importLoading, setImportLoading] = useState(false);
   const [deletedMemo, setDeletedMemo] = useState<Memo | null>(null);
   const [deleteSnackbarVisible, setDeleteSnackbarVisible] = useState(false);
+  const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
 
   const handleImportByCode = useCallback(async () => {
     const code = importCode.trim();
@@ -108,10 +110,10 @@ export default function MemoListScreen(): React.JSX.Element {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg === 'COLLABORATORS_FULL') {
-        Alert.alert(
-          t('errors.collaboratorLimitTitle'),
-          t('errors.collaboratorLimitMsg', { count: FREE_LIMITS.collaborators }),
-        );
+        setLimitModal({
+          title: t('errors.collaboratorLimitTitle'),
+          message: t('errors.collaboratorLimitMsg', { count: FREE_LIMITS.collaborators }),
+        });
         return;
       }
       recordError(e, '[MemoList] importByCode');
@@ -123,10 +125,10 @@ export default function MemoListScreen(): React.JSX.Element {
 
   const handleAddNewMemo = useCallback(() => {
     if (LIMITS_ENABLED && !isPremium && memos.length >= getMemosLimit(isPremium)) {
-      Alert.alert(
-        t('errors.memoLimitTitle'),
-        t('errors.memoLimitMsg', { count: FREE_LIMITS.memos }),
-      );
+      setLimitModal({
+        title: t('errors.memoLimitTitle'),
+        message: t('errors.memoLimitMsg', { count: FREE_LIMITS.memos }),
+      });
       return;
     }
     navigation.navigate('MemoEdit', {});
@@ -176,6 +178,28 @@ export default function MemoListScreen(): React.JSX.Element {
                 📍 {item.locations.map(l => l.label).join(' / ')}
               </Text>
             )}
+            {item.dueDate != null && (() => {
+              const now = new Date();
+              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+              const due = new Date(item.dueDate);
+              const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+              const dateStr = `${due.getMonth() + 1}/${due.getDate()}`;
+              const isToday = dueDay === today;
+              const isOverdue = dueDay < today;
+              return (
+                <Text style={[
+                  styles.cardDueDate,
+                  isToday && styles.cardDueDateWarning,
+                  isOverdue && styles.cardDueDateOverdue,
+                ]}>
+                  {isOverdue
+                    ? t('memoDetail.dueDateOverdue', { date: dateStr })
+                    : isToday
+                      ? t('memoDetail.dueDateToday')
+                      : t('memoDetail.dueDate', { date: dateStr })}
+                </Text>
+              );
+            })()}
           </View>
           <View style={styles.cardActions}>
             <TouchableOpacity
@@ -293,6 +317,13 @@ export default function MemoListScreen(): React.JSX.Element {
           setDeletedMemo(null);
         }}
       />
+      <LimitModal
+        visible={!!limitModal}
+        title={limitModal?.title ?? ''}
+        message={limitModal?.message ?? ''}
+        onClose={() => setLimitModal(null)}
+        onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
+      />
     </View>
   );
 }
@@ -339,6 +370,9 @@ const styles = StyleSheet.create({
   cardTitleCompleted: { flexShrink: 1 },
   cardSub: { fontSize: 13, color: '#757575' },
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
+  cardDueDate: { fontSize: 12, color: '#9E9E9E', marginTop: 2 },
+  cardDueDateWarning: { color: '#FF9800', fontWeight: '600' as const },
+  cardDueDateOverdue: { color: '#EF5350', fontWeight: '600' as const },
   completedStamp: {
     borderWidth: 2,
     borderColor: '#4CAF50',

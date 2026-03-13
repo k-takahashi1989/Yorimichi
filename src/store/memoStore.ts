@@ -4,6 +4,8 @@ import { Memo, ShoppingItem, MemoLocation, RecentPlace } from '../types';
 import { mmkvStorage } from '../storage/mmkvStorage';
 import { generateId } from '../utils/helpers';
 import { clearMemoFromCache, syncGeofences, setNotifWindowNative } from '../services/geofenceService';
+import { scheduleDueDateNotification, cancelDueDateNotification } from '../services/notificationService';
+import { syncWidget } from '../services/widgetService';
 import { getLocationsLimit } from '../config/planLimits';
 import { isTrialActive } from '../utils/trialUtils';
 import { redeemCouponCode } from '../services/couponService';
@@ -167,8 +169,8 @@ interface MemoState {
   memos: Memo[];
 
   // CRUD
-  addMemo: (title: string) => Memo;
-  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations' | 'notificationMode'>>) => void;
+  addMemo: (title: string, dueDate?: number) => Memo;
+  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations' | 'notificationMode' | 'dueDate'>>) => void;
   deleteMemo: (id: string) => void;
   restoreMemo: (memo: Memo) => void;
   getMemoById: (id: string) => Memo | undefined;
@@ -198,7 +200,7 @@ export const useMemoStore = create<MemoState>()(
       memos: [],
 
       // ── CRUD ────────────────────────────────────────────
-      addMemo: (title: string): Memo => {
+      addMemo: (title: string, dueDate?: number): Memo => {
         const now = Date.now();
         const memo: Memo = {
           id: generateId(),
@@ -206,10 +208,14 @@ export const useMemoStore = create<MemoState>()(
           items: [],
           locations: [],
           notificationEnabled: true,
+          ...(dueDate != null ? { dueDate } : {}),
           createdAt: now,
           updatedAt: now,
         };
         set(state => ({ memos: [memo, ...state.memos] }));
+        if (dueDate != null) {
+          scheduleDueDateNotification(memo.id, title, dueDate).catch(e => recordError(e, '[memoStore] scheduleDueDate'));
+        }
         return memo;
       },
 
@@ -223,10 +229,20 @@ export const useMemoStore = create<MemoState>()(
         if ('notificationEnabled' in partial || 'notificationMode' in partial) {
           syncGeofences().catch(e => recordError(e, '[memoStore] syncGeofences'));
         }
+        // dueDate が変更されたとき通知スケジュールを更新
+        if ('dueDate' in partial) {
+          const memo = get().memos.find(m => m.id === id);
+          if (partial.dueDate != null && memo) {
+            scheduleDueDateNotification(id, memo.title, partial.dueDate).catch(e => recordError(e, '[memoStore] scheduleDueDate'));
+          } else {
+            cancelDueDateNotification(id).catch(e => recordError(e, '[memoStore] cancelDueDate'));
+          }
+        }
       },
 
       deleteMemo: (id) => {
         clearMemoFromCache(id);
+        cancelDueDateNotification(id).catch(e => recordError(e, '[memoStore] cancelDueDate'));
         set(state => ({
           memos: state.memos.filter(m => m.id !== id),
         }));
@@ -430,3 +446,8 @@ export const useMemoStore = create<MemoState>()(
     },
   ),
 );
+
+// メモが変更されたらウィジェットに同期
+useMemoStore.subscribe(state => {
+  syncWidget(state.memos);
+});

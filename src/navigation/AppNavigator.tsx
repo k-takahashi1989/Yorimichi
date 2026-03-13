@@ -75,10 +75,27 @@ export function AppNavigator(): React.JSX.Element {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
 
-  // 共有リンクを処理するハンドラ
+  // ディープリンクを処理するハンドラ（共有 / ウィジェット）
   const handleSharedUrl = async (url: string | null) => {
     if (!url) return;
     try {
+      // ウィジェットからのメモ詳細遷移
+      const memoIdMatch = url.match(/[?&]memoId=([^&]+)/);
+      if (memoIdMatch) {
+        setTimeout(() => {
+          navigationRef.current?.navigate('MemoDetail', { memoId: memoIdMatch[1] });
+        }, 300);
+        return;
+      }
+
+      // ウィジェットからの新規メモ作成
+      if (url.includes('newMemo=true')) {
+        setTimeout(() => {
+          navigationRef.current?.navigate('MemoEdit', {});
+        }, 300);
+        return;
+      }
+
       // new URL() はカスタムスキームで失敗することがある → 正規表現でパース
       const match = url.match(/[?&]shareId=([^&]+)/);
       const shareId = match ? match[1] : null;
