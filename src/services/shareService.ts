@@ -37,6 +37,7 @@ function sanitizeLocation(loc: MemoLocation): MemoLocation {
     radius: loc.radius,
   };
   if (loc.address !== undefined) result.address = loc.address;
+  if (loc.triggerType !== undefined) result.triggerType = loc.triggerType;
   return result;
 }
 
