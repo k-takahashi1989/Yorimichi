@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   useNavigation,
   useRoute,
@@ -61,6 +62,8 @@ export default function MemoEditScreen(): React.JSX.Element {
   const [title, setTitle] = useState(existingMemo?.title ?? '');
   const [newItemName, setNewItemName] = useState('');
   const [savedMemoId, setSavedMemoId] = useState<string | undefined>(memoId);
+  const [dueDate, setDueDate] = useState<number | undefined>(existingMemo?.dueDate);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
 
   // チュートリアル用 refs
@@ -212,9 +215,9 @@ export default function MemoEditScreen(): React.JSX.Element {
     const isNew = !memoId; // ルートパラメータがない → 新規作成
     let targetId: string | undefined = savedMemoId;
     if (savedMemoId) {
-      updateMemo(savedMemoId, { title: title.trim() });
+      updateMemo(savedMemoId, { title: title.trim(), dueDate });
     } else {
-      const newMemo = addMemo(title.trim());
+      const newMemo = addMemo(title.trim(), dueDate);
       targetId = newMemo.id;
     }
     if (!targetId) {
@@ -279,6 +282,38 @@ export default function MemoEditScreen(): React.JSX.Element {
             returnKeyType="done"
           />
         </View>
+
+        {/* 期限設定 */}
+        <View style={styles.dueDateRow}>
+          <TouchableOpacity
+            style={styles.dueDateBtn}
+            onPress={() => setShowDatePicker(true)}>
+            <Icon name="event" size={18} color={dueDate ? '#4CAF50' : '#9E9E9E'} />
+            <Text style={[styles.dueDateText, dueDate != null && styles.dueDateTextSet]}>
+              {dueDate
+                ? `📅 ${new Date(dueDate).getFullYear()}/${new Date(dueDate).getMonth() + 1}/${new Date(dueDate).getDate()}`
+                : t('memoEdit.dueDateLabel')}
+            </Text>
+          </TouchableOpacity>
+          {dueDate != null && (
+            <TouchableOpacity onPress={() => setDueDate(undefined)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Icon name="close" size={18} color="#9E9E9E" />
+            </TouchableOpacity>
+          )}
+        </View>
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueDate ? new Date(dueDate) : new Date()}
+            mode="date"
+            minimumDate={new Date()}
+            onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+              setShowDatePicker(false);
+              if (event.type === 'set' && selectedDate) {
+                setDueDate(selectedDate.getTime());
+              }
+            }}
+          />
+        )}
 
         {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
         <View ref={addRowRef} collapsable={false}>
@@ -352,6 +387,16 @@ export default function MemoEditScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#F5F5F5' },
   container: { flex: 1, padding: 16 },
+  dueDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  dueDateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dueDateText: { fontSize: 14, color: '#9E9E9E' },
+  dueDateTextSet: { color: '#212121' },
   scrollContent: { paddingBottom: 80 },
   label: {
     fontSize: 13,

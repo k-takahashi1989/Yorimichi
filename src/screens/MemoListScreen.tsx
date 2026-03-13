@@ -178,6 +178,28 @@ export default function MemoListScreen(): React.JSX.Element {
                 📍 {item.locations.map(l => l.label).join(' / ')}
               </Text>
             )}
+            {item.dueDate != null && (() => {
+              const now = new Date();
+              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+              const due = new Date(item.dueDate);
+              const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+              const dateStr = `${due.getMonth() + 1}/${due.getDate()}`;
+              const isToday = dueDay === today;
+              const isOverdue = dueDay < today;
+              return (
+                <Text style={[
+                  styles.cardDueDate,
+                  isToday && styles.cardDueDateWarning,
+                  isOverdue && styles.cardDueDateOverdue,
+                ]}>
+                  {isOverdue
+                    ? t('memoDetail.dueDateOverdue', { date: dateStr })
+                    : isToday
+                      ? t('memoDetail.dueDateToday')
+                      : t('memoDetail.dueDate', { date: dateStr })}
+                </Text>
+              );
+            })()}
           </View>
           <View style={styles.cardActions}>
             <TouchableOpacity
@@ -348,6 +370,9 @@ const styles = StyleSheet.create({
   cardTitleCompleted: { flexShrink: 1 },
   cardSub: { fontSize: 13, color: '#757575' },
   cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
+  cardDueDate: { fontSize: 12, color: '#9E9E9E', marginTop: 2 },
+  cardDueDateWarning: { color: '#FF9800', fontWeight: '600' as const },
+  cardDueDateOverdue: { color: '#EF5350', fontWeight: '600' as const },
   completedStamp: {
     borderWidth: 2,
     borderColor: '#4CAF50',

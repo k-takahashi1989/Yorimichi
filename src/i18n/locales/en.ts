@@ -39,6 +39,8 @@ const en: Translation = {
     errorEmptyTitle: 'Please enter a title',
     errorNeedTitleFirst: 'Enter a memo title first',
     errorNeedTitleFirstMsg: 'Please enter a title before adding items',
+    dueDateLabel: 'Set due date',
+    dueDateClear: 'Clear',
   },
 
   memoDetail: {
@@ -63,6 +65,11 @@ const en: Translation = {
     hiddenItems: '{{count}} done (tap to show)',
     allCheckedTitle: 'All items done!',
     allCheckedMessage: 'Turn off notifications for this memo?',
+    triggerEnter: 'On arrival',
+    triggerExit: 'On departure',
+    dueDate: '📅 Due: {{date}}',
+    dueDateToday: '📅 Due today',
+    dueDateOverdue: '📅 Overdue ({{date}})',
   },
 
   locationPicker: {
@@ -85,6 +92,8 @@ const en: Translation = {
     saveButton: 'Save this location',
     recentTitle: 'Recent places',
     geocodingInProgress: 'Getting address...',
+    triggerEnter: 'Notify on arrival',
+    triggerExit: 'Notify on departure',
   },
 
   settings: {
@@ -214,6 +223,10 @@ const en: Translation = {
     modeAlarmDesc: 'Screen wake-up, loud alert',
     modeAlarmComingSoon: 'Alarm notifications are coming soon.',
     comingSoon: '(Coming soon)',
+    departureTitle: '📍 Leaving {{label}}',
+    departureBody: '"{{title}}" checklist ({{count}} items) — tap to review',
+    dueDateTitle: '📅 "{{title}}" is due today',
+    dueDateBody: 'Check your list before the deadline',
   },
 
   share: {

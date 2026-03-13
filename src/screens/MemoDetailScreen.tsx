@@ -390,6 +390,30 @@ export default function MemoDetailScreen(): React.JSX.Element {
         </View>
       )}
 
+      {/* 期限バッジ */}
+      {memo.dueDate != null && (() => {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const due = new Date(memo.dueDate);
+        const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+        const dateStr = `${due.getMonth() + 1}/${due.getDate()}`;
+        const isToday = dueDay === today;
+        const isOverdue = dueDay < today;
+        return (
+          <Text style={[
+            styles.dueDateBadge,
+            isOverdue && styles.dueDateOverdue,
+            isToday && styles.dueDateToday,
+          ]}>
+            {isOverdue
+              ? t('memoDetail.dueDateOverdue', { date: dateStr })
+              : isToday
+                ? t('memoDetail.dueDateToday')
+                : t('memoDetail.dueDate', { date: dateStr })}
+          </Text>
+        );
+      })()}
+
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
         <Text style={styles.monitoringWarning}>{t('memoDetailExtra.monitoringStopped')}</Text>
@@ -436,7 +460,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
                   {loc.address ? (
                     <Text style={styles.locChipAddress}>{loc.address}</Text>
                   ) : null}
-                  <Text style={styles.locChipRadius}>{t('memoDetail.radiusLabel', { radius: loc.radius })}</Text>
+                  <Text style={styles.locChipRadius}>
+                    {t('memoDetail.radiusLabel', { radius: loc.radius })}
+                    {' · '}
+                    {loc.triggerType === 'exit' ? t('memoDetail.triggerExit') : t('memoDetail.triggerEnter')}
+                  </Text>
                 </View>
                 {memo.isOwner !== false ? (
                   <>
@@ -687,6 +715,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   presenceBannerText: { fontSize: 12, color: '#757575' },
+  dueDateBadge: {
+    fontSize: 13,
+    color: '#757575',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  dueDateToday: { color: '#FF9800', fontWeight: '600' },
+  dueDateOverdue: { color: '#EF5350', fontWeight: '600' },
   monitoringWarning: {
     fontSize: 12,
     color: '#FF9800',

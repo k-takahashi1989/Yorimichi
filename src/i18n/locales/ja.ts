@@ -40,6 +40,8 @@ const ja = {
     errorEmptyTitle: 'タイトルを入力してください',
     errorNeedTitleFirst: 'メモタイトルを入力してください',
     errorNeedTitleFirstMsg: 'アイテムを追加する前にタイトルを入力してください',
+    dueDateLabel: '期限を設定',
+    dueDateClear: 'クリア',
   },
 
   // ── MemoDetailScreen ─────────────────────────────────────
@@ -65,6 +67,11 @@ const ja = {
     hiddenItems: '{{count}}件完了（タップで表示）',
     allCheckedTitle: '全アイテム完了！',
     allCheckedMessage: 'このメモの通知をオフにしますか？',
+    triggerEnter: '到着時',
+    triggerExit: '出発時',
+    dueDate: '📅 期限: {{date}}',
+    dueDateToday: '📅 今日が期限',
+    dueDateOverdue: '📅 期限切れ ({{date}})',
   },
 
   // ── LocationPickerScreen ──────────────────────────────────
@@ -88,6 +95,8 @@ const ja = {
     saveButton: 'この場所を保存',
     recentTitle: '最近の場所',
     geocodingInProgress: '住所を取得中…',
+    triggerEnter: '到着時に通知',
+    triggerExit: '出発時に通知',
   },
 
   // ── SettingsScreen ────────────────────────────────────────
@@ -223,6 +232,10 @@ const ja = {
     modeAlarmDesc: '画面点灯・大音量',
     modeAlarmComingSoon: 'アラーム通知は現在準備中です。近日公開予定です。',
     comingSoon: '（近日公開）',
+    departureTitle: '📍 {{label}} を離れます',
+    departureBody: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう',
+    dueDateTitle: '📅 「{{title}}」の期限です',
+    dueDateBody: 'チェックリストを確認しましょう',
   },
   // ── 共有機能 ──────────────────────────────────────
   share: {

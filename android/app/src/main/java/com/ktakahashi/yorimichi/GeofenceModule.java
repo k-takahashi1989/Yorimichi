@@ -102,6 +102,10 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
                 JSONObject obj = array.getJSONObject(i);
                 String id = obj.getString("id");
                 float radius = Math.max(50f, (float) obj.getDouble("radius"));
+                String triggerType = obj.optString("triggerType", "enter");
+                int transitionType = "exit".equals(triggerType)
+                        ? Geofence.GEOFENCE_TRANSITION_EXIT
+                        : Geofence.GEOFENCE_TRANSITION_ENTER;
                 geofences.add(new Geofence.Builder()
                         .setRequestId(id)
                         .setCircularRegion(
@@ -110,7 +114,7 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
                                 radius
                         )
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                        .setTransitionTypes(transitionType)
                         .setLoiteringDelay(0)
                         .build()
                 );
@@ -133,7 +137,8 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
                             return;
                         }
                         GeofencingRequest request = new GeofencingRequest.Builder()
-                                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER
+                                        | GeofencingRequest.INITIAL_TRIGGER_EXIT)
                                 .addGeofences(geofences)
                                 .build();
                         getGeofencingClient().addGeofences(request, getGeofencePendingIntent())
