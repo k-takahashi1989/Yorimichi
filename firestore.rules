@@ -75,6 +75,15 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    // ── FCM デバイストークン ────────────────────────────────────────────
+    // ドキュメントID = Firebase Auth UID。自分のトークンのみ CRUD 可能。
+    // Cloud Functions (Admin SDK) はルールをバイパスするため、
+    // notifyCollaborators 関数からの読み取りには影響しない。
+    match /deviceTokens/{uid} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid;
+    }
+
     // その他のコレクションはすべて拒否
     match /{document=**} {
       allow read, write: if false;
