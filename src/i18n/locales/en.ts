@@ -345,6 +345,8 @@ const en: Translation = {
     locationLimitMsg: 'Free plan allows up to {{count}} locations per memo. Upgrade to Premium for unlimited locations.',
     collaboratorLimitTitle: 'Collaborator limit reached',
     collaboratorLimitMsg: 'Free plan supports 1-on-1 sharing (2 people). Upgrade to Premium to invite more members.',
+    upgradeButton: 'Upgrade to Premium',
+    later: 'Later',
   },
 };
 

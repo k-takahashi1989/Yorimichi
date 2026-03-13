@@ -28,6 +28,7 @@ import { useTutorial } from '../hooks/useTutorial';
 import { getDeviceId } from '../utils/deviceId';
 import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
 import { LIMITS_ENABLED, FREE_LIMITS, getItemsLimit } from '../config/planLimits';
+import { LimitModal } from '../components/LimitModal';
 import { recordError } from '../services/crashlyticsService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -60,6 +61,7 @@ export default function MemoEditScreen(): React.JSX.Element {
   const [title, setTitle] = useState(existingMemo?.title ?? '');
   const [newItemName, setNewItemName] = useState('');
   const [savedMemoId, setSavedMemoId] = useState<string | undefined>(memoId);
+  const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
 
   // チュートリアル用 refs
   const titleInputRef = useRef<View>(null);
@@ -136,10 +138,10 @@ export default function MemoEditScreen(): React.JSX.Element {
     if (!newItemName.trim()) return;
     // アイテム上限チェック
     if (LIMITS_ENABLED && !isPremium && currentItems.length >= getItemsLimit(isPremium)) {
-      Alert.alert(
-        t('errors.itemLimitTitle'),
-        t('errors.itemLimitMsg', { count: FREE_LIMITS.itemsPerMemo }),
-      );
+      setLimitModal({
+        title: t('errors.itemLimitTitle'),
+        message: t('errors.itemLimitMsg', { count: FREE_LIMITS.itemsPerMemo }),
+      });
       return;
     }
     if (!savedMemoId) {
@@ -335,6 +337,13 @@ export default function MemoEditScreen(): React.JSX.Element {
         skipLabel={t('tutorial.skip')}
         onNext={tutAdvance}
         onSkip={tutSkip}
+      />
+      <LimitModal
+        visible={!!limitModal}
+        title={limitModal?.title ?? ''}
+        message={limitModal?.message ?? ''}
+        onClose={() => setLimitModal(null)}
+        onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
       />
     </KeyboardAvoidingView>
   );

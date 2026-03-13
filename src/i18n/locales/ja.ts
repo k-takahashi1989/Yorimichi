@@ -348,6 +348,8 @@ const ja = {
     locationLimitMsg: '無料プランでは1メモあたり最大{{count}}か所まで登録できます。プレミアムプランでは無制限に追加できます。',
     collaboratorLimitTitle: '参加人数の上限に達しました',
     collaboratorLimitMsg: '無料プランでは1対1（2人）まで共有できます。プレミアムプランにアップグレードするともっと多くのメンバーを招待できます。',
+    upgradeButton: 'プレミアムにアップグレード',
+    later: 'あとで',
   },
   // ── App 起動時の権限ダイアログ ──────────────────────────
   appPermission: {

@@ -30,6 +30,7 @@ import { useMemoStore } from '../store/memoStore';
 import { useSettingsStore } from '../store/memoStore';
 import { useShallow } from 'zustand/react/shallow';
 import { RootStackParamList, RecentPlace } from '../types';
+import { LimitModal } from '../components/LimitModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'LocationPicker'>;
@@ -82,6 +83,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const [searchText, setSearchText] = useState('');
   const [searchResults, setSearchResults] = useState<{ name: string; address: string; lat: number; lng: number }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapRef = useRef<MapView>(null);
@@ -303,7 +305,10 @@ export default function LocationPickerScreen(): React.JSX.Element {
     } else {
       const result = addLocation(memoId, locationData);
       if (!result) {
-        Alert.alert(t('locationPicker.alertMaxTitle'), t('locationPicker.alertMaxMsg'));
+        setLimitModal({
+          title: t('locationPicker.alertMaxTitle'),
+          message: t('locationPicker.alertMaxMsg'),
+        });
         return;
       }
     }
@@ -501,6 +506,13 @@ export default function LocationPickerScreen(): React.JSX.Element {
           <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
         </TouchableOpacity>
       </View>
+      <LimitModal
+        visible={!!limitModal}
+        title={limitModal?.title ?? ''}
+        message={limitModal?.message ?? ''}
+        onClose={() => setLimitModal(null)}
+        onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
+      />
     </KeyboardAvoidingView>
   );
 }

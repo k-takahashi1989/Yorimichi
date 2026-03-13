@@ -19,6 +19,7 @@ import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
+import { LimitModal } from '../components/LimitModal';
 import { joinSharedMemo, syncAllSharedMemos } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
@@ -74,6 +75,7 @@ export default function MemoListScreen(): React.JSX.Element {
   const [importLoading, setImportLoading] = useState(false);
   const [deletedMemo, setDeletedMemo] = useState<Memo | null>(null);
   const [deleteSnackbarVisible, setDeleteSnackbarVisible] = useState(false);
+  const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
 
   const handleImportByCode = useCallback(async () => {
     const code = importCode.trim();
@@ -108,10 +110,10 @@ export default function MemoListScreen(): React.JSX.Element {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg === 'COLLABORATORS_FULL') {
-        Alert.alert(
-          t('errors.collaboratorLimitTitle'),
-          t('errors.collaboratorLimitMsg', { count: FREE_LIMITS.collaborators }),
-        );
+        setLimitModal({
+          title: t('errors.collaboratorLimitTitle'),
+          message: t('errors.collaboratorLimitMsg', { count: FREE_LIMITS.collaborators }),
+        });
         return;
       }
       recordError(e, '[MemoList] importByCode');
@@ -123,10 +125,10 @@ export default function MemoListScreen(): React.JSX.Element {
 
   const handleAddNewMemo = useCallback(() => {
     if (LIMITS_ENABLED && !isPremium && memos.length >= getMemosLimit(isPremium)) {
-      Alert.alert(
-        t('errors.memoLimitTitle'),
-        t('errors.memoLimitMsg', { count: FREE_LIMITS.memos }),
-      );
+      setLimitModal({
+        title: t('errors.memoLimitTitle'),
+        message: t('errors.memoLimitMsg', { count: FREE_LIMITS.memos }),
+      });
       return;
     }
     navigation.navigate('MemoEdit', {});
@@ -292,6 +294,13 @@ export default function MemoListScreen(): React.JSX.Element {
           setDeleteSnackbarVisible(false);
           setDeletedMemo(null);
         }}
+      />
+      <LimitModal
+        visible={!!limitModal}
+        title={limitModal?.title ?? ''}
+        message={limitModal?.message ?? ''}
+        onClose={() => setLimitModal(null)}
+        onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
       />
     </View>
   );
