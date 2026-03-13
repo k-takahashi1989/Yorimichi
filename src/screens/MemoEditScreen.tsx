@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   useNavigation,
   useRoute,
@@ -28,6 +29,8 @@ import { useTutorial } from '../hooks/useTutorial';
 import { getDeviceId } from '../utils/deviceId';
 import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
 import { LIMITS_ENABLED, FREE_LIMITS, getItemsLimit } from '../config/planLimits';
+import { LimitModal } from '../components/LimitModal';
+import { recordError } from '../services/crashlyticsService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoEdit'>;
@@ -59,6 +62,9 @@ export default function MemoEditScreen(): React.JSX.Element {
   const [title, setTitle] = useState(existingMemo?.title ?? '');
   const [newItemName, setNewItemName] = useState('');
   const [savedMemoId, setSavedMemoId] = useState<string | undefined>(memoId);
+  const [dueDate, setDueDate] = useState<number | undefined>(existingMemo?.dueDate);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
 
   // チュートリアル用 refs
   const titleInputRef = useRef<View>(null);
@@ -79,9 +85,9 @@ export default function MemoEditScreen(): React.JSX.Element {
     const shareId = existingMemo?.shareId;
     if (!shareId) return;
     const deviceId = getDeviceId();
-    setPresence(shareId, deviceId).catch(() => {});
+    setPresence(shareId, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     return () => {
-      clearPresence(shareId, deviceId).catch(() => {});
+      clearPresence(shareId, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingMemo?.shareId]);
@@ -135,10 +141,10 @@ export default function MemoEditScreen(): React.JSX.Element {
     if (!newItemName.trim()) return;
     // アイテム上限チェック
     if (LIMITS_ENABLED && !isPremium && currentItems.length >= getItemsLimit(isPremium)) {
-      Alert.alert(
-        t('errors.itemLimitTitle'),
-        t('errors.itemLimitMsg', { count: FREE_LIMITS.itemsPerMemo }),
-      );
+      setLimitModal({
+        title: t('errors.itemLimitTitle'),
+        message: t('errors.itemLimitMsg', { count: FREE_LIMITS.itemsPerMemo }),
+      });
       return;
     }
     if (!savedMemoId) {
@@ -209,9 +215,9 @@ export default function MemoEditScreen(): React.JSX.Element {
     const isNew = !memoId; // ルートパラメータがない → 新規作成
     let targetId: string | undefined = savedMemoId;
     if (savedMemoId) {
-      updateMemo(savedMemoId, { title: title.trim() });
+      updateMemo(savedMemoId, { title: title.trim(), dueDate });
     } else {
-      const newMemo = addMemo(title.trim());
+      const newMemo = addMemo(title.trim(), dueDate);
       targetId = newMemo.id;
     }
     if (!targetId) {
@@ -223,7 +229,7 @@ export default function MemoEditScreen(): React.JSX.Element {
     const savedMemo = getMemoById(finalId);
     if (savedMemo?.shareId) {
       const deviceId = getDeviceId();
-      uploadSharedMemo(savedMemo, deviceId).catch(() => {});
+      uploadSharedMemo(savedMemo, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     }
     // MemoDetail から編集した場合は replace ではなく goBack
     // (replace を使うと MemoDetail がスタックに重複して積まれ、戻るボタンが余分に必要になる)
@@ -238,8 +244,8 @@ export default function MemoEditScreen(): React.JSX.Element {
     if (isNew) {
       incrementMemoRegistrations();
       // totalMemoRegistrations は increment 前の値。
-      // 5回目 (index 4) 以降からインタースティシャルを表示する
-      if (totalMemoRegistrations >= 4) {
+      // 5回目 (index 4) 以降からインタースティシャルを表示する（プレミアムユーザーには表示しない）
+      if (!isPremium && totalMemoRegistrations >= 4) {
         showIfReady(doNavigate) || doNavigate();
         return;
       }
@@ -276,6 +282,38 @@ export default function MemoEditScreen(): React.JSX.Element {
             returnKeyType="done"
           />
         </View>
+
+        {/* 期限設定 */}
+        <View style={styles.dueDateRow}>
+          <TouchableOpacity
+            style={styles.dueDateBtn}
+            onPress={() => setShowDatePicker(true)}>
+            <Icon name="event" size={18} color={dueDate ? '#4CAF50' : '#9E9E9E'} />
+            <Text style={[styles.dueDateText, dueDate != null && styles.dueDateTextSet]}>
+              {dueDate
+                ? `📅 ${new Date(dueDate).getFullYear()}/${new Date(dueDate).getMonth() + 1}/${new Date(dueDate).getDate()}`
+                : t('memoEdit.dueDateLabel')}
+            </Text>
+          </TouchableOpacity>
+          {dueDate != null && (
+            <TouchableOpacity onPress={() => setDueDate(undefined)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Icon name="close" size={18} color="#9E9E9E" />
+            </TouchableOpacity>
+          )}
+        </View>
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueDate ? new Date(dueDate) : new Date()}
+            mode="date"
+            minimumDate={new Date()}
+            onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+              setShowDatePicker(false);
+              if (event.type === 'set' && selectedDate) {
+                setDueDate(selectedDate.getTime());
+              }
+            }}
+          />
+        )}
 
         {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
         <View ref={addRowRef} collapsable={false}>
@@ -335,6 +373,13 @@ export default function MemoEditScreen(): React.JSX.Element {
         onNext={tutAdvance}
         onSkip={tutSkip}
       />
+      <LimitModal
+        visible={!!limitModal}
+        title={limitModal?.title ?? ''}
+        message={limitModal?.message ?? ''}
+        onClose={() => setLimitModal(null)}
+        onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -342,6 +387,16 @@ export default function MemoEditScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#F5F5F5' },
   container: { flex: 1, padding: 16 },
+  dueDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  dueDateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dueDateText: { fontSize: 14, color: '#9E9E9E' },
+  dueDateTextSet: { color: '#212121' },
   scrollContent: { paddingBottom: 80 },
   label: {
     fontSize: 13,

@@ -4,8 +4,16 @@ import firestore, {
 import auth from '@react-native-firebase/auth';
 import { Memo, SharedMemoDoc, SharePresence, ShoppingItem, MemoLocation } from '../types';
 import { getCollaboratorsLimit } from '../config/planLimits';
+import { recordError } from './crashlyticsService';
 
 const COLLECTION = 'sharedMemos';
+
+/** ensureSignedIn() 後に currentUser の UID を安全に取得する */
+function getCurrentUid(): string {
+  const user = auth().currentUser;
+  if (!user) throw new Error('Not signed in');
+  return user.uid;
+}
 
 // ── Firestore は undefined を拒否するため、optional フィールドをサニタイズ ──
 // undefined のフィールドを持つオブジェクトをそのまま渡すと
@@ -82,6 +90,7 @@ export async function uploadSharedMemo(
   deviceId: string,
 ): Promise<string> {
   await ensureSignedIn();
+  const uid = getCurrentUid();
   const doc: SharedMemoDoc = {
     title: memo.title,
     items: memo.items.map(sanitizeItem),
@@ -89,6 +98,8 @@ export async function uploadSharedMemo(
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],
+    ownerUid: uid,
+    collaboratorUids: [uid],
     presences: {},
   };
   if (memo.shareId) {
@@ -150,11 +161,13 @@ export async function joinSharedMemo(
       throw new Error('COLLABORATORS_FULL');
     }
     try {
+      const uid = getCurrentUid();
       await ref.update({
         collaborators: firestore.FieldValue.arrayUnion(deviceId),
+        collaboratorUids: firestore.FieldValue.arrayUnion(uid),
       });
     } catch (e) {
-      console.warn('[joinSharedMemo] could not update collaborators:', e);
+      recordError(e, '[shareService] joinSharedMemo collaborators');
     }
   }
   return data;

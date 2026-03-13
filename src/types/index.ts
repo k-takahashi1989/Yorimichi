@@ -9,6 +9,8 @@ export interface ShoppingItem {
   checkedAt?: number;
 }
 
+export type TriggerType = 'enter' | 'exit';
+
 export interface MemoLocation {
   id: string;
   label: string;        // ユーザーが付けた名前 (例: "スーパー三和")
@@ -16,6 +18,7 @@ export interface MemoLocation {
   longitude: number;
   radius: number;       // ジオフェンス半径 (メートル)
   address?: string;     // 逆ジオコーディングで取得した住所 (町名まで)
+  triggerType?: TriggerType; // 'enter'=到着時(デフォルト), 'exit'=出発時
 }
 
 export interface RecentPlace {
@@ -35,6 +38,7 @@ export interface Memo {
   notificationEnabled: boolean;
   autoDisabledNotification?: boolean; // 全チェック時に自動でOFFにした場合 true
   notificationMode?: NotificationMode; // undefined = 'push' 相当（後方互換）
+  dueDate?: number;            // 期限日 (Unix ms, 日付のみ)
   createdAt: number;           // Unix タイムスタンプ (ms)
   updatedAt: number;
   // 共有機能
@@ -54,6 +58,9 @@ export interface SharedMemoDoc {
   updatedAt: number;
   ownerDeviceId: string;
   collaborators: string[];
+  // Firebase Auth UID ベースの所有者・参加者（セキュリティルール検証用）
+  ownerUid?: string;
+  collaboratorUids?: string[];
   // deviceId をキーとするプレゼンスマップ（複数人対応）
   presences: Record<string, SharePresence>;
 }

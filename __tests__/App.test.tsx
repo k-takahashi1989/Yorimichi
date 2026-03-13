@@ -37,7 +37,7 @@ jest.mock('react-native-gesture-handler', () => ({
 jest.mock('../src/services/notificationService', () => ({
   createNotificationChannel: jest.fn().mockResolvedValue(undefined),
   registerBackgroundNotificationHandler: jest.fn(),
-  useForegroundNotificationHandler: jest.fn(),
+  handleForegroundNotification: jest.fn(),
 }));
 jest.mock('../src/services/geofenceService', () => ({
   startGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),

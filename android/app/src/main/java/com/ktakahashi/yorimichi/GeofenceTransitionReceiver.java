@@ -42,7 +42,8 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
         if (geofencingEvent.hasError()) return;
 
         int transition = geofencingEvent.getGeofenceTransition();
-        if (transition != Geofence.GEOFENCE_TRANSITION_ENTER) return;
+        if (transition != Geofence.GEOFENCE_TRANSITION_ENTER
+                && transition != Geofence.GEOFENCE_TRANSITION_EXIT) return;
 
         android.content.SharedPreferences prefs =
                 context.getSharedPreferences(GeofenceModule.PREFS_NAME, 0);
@@ -56,6 +57,11 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
             if (metaJson == null) continue;
             try {
                 JSONObject meta = new JSONObject(metaJson);
+                // triggerType と実際の transition が一致する場合のみ通知
+                String triggerType = meta.optString("triggerType", "enter");
+                boolean isEnter = transition == Geofence.GEOFENCE_TRANSITION_ENTER;
+                if (isEnter && !"enter".equals(triggerType)) continue;
+                if (!isEnter && !"exit".equals(triggerType)) continue;
                 sendNotification(
                         context,
                         id,

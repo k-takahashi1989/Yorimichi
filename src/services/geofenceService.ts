@@ -12,6 +12,7 @@ import { NativeModules, Platform } from 'react-native';
 import i18n from '../i18n';
 import { Memo } from '../types';
 import { storage } from '../storage/mmkvStorage';
+import { recordError } from './crashlyticsService';
 
 // NativeModule: YorimichiGeofence (GeofenceModule.kt の getName() と一致)
 const YorimichiGeofence = NativeModules.YorimichiGeofence as {
@@ -52,6 +53,7 @@ interface GeofenceEntry {
   notifTitle: string;
   notifBody: string;
   notificationMode: string;
+  triggerType: string;
 }
 
 function buildEntries(memos: Memo[]): GeofenceEntry[] {
@@ -60,18 +62,21 @@ function buildEntries(memos: Memo[]): GeofenceEntry[] {
     if (!memo.notificationEnabled) continue;
     for (const loc of memo.locations) {
       const itemCount = memo.items.filter(it => !it.isChecked).length;
+      const trigger = loc.triggerType ?? 'enter';
+      const isExit = trigger === 'exit';
       entries.push({
         id: `${memo.id}:${loc.id}`,
         latitude: loc.latitude,
         longitude: loc.longitude,
         radius: loc.radius,
         memoId: memo.id,
-        notifTitle: i18n.t('notification.arrivalTitle', { label: loc.label }),
-        notifBody: i18n.t('notification.arrivalBody', {
+        notifTitle: i18n.t(isExit ? 'notification.departureTitle' : 'notification.arrivalTitle', { label: loc.label }),
+        notifBody: i18n.t(isExit ? 'notification.departureBody' : 'notification.arrivalBody', {
           title: memo.title,
           count: itemCount,
         }),
         notificationMode: memo.notificationMode ?? 'push',
+        triggerType: trigger,
       });
     }
   }
@@ -152,5 +157,5 @@ export function setNotifWindowNative(
  */
 export function clearMemoFromCache(memoId: string): void {
   if (Platform.OS !== 'android' || !YorimichiGeofence) return;
-  YorimichiGeofence.removeGeofencesForMemo(memoId).catch(() => {});
+  YorimichiGeofence.removeGeofencesForMemo(memoId).catch(e => recordError(e, '[geofenceService] removeGeofences'));
 }

@@ -8,6 +8,7 @@ import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.MapsInitializer.Renderer
+import com.ktakahashi.yorimichi.widget.WidgetBridgePackage
 
 class YorimichiApplication : Application(), ReactApplication {
 
@@ -18,6 +19,8 @@ class YorimichiApplication : Application(), ReactApplication {
         PackageList(this).packages.apply {
           // ネイティブジオフェンスモジュールを登録
           add(GeofencePackage())
+          // ウィジェットブリッジモジュールを登録
+          add(WidgetBridgePackage())
         },
     )
   }

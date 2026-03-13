@@ -6,13 +6,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import notifee from '@notifee/react-native';
 import { useInterstitialAd } from '../hooks/useInterstitialAd';
-import { useSettingsStore } from '../store/memoStore';
+import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
-import { useForegroundNotificationHandler } from '../services/notificationService';
+import { handleForegroundNotification } from '../services/notificationService';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
+import { recordError } from '../services/crashlyticsService';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import MemoListScreen from '../screens/MemoListScreen';
@@ -29,6 +30,7 @@ function MainTabs(): React.JSX.Element {
   const { t } = useTranslation();
   const { showIfReady } = useInterstitialAd();
   const totalMemoRegistrations = useSettingsStore(s => s.totalMemoRegistrations);
+  const isPremium = useSettingsStore(selectEffectivePremium);
 
   return (
     <Tab.Navigator
@@ -52,7 +54,7 @@ function MainTabs(): React.JSX.Element {
         component={SettingsScreen}
         listeners={{
           tabPress: () => {
-            if (totalMemoRegistrations >= 5) {
+            if (!isPremium && totalMemoRegistrations >= 5) {
               showIfReady();
             }
           },
@@ -73,14 +75,34 @@ export function AppNavigator(): React.JSX.Element {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
 
-  // 共有リンクを処理するハンドラ
+  // ディープリンクを処理するハンドラ（共有 / ウィジェット）
   const handleSharedUrl = async (url: string | null) => {
     if (!url) return;
     try {
+      // ウィジェットからのメモ詳細遷移
+      const memoIdMatch = url.match(/[?&]memoId=([^&]+)/);
+      if (memoIdMatch) {
+        setTimeout(() => {
+          navigationRef.current?.navigate('MemoDetail', { memoId: memoIdMatch[1] });
+        }, 300);
+        return;
+      }
+
+      // ウィジェットからの新規メモ作成
+      if (url.includes('newMemo=true')) {
+        setTimeout(() => {
+          navigationRef.current?.navigate('MemoEdit', {});
+        }, 300);
+        return;
+      }
+
       // new URL() はカスタムスキームで失敗することがある → 正規表現でパース
       const match = url.match(/[?&]shareId=([^&]+)/);
       const shareId = match ? match[1] : null;
-      if (!shareId) return;
+      if (!shareId) {
+        Alert.alert(t('common.error'), t('share.invalidLink'));
+        return;
+      }
       const deviceId = getDeviceId();
       const doc = await joinSharedMemo(shareId, deviceId);
       if (!doc) {
@@ -108,14 +130,14 @@ export function AppNavigator(): React.JSX.Element {
         ],
       );
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('[handleSharedUrl] error:', msg);
+      recordError(e, '[AppNavigator] handleSharedUrl');
+      Alert.alert(t('common.error'), t('share.importError'));
     }
   };
 
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
-    useForegroundNotificationHandler((memoId: string) => {
+    handleForegroundNotification((memoId: string) => {
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
   }, []);
@@ -132,7 +154,7 @@ export function AppNavigator(): React.JSX.Element {
     <NavigationContainer
       ref={navigationRef}
       onStateChange={() => {
-        useSettingsStore.getState().syncPurchaseStatus().catch(() => {});
+        useSettingsStore.getState().syncPurchaseStatus().catch(e => recordError(e, '[AppNavigator] syncPurchaseStatus'));
       }}
       onReady={() => {
         // killed 状態から通知タップで起動した場合: getInitialNotification で memoId を取得し遷移
@@ -141,7 +163,7 @@ export function AppNavigator(): React.JSX.Element {
           if (memoId) {
             navigationRef.current?.navigate('MemoDetail', { memoId });
           }
-        }).catch(() => {});
+        }).catch(e => recordError(e, '[AppNavigator] getInitialNotification'));
 
         // MMKV 経由のブックマーク（バックグラウンドからのフォールバック）
         const pending = storage.getString('pendingNotificationMemoId');

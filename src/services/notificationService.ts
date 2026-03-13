@@ -2,6 +2,8 @@ import notifee, {
   AndroidImportance,
   AndroidStyle,
   EventType,
+  TriggerType,
+  TimestampTrigger,
 } from '@notifee/react-native';
 import i18n from '../i18n';
 
@@ -74,7 +76,7 @@ export function registerBackgroundNotificationHandler(
  * フォアグラウンドの通知イベントリスナーを登録する
  * (NavigationContainer 内で呼び出す)
  */
-export function useForegroundNotificationHandler(
+export function handleForegroundNotification(
   onOpenMemo: (memoId: string) => void,
 ): void {
   notifee.onForegroundEvent(({ type, detail }) => {
@@ -83,4 +85,52 @@ export function useForegroundNotificationHandler(
       if (memoId) onOpenMemo(memoId);
     }
   });
+}
+
+/**
+ * メモの期限日に通知をスケジュールする（期限日の朝9:00）
+ */
+export async function scheduleDueDateNotification(
+  memoId: string,
+  title: string,
+  dueDate: number,
+): Promise<void> {
+  // 期限日の朝9:00を算出
+  const due = new Date(dueDate);
+  const triggerDate = new Date(due.getFullYear(), due.getMonth(), due.getDate(), 9, 0, 0);
+
+  // 過去の日時ならスケジュールしない
+  if (triggerDate.getTime() <= Date.now()) return;
+
+  const trigger: TimestampTrigger = {
+    type: TriggerType.TIMESTAMP,
+    timestamp: triggerDate.getTime(),
+  };
+
+  await notifee.createTriggerNotification(
+    {
+      id: `duedate-${memoId}`,
+      title: i18n.t('notification.dueDateTitle', { title }),
+      body: i18n.t('notification.dueDateBody'),
+      data: { memoId },
+      android: {
+        channelId: CHANNEL_ID,
+        importance: AndroidImportance.HIGH,
+        smallIcon: 'ic_notification',
+        color: '#FF9800',
+        pressAction: {
+          id: 'open_memo',
+          launchActivity: 'com.ktakahashi.yorimichi.MainActivity',
+        },
+      },
+    },
+    trigger,
+  );
+}
+
+/**
+ * メモの期限通知をキャンセルする
+ */
+export async function cancelDueDateNotification(memoId: string): Promise<void> {
+  await notifee.cancelNotification(`duedate-${memoId}`);
 }

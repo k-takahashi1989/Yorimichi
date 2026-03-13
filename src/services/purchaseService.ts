@@ -25,7 +25,7 @@ const ENTITLEMENT_ID = 'premium';
 export function initPurchases(): void {
   const apiKey = Config.REVENUECAT_ANDROID_API_KEY;
   if (!apiKey) {
-    console.warn('[purchaseService] REVENUECAT_ANDROID_API_KEY が未設定です。');
+    if (__DEV__) console.warn('[purchaseService] REVENUECAT_ANDROID_API_KEY が未設定です。');
     return;
   }
   Purchases.configure({ apiKey });
@@ -57,7 +57,7 @@ export async function getPremiumOffering(): Promise<PremiumOffering | null> {
       annual: current.annual ?? null,
     };
   } catch (e) {
-    console.error('[purchaseService] getOfferings エラー:', e);
+    if (__DEV__) console.error('[purchaseService] getOfferings エラー:', e);
     return null;
   }
 }

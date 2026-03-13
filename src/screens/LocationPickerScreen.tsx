@@ -29,7 +29,8 @@ import Config from 'react-native-config';
 import { useMemoStore } from '../store/memoStore';
 import { useSettingsStore } from '../store/memoStore';
 import { useShallow } from 'zustand/react/shallow';
-import { RootStackParamList, RecentPlace } from '../types';
+import { RootStackParamList, RecentPlace, TriggerType } from '../types';
+import { LimitModal } from '../components/LimitModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'LocationPicker'>;
@@ -82,6 +83,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const [searchText, setSearchText] = useState('');
   const [searchResults, setSearchResults] = useState<{ name: string; address: string; lat: number; lng: number }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [triggerType, setTriggerType] = useState<TriggerType>('enter');
+  const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapRef = useRef<MapView>(null);
@@ -183,6 +186,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
     if (!existing) return;
     setLabel(existing.label);
     setRadius(existing.radius);
+    if (existing.triggerType) setTriggerType(existing.triggerType);
     if (existing.address) setAddress(existing.address);
     const coords = { latitude: existing.latitude, longitude: existing.longitude };
     setPicked(coords);
@@ -295,6 +299,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
       latitude: picked.latitude,
       longitude: picked.longitude,
       radius,
+      triggerType,
       ...(address ? { address } : {}),
     };
 
@@ -303,7 +308,10 @@ export default function LocationPickerScreen(): React.JSX.Element {
     } else {
       const result = addLocation(memoId, locationData);
       if (!result) {
-        Alert.alert(t('locationPicker.alertMaxTitle'), t('locationPicker.alertMaxMsg'));
+        setLimitModal({
+          title: t('locationPicker.alertMaxTitle'),
+          message: t('locationPicker.alertMaxMsg'),
+        });
         return;
       }
     }
@@ -437,6 +445,24 @@ export default function LocationPickerScreen(): React.JSX.Element {
           />
         </View>
 
+        {/* 到着 / 出発 切り替え */}
+        <View style={styles.triggerRow}>
+          <TouchableOpacity
+            style={[styles.triggerBtn, triggerType === 'enter' && styles.triggerBtnActive]}
+            onPress={() => setTriggerType('enter')}>
+            <Text style={[styles.triggerBtnText, triggerType === 'enter' && styles.triggerBtnTextActive]}>
+              📍 {t('locationPicker.triggerEnter')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.triggerBtn, triggerType === 'exit' && styles.triggerBtnActive]}
+            onPress={() => setTriggerType('exit')}>
+            <Text style={[styles.triggerBtnText, triggerType === 'exit' && styles.triggerBtnTextActive]}>
+              🚶 {t('locationPicker.triggerExit')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* 半径スライダー */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>{t('locationPicker.radiusLabel', { radius })}</Text>
@@ -501,6 +527,13 @@ export default function LocationPickerScreen(): React.JSX.Element {
           <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
         </TouchableOpacity>
       </View>
+      <LimitModal
+        visible={!!limitModal}
+        title={limitModal?.title ?? ''}
+        message={limitModal?.message ?? ''}
+        onClose={() => setLimitModal(null)}
+        onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -629,6 +662,17 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
+  triggerRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  triggerBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+  },
+  triggerBtnActive: { backgroundColor: '#E8F5E9' },
+  triggerBtnText: { fontSize: 13, color: '#757575', fontWeight: '600' },
+  triggerBtnTextActive: { color: '#2E7D32' },
   inputGroup: { marginBottom: 10 },
   inputLabel: { fontSize: 12, color: '#757575', marginBottom: 4, fontWeight: '600' },
   input: {

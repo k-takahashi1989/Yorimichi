@@ -127,6 +127,9 @@ describe('uploadSharedMemo', () => {
     const addArg = firestoreMock._mockCollection.add.mock.calls[0][0];
     expect(Object.prototype.hasOwnProperty.call(addArg.items[0], 'checkedAt')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(addArg.locations[0], 'address')).toBe(false);
+    // ownerUid と collaboratorUids が設定されていること
+    expect(addArg.ownerUid).toBe('test-uid');
+    expect(addArg.collaboratorUids).toEqual(['test-uid']);
   });
 
   it('既存共有 (shareId あり): set が呼ばれる', async () => {
