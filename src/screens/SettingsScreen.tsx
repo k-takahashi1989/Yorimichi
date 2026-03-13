@@ -72,10 +72,12 @@ export default function SettingsScreen(): React.JSX.Element {
   const setDefaultRadius = useSettingsStore(s => s.setDefaultRadius);
   const maxRadius = useSettingsStore(s => s.maxRadius);
   const setMaxRadius = useSettingsStore(s => s.setMaxRadius);
-  const notifWindowEnabled = useSettingsStore(s => s.notifWindowEnabled);
-  const notifWindowStart   = useSettingsStore(s => s.notifWindowStart);
-  const notifWindowEnd     = useSettingsStore(s => s.notifWindowEnd);
-  const setNotifWindow     = useSettingsStore(s => s.setNotifWindow);
+  const notifWindowEnabled       = useSettingsStore(s => s.notifWindowEnabled);
+  const notifWindowStart         = useSettingsStore(s => s.notifWindowStart);
+  const notifWindowEnd           = useSettingsStore(s => s.notifWindowEnd);
+  const setNotifWindow           = useSettingsStore(s => s.setNotifWindow);
+  const sharedMemoNotifEnabled   = useSettingsStore(s => s.sharedMemoNotifEnabled);
+  const setSharedMemoNotifEnabled = useSettingsStore(s => s.setSharedMemoNotifEnabled);
   const isPremium          = useSettingsStore(selectEffectivePremium);
   const trialStartDate     = useSettingsStore(s => s.trialStartDate);
   const isTrialOn          = isTrialActive(trialStartDate);
@@ -376,6 +378,28 @@ export default function SettingsScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
         )}
+      </View>
+
+      {/* 共有メモ更新通知 */}
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Icon name="notifications-active" size={18} color="#4CAF50" />
+          <Text style={[styles.cardTitle, styles.cardTitleInRow]}>
+            {t('settings.sharedNotif.sectionTitle')}
+          </Text>
+        </View>
+        <Text style={styles.cardDesc}>
+          {t('settings.sharedNotif.description')}
+        </Text>
+        <View style={styles.notifWindowRow}>
+          <Text style={styles.notifWindowLabel}>{t('settings.sharedNotif.enableToggle')}</Text>
+          <Switch
+            value={sharedMemoNotifEnabled}
+            onValueChange={setSharedMemoNotifEnabled}
+            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
+            thumbColor={sharedMemoNotifEnabled ? '#4CAF50' : '#F5F5F5'}
+          />
+        </View>
       </View>
 
       {/* プレミアムプランカード */}

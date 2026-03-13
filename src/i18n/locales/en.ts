@@ -167,6 +167,11 @@ const en: Translation = {
       endLabel: 'End time',
       description: 'Notifications are only sent within the set hours.',
     },
+    sharedNotif: {
+      sectionTitle: 'Shared Memo Notifications',
+      enableToggle: 'Receive update notifications',
+      description: 'Get notified when a collaborator sends an update notification.',
+    },
   },
 
   nav: {
@@ -256,6 +261,15 @@ const en: Translation = {
     syncSuccess: 'Memo updated to latest version',
     roleOwner: 'Owner',
     roleCollaborator: 'Collaborator',
+  },
+  shareNotify: {
+    button: 'Notify collaborators',
+    cooldownBtn: 'Sent (resend in {{seconds}}s)',
+    sentTitle: 'Notification sent',
+    sentMessage: 'Your collaborators have been notified.',
+    cooldownTitle: 'Please wait',
+    cooldownMessage: 'Notifications can be sent every 5 minutes.',
+    errorMessage: 'Failed to send notification.',
   },
   // ── Premium plan ────────────────────────────────────────
   premium: {

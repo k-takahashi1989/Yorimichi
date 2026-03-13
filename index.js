@@ -7,6 +7,7 @@ import { AppRegistry } from 'react-native';
 import App from './App';
 import { name as appName } from './app.json';
 import { registerBackgroundNotificationHandler } from './src/services/notificationService';
+import { setBackgroundMessageHandler } from './src/services/fcmService';
 import { storage } from './src/storage/mmkvStorage';
 
 // バックグラウンドで通知をタップしたときの処理
@@ -16,5 +17,8 @@ registerBackgroundNotificationHandler((memoId) => {
     storage.set('pendingNotificationMemoId', memoId);
   }
 });
+
+// FCM バックグラウンドメッセージハンドラー（共有メモ更新通知用）
+setBackgroundMessageHandler();
 
 AppRegistry.registerComponent(appName, () => App);

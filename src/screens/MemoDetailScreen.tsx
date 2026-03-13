@@ -34,6 +34,7 @@ import {
   updateSharedMemoItems,
   updateSharedMemoLocations,
 } from '../services/shareService';
+import { notifySharedMemoUpdate, getCooldownRemaining } from '../services/fcmService';
 import { recordError } from '../services/crashlyticsService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -83,9 +84,41 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
   const [isSyncLoading, setIsSyncLoading] = useState(false);
+  const [isNotifyLoading, setIsNotifyLoading] = useState(false);
+  const [notifyCooldown, setNotifyCooldown] = useState(0);
   const [hideChecked, setHideChecked] = useState(false);
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const deviceId = getDeviceId();
+
+  // 共有メモ通知のクールダウンタイマー
+  useEffect(() => {
+    if (!memo?.shareId) return;
+    setNotifyCooldown(getCooldownRemaining(memo.shareId));
+    const timer = setInterval(() => {
+      const remaining = getCooldownRemaining(memo.shareId!);
+      setNotifyCooldown(remaining);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [memo?.shareId]);
+
+  const handleNotifyCollaborators = async () => {
+    if (!memo?.shareId) return;
+    setIsNotifyLoading(true);
+    try {
+      const result = await notifySharedMemoUpdate(memo.shareId, memo.title);
+      if (result === 'ok') {
+        Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
+      } else if (result === 'cooldown') {
+        Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
+      } else {
+        Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
+      }
+    } catch {
+      Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
+    } finally {
+      setIsNotifyLoading(false);
+    }
+  };
 
   // ローカルのチェック状態を保持しつつ Firestore の最新データをマージするヘルパー
   // Firestore を items の存在源（追加・削除）の真実源とし、
@@ -417,6 +450,26 @@ export default function MemoDetailScreen(): React.JSX.Element {
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
         <Text style={styles.monitoringWarning}>{t('memoDetailExtra.monitoringStopped')}</Text>
+      )}
+
+      {/* 共有メモ更新通知ボタン（プレミアム限定） */}
+      {memo.shareId && isPremium && (
+        <TouchableOpacity
+          style={[styles.notifyBtn, (isNotifyLoading || notifyCooldown > 0) && styles.notifyBtnDisabled]}
+          disabled={isNotifyLoading || notifyCooldown > 0}
+          onPress={handleNotifyCollaborators}
+          activeOpacity={0.7}>
+          {isNotifyLoading ? (
+            <ActivityIndicator size={16} color="#fff" />
+          ) : (
+            <Icon name="campaign" size={18} color="#fff" />
+          )}
+          <Text style={styles.notifyBtnText}>
+            {notifyCooldown > 0
+              ? t('shareNotify.cooldownBtn', { seconds: notifyCooldown })
+              : t('shareNotify.button')}
+          </Text>
+        </TouchableOpacity>
       )}
 
       {/* 場所セクション */}
@@ -835,4 +888,16 @@ const styles = StyleSheet.create({
   notifModeNameDisabled: { color: '#9E9E9E' },
   notifModeDesc: { fontSize: 12, color: '#757575', marginTop: 2 },
   notifModeComingSoon: { fontSize: 11, color: '#FF9800', fontWeight: '500' as const },
+  notifyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#2196F3',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginBottom: 14,
+  },
+  notifyBtnDisabled: { backgroundColor: '#B0BEC5' },
+  notifyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

@@ -171,6 +171,11 @@ const ja = {
       endLabel: '終了時刻',
       description: '設定した時間内のみ通知します。時間外は通知されません。',
     },
+    sharedNotif: {
+      sectionTitle: '共有メモの更新通知',
+      enableToggle: '更新通知を受け取る',
+      description: '共有相手がメモの更新を通知した際に、プッシュ通知を受け取ります。',
+    },
   },
 
   // ── AppNavigator ──────────────────────────────────────────
@@ -265,6 +270,16 @@ const ja = {
     syncSuccess: 'メモを最新の状態に更新しました',
     roleOwner: 'オーナー',
     roleCollaborator: 'コラボレーター',
+  },
+  // ── 共有メモ更新通知 ───────────────────────────────────
+  shareNotify: {
+    button: '共有相手に更新を通知',
+    cooldownBtn: '通知済み ({{seconds}}秒後に再送可)',
+    sentTitle: '通知を送信しました',
+    sentMessage: '共有相手に更新通知を送りました。',
+    cooldownTitle: 'しばらくお待ちください',
+    cooldownMessage: '通知は5分間隔で送信できます。',
+    errorMessage: '通知の送信に失敗しました。',
   },
   // ── プレミアムプラン ───────────────────────────────────
   premium: {

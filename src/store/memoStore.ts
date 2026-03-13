@@ -33,6 +33,8 @@ export interface SettingsState {
   notifWindowEnd: number;              // 終了時刻 (float, 0.5刻み)
   // クーポンコード
   couponExpiry: number | null;         // クーポン有効期限 (Unix ms)。null = 未使用
+  // 共有メモ更新通知の受信（オプトアウト設定）
+  sharedMemoNotifEnabled: boolean;     // 共有メモの更新通知を受け取るか
   // クラウドバックアップ（プレミアム機能）
   lastCloudBackupAt: number | null;    // 最後にクラウドバックアップした日時 (Unix ms)
   setDefaultRadius: (radius: number) => void;
@@ -43,6 +45,7 @@ export interface SettingsState {
   setIsPremium: (value: boolean) => void;
   startTrial: () => void;
   setNotifWindow: (enabled: boolean, start: number, end: number) => void;
+  setSharedMemoNotifEnabled: (value: boolean) => void;
   redeemCoupon: (code: string) => Promise<'ok' | 'invalid' | 'already_used' | 'network'>;
   syncPurchaseStatus: () => Promise<void>;
   setLastCloudBackupAt: (ts: number) => void;
@@ -63,6 +66,7 @@ export const useSettingsStore = create<SettingsState>()(
       notifWindowStart: 8.0,
       notifWindowEnd: 22.0,
       couponExpiry: null,
+      sharedMemoNotifEnabled: true,
       lastCloudBackupAt: null,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       incrementMemoRegistrations: () =>
@@ -85,6 +89,7 @@ export const useSettingsStore = create<SettingsState>()(
           return { recentPlaces: updated };
         }),
       setIsPremium: (value: boolean) => set({ isPremium: value }),
+      setSharedMemoNotifEnabled: (value: boolean) => set({ sharedMemoNotifEnabled: value }),
       startTrial: () => set({ trialStartDate: Date.now(), hasUsedTrial: true }),
       setNotifWindow: (enabled: boolean, start: number, end: number) => {
         set({ notifWindowEnabled: enabled, notifWindowStart: start, notifWindowEnd: end });
@@ -114,7 +119,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'settings',
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -146,6 +151,9 @@ export const useSettingsStore = create<SettingsState>()(
           // 旧マイグレーションバグで isPremium: true が保存されていたユーザーをリセット。
           // アプリ起動時の syncPurchaseStatus() で実際の購入者は true に戻る。
           persisted = { ...persisted, isPremium: false };
+        }
+        if (version <= 9) {
+          persisted = { ...persisted, sharedMemoNotifEnabled: true };
         }
         return persisted;
       },
