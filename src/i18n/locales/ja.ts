@@ -349,6 +349,14 @@ const ja = {
     collaboratorLimitTitle: '参加人数の上限に達しました',
     collaboratorLimitMsg: '無料プランでは1対1（2人）まで共有できます。プレミアムプランにアップグレードするともっと多くのメンバーを招待できます。',
   },
+  // ── App 起動時の権限ダイアログ ──────────────────────────
+  appPermission: {
+    fineLocationTitle: '📍 位置情報の許可が必要です',
+    fineLocationMessage:
+      'このアプリは近くの場所に近づいたときに通知するために位置情報を使用します。設定から「アプリの使用中のみ許可」または「常に許可」をオンにしてください。',
+    later: 'あとで',
+    openSettings: '設定を開く',
+  },
 } as const;
 
 export default ja;

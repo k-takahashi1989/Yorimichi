@@ -13,6 +13,7 @@ import { startGeofenceMonitoring, setNotifWindowNative } from './src/services/ge
 import { useSettingsStore, useMemoStore, selectEffectivePremium } from './src/store/memoStore';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import './src/i18n'; // i18n 初期化
+import i18n from './src/i18n';
 import { initPurchases } from './src/services/purchaseService';
 import { backupAllMemos, shouldAutoBackup } from './src/services/backupService';
 import { getDeviceId } from './src/utils/deviceId';
@@ -67,11 +68,11 @@ function App(): React.JSX.Element {
       const fineStatus = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
       if (fineStatus === RESULTS.BLOCKED) {
         Alert.alert(
-          '📍 位置情報の許可が必要です',
-          'このアプリは近くの場所に近づいたときに通知するために位置情報を使用します。設定から「アプリの使用中のみ許可」または「常に許可」をオンにしてください。',
+          i18n.t('appPermission.fineLocationTitle'),
+          i18n.t('appPermission.fineLocationMessage'),
           [
-            { text: 'あとで', style: 'cancel' },
-            { text: '設定を開く', onPress: () => Linking.openSettings() },
+            { text: i18n.t('appPermission.later'), style: 'cancel' },
+            { text: i18n.t('appPermission.openSettings'), onPress: () => Linking.openSettings() },
           ],
         );
         return;

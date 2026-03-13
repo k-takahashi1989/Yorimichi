@@ -329,6 +329,13 @@ const en: Translation = {
     lastBackup: 'Last backup: {{date}}',
     noBackupYet: 'Not backed up yet',
   },
+  appPermission: {
+    fineLocationTitle: '📍 Location permission required',
+    fineLocationMessage:
+      'This app uses your location to notify you when you are near a registered place. Please enable "While using the app" or "Always" in Settings.',
+    later: 'Later',
+    openSettings: 'Open Settings',
+  },
   errors: {
     memoLimitTitle: 'Memo limit reached',
     memoLimitMsg: 'Free plan allows up to {{count}} memos. Upgrade to Premium for unlimited memos.',
