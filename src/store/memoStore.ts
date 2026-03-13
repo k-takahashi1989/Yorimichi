@@ -5,6 +5,7 @@ import { mmkvStorage } from '../storage/mmkvStorage';
 import { generateId } from '../utils/helpers';
 import { clearMemoFromCache, syncGeofences, setNotifWindowNative } from '../services/geofenceService';
 import { scheduleDueDateNotification, cancelDueDateNotification } from '../services/notificationService';
+import { syncWidget } from '../services/widgetService';
 import { getLocationsLimit } from '../config/planLimits';
 import { isTrialActive } from '../utils/trialUtils';
 import { redeemCouponCode } from '../services/couponService';
@@ -445,3 +446,8 @@ export const useMemoStore = create<MemoState>()(
     },
   ),
 );
+
+// メモが変更されたらウィジェットに同期
+useMemoStore.subscribe(state => {
+  syncWidget(state.memos);
+});

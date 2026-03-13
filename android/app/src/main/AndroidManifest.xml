@@ -75,6 +75,22 @@
           </intent-filter>
       </receiver>
 
+      <!-- ウィジェット: メモ一覧 -->
+      <receiver
+          android:name=".widget.MemoListWidgetProvider"
+          android:exported="false">
+          <intent-filter>
+              <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+          </intent-filter>
+          <meta-data
+              android:name="android.appwidget.provider"
+              android:resource="@xml/memo_list_widget_info" />
+      </receiver>
+      <service
+          android:name=".widget.MemoListRemoteViewsService"
+          android:permission="android.permission.BIND_REMOTEVIEWS"
+          android:exported="false" />
+
       <!-- AdMob: .env の ADMOB_APP_ID から注入（未設定時はテストID） -->
       <meta-data
           android:name="com.google.android.gms.ads.APPLICATION_ID"
