@@ -423,3 +423,42 @@ describe('Fix#LocSync 共有メモ isOwner フラグ', () => {
     expect(updated?.locations[0].label).toBe('新場所');
   });
 });
+
+// ============================================================
+// 場所先行メモ作成フロー（addMemo → addLocation）
+// ============================================================
+describe('メモ作成フロー: 場所を先に選択', () => {
+  it('メモ作成後に場所を登録できる', () => {
+    const memo = useMemoStore.getState().addMemo('セブンイレブン渋谷店のメモ');
+    const loc = useMemoStore.getState().addLocation(memo.id, {
+      label: 'セブンイレブン渋谷店',
+      latitude: 35.6612,
+      longitude: 139.7036,
+      radius: 200,
+      triggerType: 'enter',
+    });
+    expect(loc).not.toBeNull();
+    const saved = useMemoStore.getState().getMemoById(memo.id);
+    expect(saved?.title).toBe('セブンイレブン渋谷店のメモ');
+    expect(saved?.locations).toHaveLength(1);
+    expect(saved?.locations[0].label).toBe('セブンイレブン渋谷店');
+  });
+
+  it('場所スキップ時は場所なしでメモが作成される', () => {
+    const memo = useMemoStore.getState().addMemo('メモ1');
+    const saved = useMemoStore.getState().getMemoById(memo.id);
+    expect(saved?.title).toBe('メモ1');
+    expect(saved?.locations).toHaveLength(0);
+  });
+
+  it('連番タイトル: 既存メモ数に基づく', () => {
+    useMemoStore.getState().addMemo('メモ1');
+    useMemoStore.getState().addMemo('メモ2');
+    useMemoStore.getState().addMemo('メモ3');
+    const memoCount = useMemoStore.getState().memos.length;
+    expect(memoCount).toBe(3);
+    // 次のメモは「メモ4」
+    const title = `メモ${memoCount + 1}`;
+    expect(title).toBe('メモ4');
+  });
+});

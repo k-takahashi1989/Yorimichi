@@ -92,10 +92,10 @@ export function AppNavigator(): React.JSX.Element {
         return;
       }
 
-      // ウィジェットからの新規メモ作成
+      // ウィジェットからの新規メモ作成 → 場所選択フローへ
       if (url.includes('newMemo=true')) {
         setTimeout(() => {
-          navigationRef.current?.navigate('MemoEdit', {});
+          navigationRef.current?.navigate('LocationPicker', {});
         }, 300);
         return;
       }

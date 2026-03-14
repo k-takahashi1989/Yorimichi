@@ -42,12 +42,15 @@ export default function MemoEditScreen(): React.JSX.Element {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const memoId = route.params?.memoId;
+  const pickedLocation = route.params?.pickedLocation;
 
   const existingMemo = useMemoStore(s => (memoId ? s.getMemoById(memoId) : undefined));
+  const memoCount = useMemoStore(s => s.memos.length);
   const addMemo = useMemoStore(s => s.addMemo);
   const updateMemo = useMemoStore(s => s.updateMemo);
   const getMemoById = useMemoStore(s => s.getMemoById);
   const addItem = useMemoStore(s => s.addItem);
+  const addLocation = useMemoStore(s => s.addLocation);
   const deleteItem = useMemoStore(s => s.deleteItem);
   const updateItem = useMemoStore(s => s.updateItem);
   const reorderItems = useMemoStore(s => s.reorderItems);
@@ -61,7 +64,14 @@ export default function MemoEditScreen(): React.JSX.Element {
   const scrollRef = useRef<ScrollView>(null);
   /** handleDone 実行中フラグ。onBlur の handleSaveTitle との二重保存を防ぐ */
   const isSavingRef = useRef(false);
-  const [title, setTitle] = useState(existingMemo?.title ?? '');
+  // タイトル自動生成: 場所名ベース or 連番
+  const generateAutoTitle = () => {
+    if (existingMemo) return existingMemo.title;
+    if (pickedLocation) return t('memoEdit.autoTitleWithLocation', { label: pickedLocation.label });
+    if (!memoId) return t('memoEdit.autoTitleDefault', { number: memoCount + 1 });
+    return '';
+  };
+  const [title, setTitle] = useState(generateAutoTitle);
   const [newItemName, setNewItemName] = useState('');
   const [savedMemoId, setSavedMemoId] = useState<string | undefined>(memoId);
   const [note, setNote] = useState(existingMemo?.note ?? '');
@@ -230,6 +240,10 @@ export default function MemoEditScreen(): React.JSX.Element {
       return;
     }
     const finalId = targetId;
+    // 場所選択フローから渡された場所を登録
+    if (pickedLocation && isNew) {
+      addLocation(finalId, pickedLocation);
+    }
     // 共有メモの場合: Firestore に変更をアップロード
     const savedMemo = getMemoById(finalId);
     if (savedMemo?.shareId) {
