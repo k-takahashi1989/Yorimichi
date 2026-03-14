@@ -12,9 +12,12 @@ module.exports = {
     'react-native-vector-icons/(.*)': '<rootDir>/__mocks__/react-native-vector-icons.js',
     'react-native-google-places-autocomplete': '<rootDir>/__mocks__/react-native-google-places-autocomplete.js',
     '@react-native-community/slider': '<rootDir>/__mocks__/@react-native-community/slider.js',
+    '@react-native-community/datetimepicker': '<rootDir>/__mocks__/@react-native-community/datetimepicker.js',
     'react-native-google-mobile-ads': '<rootDir>/__mocks__/react-native-google-mobile-ads.js',
     '@react-native-firebase/firestore': '<rootDir>/__mocks__/@react-native-firebase/firestore.js',
     '@react-native-firebase/auth': '<rootDir>/__mocks__/@react-native-firebase/auth.js',
+    '@react-native-firebase/messaging': '<rootDir>/__mocks__/@react-native-firebase/messaging.js',
+    '@react-native-firebase/functions': '<rootDir>/__mocks__/@react-native-firebase/functions.js',
     'react-native-device-info': '<rootDir>/__mocks__/react-native-device-info.js',
   },
   transformIgnorePatterns: [
