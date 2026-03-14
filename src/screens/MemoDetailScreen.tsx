@@ -36,6 +36,7 @@ import {
 } from '../services/shareService';
 import { notifySharedMemoUpdate, getCooldownRemaining } from '../services/fcmService';
 import { recordError } from '../services/crashlyticsService';
+import { getDueDateInfo } from '../utils/helpers';
 import { onItemComplete, onShareMemo } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 
@@ -91,6 +92,27 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [hideChecked, setHideChecked] = useState(false);
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const deviceId = getDeviceId();
+
+  // 共有メモの Firestore 書き込みをデバウンス（連続チェック操作のバッチ化）
+  const sharedItemsSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushSharedItemsSync = useCallback(() => {
+    if (!memo?.shareId) return;
+    const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
+    updateSharedMemoItems(memo.shareId, updatedItems).catch(e => recordError(e, '[MemoDetail] shareSync'));
+  }, [memoId, memo?.shareId]);
+  const debouncedSharedItemsSync = useCallback(() => {
+    if (sharedItemsSyncTimer.current) clearTimeout(sharedItemsSyncTimer.current);
+    sharedItemsSyncTimer.current = setTimeout(flushSharedItemsSync, 800);
+  }, [flushSharedItemsSync]);
+  // 画面離脱時にペンディングの同期をフラッシュ
+  useEffect(() => {
+    return () => {
+      if (sharedItemsSyncTimer.current) {
+        clearTimeout(sharedItemsSyncTimer.current);
+        flushSharedItemsSync();
+      }
+    };
+  }, [flushSharedItemsSync]);
 
   // 共有メモ通知のクールダウンタイマー
   useEffect(() => {
@@ -163,7 +185,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
       unsubs.push(subscribePresence(shareId, setPresences));
     }
     return () => unsubs.forEach(u => u());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- マウント時と shareId/isPremium 変更時にのみ購読を設定。mergeSharedDoc は useCallback で安定化済み
   }, [memo?.shareId, isPremium]);
 
   // フォアグラウンド復帰時に監視状態を再チェック（フォーカス中のみ: 遷移アニメーション中の再レンダリングを防ぐ）
@@ -269,10 +291,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
   const handleToggleItem = useCallback((item: ShoppingItem) => {
     toggleItem(memoId, item.id);
-    // 共有メモの場合: チェック状態を Firestore に即時反映（fire-and-forget）
+    // 共有メモの場合: チェック状態を Firestore にデバウンス反映（連続チェック操作をバッチ化）
     if (memo?.shareId) {
-      const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
-      updateSharedMemoItems(memo.shareId, updatedItems).catch(e => recordError(e, '[MemoDetail] shareSync'));
+      debouncedSharedItemsSync();
     }
     if (item.isChecked) {
       // チェック解除時: 即座に実行して Snackbar で元に戻せる
@@ -292,7 +313,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         setAllCheckedSnackbarVisible(true);
       }
     }
-  }, [memoId, toggleItem, memo, t, updateMemo]);
+  }, [memoId, toggleItem, memo, t, updateMemo, debouncedSharedItemsSync]);
 
   // checkAll/uncheckAll のハンドラ（共有メモへの Firestore 即時反映付き）
   const handleCheckAllToggle = useCallback(() => {
@@ -304,10 +325,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
       checkAllItems(memoId);
     }
     if (memo.shareId) {
-      const updatedItems = useMemoStore.getState().memos.find(m => m.id === memoId)?.items ?? [];
-      updateSharedMemoItems(memo.shareId, updatedItems).catch(e => recordError(e, '[MemoDetail] shareSync'));
+      debouncedSharedItemsSync();
     }
-  }, [memoId, memo, checkAllItems, uncheckAllItems]);
+  }, [memoId, memo, checkAllItems, uncheckAllItems, debouncedSharedItemsSync]);
 
   const handleUndo = useCallback(() => {
     if (!undoTarget) return;
@@ -435,22 +455,16 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
       {/* 期限バッジ */}
       {memo.dueDate != null && (() => {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const due = new Date(memo.dueDate);
-        const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
-        const dateStr = `${due.getMonth() + 1}/${due.getDate()}`;
-        const isToday = dueDay === today;
-        const isOverdue = dueDay < today;
+        const { status, dateStr } = getDueDateInfo(memo.dueDate);
         return (
           <Text style={[
             styles.dueDateBadge,
-            isOverdue && styles.dueDateOverdue,
-            isToday && styles.dueDateToday,
+            status === 'overdue' && styles.dueDateOverdue,
+            status === 'today' && styles.dueDateToday,
           ]}>
-            {isOverdue
+            {status === 'overdue'
               ? t('memoDetail.dueDateOverdue', { date: dateStr })
-              : isToday
+              : status === 'today'
                 ? t('memoDetail.dueDateToday')
                 : t('memoDetail.dueDate', { date: dateStr })}
           </Text>

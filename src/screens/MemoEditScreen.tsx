@@ -102,7 +102,7 @@ export default function MemoEditScreen(): React.JSX.Element {
     return () => {
       clearPresence(shareId, deviceId).catch(e => recordError(e, '[MemoEdit] shareSync'));
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- shareId が変わったときだけプレゼンスを設定/クリアする。deviceId は安定値
   }, [existingMemo?.shareId]);
 
   useEffect(() => {

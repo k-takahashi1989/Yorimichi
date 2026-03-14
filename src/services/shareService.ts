@@ -125,21 +125,40 @@ export async function syncSharedMemo(
 }
 
 // ── 複数の共有メモを一括取得（一覧遷移時に使用）────────────────
+// Firestore の `in` クエリを使い、N+1 問題を解消（最大30件ずつバッチ取得）
 export async function syncAllSharedMemos(
   shareIds: string[],
 ): Promise<Record<string, SharedMemoDoc>> {
   if (shareIds.length === 0) return {};
   await ensureSignedIn();
-  const snaps = await Promise.all(
-    shareIds.map(id => firestore().collection(COLLECTION).doc(id).get()),
-  );
+
   const result: Record<string, SharedMemoDoc> = {};
-  snaps.forEach((snap, idx) => {
-    const data = snap.data() as SharedMemoDoc | undefined;
-    if (snap.exists && data) {
-      result[shareIds[idx]] = data;
+
+  // Firestore の `in` クエリは最大30件まで。チャンク分割して並列取得する
+  const CHUNK_SIZE = 30;
+  const chunks: string[][] = [];
+  for (let i = 0; i < shareIds.length; i += CHUNK_SIZE) {
+    chunks.push(shareIds.slice(i, i + CHUNK_SIZE));
+  }
+
+  const snapshots = await Promise.all(
+    chunks.map(chunk =>
+      firestore()
+        .collection(COLLECTION)
+        .where(firestore.FieldPath.documentId(), 'in', chunk)
+        .get(),
+    ),
+  );
+
+  for (const querySnap of snapshots) {
+    for (const docSnap of querySnap.docs) {
+      const data = docSnap.data() as SharedMemoDoc | undefined;
+      if (data) {
+        result[docSnap.id] = data;
+      }
     }
-  });
+  }
+
   return result;
 }
 

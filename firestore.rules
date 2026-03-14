@@ -8,6 +8,9 @@ service cloud.firestore {
     match /sharedMemos/{shareId} {
 
       // 移行期間ヘルパー: ownerUid がまだ設定されていない既存ドキュメント
+      // TODO: 2026-06-30 までに既存ドキュメントへ ownerUid を付与する移行スクリプトを実行し、
+      //       この isLegacyDoc() フォールバックを削除すること。
+      //       フォールバックが残っている間、認証済みユーザー全員がレガシードキュメントにアクセス可能。
       function isLegacyDoc() {
         return !('ownerUid' in resource.data);
       }
