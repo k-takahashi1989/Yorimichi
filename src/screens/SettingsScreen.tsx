@@ -277,6 +277,7 @@ export default function SettingsScreen(): React.JSX.Element {
           {t('settings.monitorCard.description')}
         </Text>
         <TouchableOpacity
+          testID="monitor-toggle-button"
           style={[styles.monitorBtn, isMonitoring && styles.monitorBtnStop]}
           onPress={handleToggleMonitoring}>
           <Icon name={isMonitoring ? 'stop' : 'play-arrow'} size={20} color="#fff" />

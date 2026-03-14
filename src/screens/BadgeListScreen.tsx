@@ -45,6 +45,7 @@ export default function BadgeListScreen(): React.JSX.Element {
         <View style={styles.tabRow}>
           {BADGE_CATEGORIES.map(cat => (
             <TouchableOpacity
+              testID={`badge-tab-${cat.key}`}
               key={cat.key}
               style={[styles.tab, selectedCategory === cat.key && styles.tabActive]}
               onPress={() => setSelectedCategory(cat.key)}>

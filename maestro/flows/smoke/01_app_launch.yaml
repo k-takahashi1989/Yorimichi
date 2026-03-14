@@ -1,0 +1,7 @@
+appId: com.yorimichi
+tags:
+  - smoke
+---
+# 01: アプリ起動 → メモ一覧画面が表示される
+- launchApp
+- assertVisible: "よりみちリスト"

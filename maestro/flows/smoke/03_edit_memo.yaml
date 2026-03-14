@@ -1,0 +1,34 @@
+appId: com.yorimichi
+tags:
+  - smoke
+---
+# 03: メモ編集（タイトル変更・アイテム追加）
+- launchApp
+- assertVisible: "よりみちリスト"
+
+# 前のテストで作成されたメモをタップ
+- tapOn: "E2Eテストメモ"
+
+# 編集ボタン
+- tapOn:
+    id: "memo-edit-button"
+
+# タイトル変更
+- tapOn:
+    id: "memo-title-input"
+- clearInput
+- inputText: "E2Eテストメモ 更新"
+
+# アイテム追加
+- tapOn:
+    id: "memo-item-input"
+- inputText: "卵"
+- pressKey: Enter
+
+# 完了
+- tapOn:
+    id: "memo-done-button"
+
+# 更新されたタイトルを確認
+- assertVisible: "E2Eテストメモ 更新"
+- assertVisible: "卵"

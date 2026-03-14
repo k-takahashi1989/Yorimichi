@@ -1,0 +1,40 @@
+appId: com.yorimichi
+tags:
+  - smoke
+---
+# 02: メモ作成 → 一覧に表示確認
+- launchApp
+- assertVisible: "よりみちリスト"
+
+# + ボタンでメモ作成画面へ
+- tapOn:
+    id: "memo-add-button"
+
+# タイトル入力
+- tapOn:
+    id: "memo-title-input"
+- inputText: "E2Eテストメモ"
+
+# アイテム追加
+- tapOn:
+    id: "memo-item-input"
+- inputText: "牛乳"
+- pressKey: Enter
+
+- tapOn:
+    id: "memo-item-input"
+- inputText: "パン"
+- pressKey: Enter
+
+# 完了ボタン
+- tapOn:
+    id: "memo-done-button"
+
+# MemoDetail 画面でタイトルが表示されている
+- assertVisible: "E2Eテストメモ"
+- assertVisible: "牛乳"
+- assertVisible: "パン"
+
+# 戻って一覧にメモが表示されている
+- back
+- assertVisible: "E2Eテストメモ"

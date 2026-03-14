@@ -443,6 +443,7 @@ export default function PremiumScreen(): React.JSX.Element {
 
           {/* アップグレードCTA */}
           <TouchableOpacity
+            testID="purchase-button"
             style={[styles.upgradeBtn, purchasing && styles.upgradeBtnDisabled]}
             onPress={handleUpgrade}
             disabled={purchasing || offeringLoading}>

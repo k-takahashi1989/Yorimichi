@@ -155,6 +155,7 @@ export default function MemoListScreen(): React.JSX.Element {
 
     return (
         <TouchableOpacity
+          testID={`memo-card-${item.id}`}
           style={[styles.card, isCompleted && styles.cardCompleted]}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('MemoDetail', { memoId: item.id })}>
@@ -203,11 +204,13 @@ export default function MemoListScreen(): React.JSX.Element {
           </View>
           <View style={styles.cardActions}>
             <TouchableOpacity
+              testID={`memo-edit-icon-${item.id}`}
               onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Icon name="edit" size={22} color="#757575" />
             </TouchableOpacity>
             <TouchableOpacity
+              testID={`memo-delete-icon-${item.id}`}
               onPress={() => handleDelete(item)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={styles.deleteBtn}>
@@ -224,11 +227,13 @@ export default function MemoListScreen(): React.JSX.Element {
         <Text style={styles.headerTitle}>{t('memoList.headerTitle')}</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
+            testID="share-import-button"
             style={styles.headerIconBtn}
             onPress={() => { setImportCode(''); setImportModalVisible(true); }}>
             <Icon name="group-add" size={26} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
+            testID="memo-add-button"
             style={styles.addBtn}
             onPress={handleAddNewMemo}>
             <Icon name="add" size={28} color="#fff" />

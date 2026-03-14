@@ -280,6 +280,7 @@ export default function MemoEditScreen(): React.JSX.Element {
         <View ref={titleInputRef} collapsable={false}>
           <Text style={styles.label}>{t('memoEdit.titleLabel')}</Text>
           <TextInput
+            testID="memo-title-input"
             style={styles.titleInput}
             value={title}
             onChangeText={setTitle}
@@ -325,6 +326,7 @@ export default function MemoEditScreen(): React.JSX.Element {
         {/* ノート欄 */}
         <Text style={styles.label}>{t('memoEdit.noteLabel')}</Text>
         <TextInput
+          testID="memo-note-input"
           style={styles.noteInput}
           value={note}
           onChangeText={setNote}
@@ -353,6 +355,7 @@ export default function MemoEditScreen(): React.JSX.Element {
           {/* アイテム入力 */}
           <View style={styles.addRow}>
           <TextInput
+            testID="memo-item-input"
             style={styles.addInput}
             value={newItemName}
             onChangeText={setNewItemName}
@@ -368,7 +371,7 @@ export default function MemoEditScreen(): React.JSX.Element {
             }}
           />
           {newItemName.trim().length > 0 && (
-            <TouchableOpacity onPress={handleAddItem} style={styles.addButton}>
+            <TouchableOpacity testID="memo-item-add-button" onPress={handleAddItem} style={styles.addButton}>
               <Icon name="add" size={20} color="#4CAF50" />
             </TouchableOpacity>
           )}
@@ -378,7 +381,7 @@ export default function MemoEditScreen(): React.JSX.Element {
 
       {/* 確認する */}
       <View ref={doneBtnRef} collapsable={false}>
-        <TouchableOpacity style={[styles.doneBtn, { marginBottom: Math.max(insets.bottom, 16) }]} onPress={handleDone}>
+        <TouchableOpacity testID="memo-done-button" style={[styles.doneBtn, { marginBottom: Math.max(insets.bottom, 16) }]} onPress={handleDone}>
           <Text style={styles.doneBtnText}>{t('memoEdit.doneButton')}</Text>
         </TouchableOpacity>
       </View>

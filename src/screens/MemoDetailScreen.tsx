@@ -324,6 +324,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         : null;
     return (
       <TouchableOpacity
+        testID={`checklist-item-${item.id}`}
         key={item.id}
         style={styles.itemRow}
         onPress={() => handleToggleItem(item)}
@@ -375,6 +376,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         </View>
         <View ref={shareRef} collapsable={false}>
           <TouchableOpacity
+            testID="memo-share-button"
             onPress={handleShare}
             disabled={isSharingLoading}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -406,6 +408,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
           </View>
         )}
         <TouchableOpacity
+          testID="memo-edit-button"
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.pencilBtn}>
@@ -504,6 +507,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
             )}
             {memo.isOwner !== false && memo.locations.length < getLocationsLimit(isPremium) && (
               <TouchableOpacity
+                testID="location-add-button"
                 onPress={() => navigation.navigate('LocationPicker', { memoId })}
                 style={styles.addLocBtn}>
                 <Icon name="add-location" size={18} color="#4CAF50" />
@@ -596,6 +600,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
                 <View style={{ flexDirection: 'row', gap: 4 }}>
                   <View ref={checkAllRef} collapsable={false}>
                     <TouchableOpacity
+                      testID="check-all-button"
                       onPress={handleCheckAllToggle}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       style={{ padding: 4 }}>
