@@ -380,6 +380,21 @@ export default function SettingsScreen(): React.JSX.Element {
         )}
       </View>
 
+      {/* バッジ */}
+      <TouchableOpacity
+        style={styles.badgeCard}
+        onPress={() => navigation.navigate('BadgeList')}
+        activeOpacity={0.85}>
+        <View style={styles.premiumCardLeft}>
+          <Text style={styles.premiumCardIcon}>🏆</Text>
+          <View>
+            <Text style={styles.badgeCardTitle}>{t('settings.badgeCard.title')}</Text>
+            <Text style={styles.badgeCardSub}>{t('settings.badgeCard.subtitle')}</Text>
+          </View>
+        </View>
+        <Icon name="chevron-right" size={24} color="#FFC107" />
+      </TouchableOpacity>
+
       {/* 共有メモ更新通知 */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
@@ -508,6 +523,20 @@ export default function SettingsScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  badgeCard: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  badgeCardTitle: { fontSize: 15, fontWeight: '700', color: '#F57F17' },
+  badgeCardSub: { fontSize: 12, color: '#F9A825', marginTop: 2 },
   premiumCard: {
     backgroundColor: '#E65100',
     borderRadius: 12,

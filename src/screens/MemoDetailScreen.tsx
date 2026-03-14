@@ -36,6 +36,8 @@ import {
 } from '../services/shareService';
 import { notifySharedMemoUpdate, getCooldownRemaining } from '../services/fcmService';
 import { recordError } from '../services/crashlyticsService';
+import { onItemComplete, onShareMemo } from '../services/badgeService';
+import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoDetail'>;
@@ -133,8 +135,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
         : docItem;
     });
-    // オーナーもコラボレーターも Firestore を真実源として locations を取得
-    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations });
+    // オーナーもコラボレーターも Firestore を真実源として locations, note を取得
+    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations, note: doc.note });
   }, [memoId, updateMemo]);
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
@@ -213,6 +215,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
       const shareId = await uploadSharedMemo(memo, deviceId);
       if (!memo.shareId) {
         setMemoShareId(memoId, shareId, true);
+        const newBadges = onShareMemo();
+        if (newBadges.length > 0) showBadgeUnlock(newBadges);
       }
       await Share.share({
         message: `${t('share.shareMessage')}\n\n${t('share.shareCodeLabel')}: ${shareId}\n\n${t('share.shareCodeHint')}`,
@@ -275,6 +279,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
       setUndoTarget(item);
       setSnackbarVisible(true);
     } else {
+      // チェック時: バッジ判定
+      const newBadges = onItemComplete(1, !!memo?.shareId);
+      if (newBadges.length > 0) showBadgeUnlock(newBadges);
       // チェック時: 全アイテムがチェックされたか確認
       const allOthersChecked = memo
         ? memo.items.filter(it => it.id !== item.id).every(it => it.isChecked)
@@ -446,6 +453,14 @@ export default function MemoDetailScreen(): React.JSX.Element {
           </Text>
         );
       })()}
+
+      {/* ノート表示 */}
+      {memo.note ? (
+        <View style={styles.noteSection}>
+          <Icon name="sticky-note-2" size={14} color="#9E9E9E" />
+          <Text style={styles.noteText}>{memo.note}</Text>
+        </View>
+      ) : null}
 
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
@@ -888,6 +903,16 @@ const styles = StyleSheet.create({
   notifModeNameDisabled: { color: '#9E9E9E' },
   notifModeDesc: { fontSize: 12, color: '#757575', marginTop: 2 },
   notifModeComingSoon: { fontSize: 11, color: '#FF9800', fontWeight: '500' as const },
+  noteSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: '#FFFDE7',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  noteText: { fontSize: 13, color: '#616161', flex: 1, lineHeight: 20 },
   notifyBtn: {
     flexDirection: 'row',
     alignItems: 'center',

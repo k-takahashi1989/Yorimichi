@@ -11,6 +11,8 @@ import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { handleForegroundNotification } from '../services/notificationService';
 import { registerFcmToken, listenTokenRefresh, onForegroundMessage } from '../services/fcmService';
+import { onGeofenceVisit } from '../services/badgeService';
+import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
@@ -23,6 +25,7 @@ import MemoEditScreen from '../screens/MemoEditScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PremiumScreen from '../screens/PremiumScreen';
+import BadgeListScreen from '../screens/BadgeListScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -139,6 +142,9 @@ export function AppNavigator(): React.JSX.Element {
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
     handleForegroundNotification((memoId: string) => {
+      // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
+      const newBadges = onGeofenceVisit(memoId);
+      if (newBadges.length > 0) showBadgeUnlock(newBadges);
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
   }, []);
@@ -224,6 +230,11 @@ export function AppNavigator(): React.JSX.Element {
           name="Premium"
           component={PremiumScreen}
           options={{ title: t('premium.screenTitle') }}
+        />
+        <Stack.Screen
+          name="BadgeList"
+          component={BadgeListScreen}
+          options={{ title: t('badges.screenTitle') }}
         />
       </Stack.Navigator>
     </NavigationContainer>

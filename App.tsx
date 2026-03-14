@@ -18,6 +18,9 @@ import { initPurchases } from './src/services/purchaseService';
 import { backupAllMemos, shouldAutoBackup } from './src/services/backupService';
 import { getDeviceId } from './src/utils/deviceId';
 import { initCrashlytics, recordError } from './src/services/crashlyticsService';
+import { onAppLaunch } from './src/services/badgeService';
+import { showBadgeUnlock } from './src/components/BadgeUnlockModal';
+import BadgeUnlockModal from './src/components/BadgeUnlockModal';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -59,6 +62,12 @@ function App(): React.JSX.Element {
     };
     // 少し遅延して実行（起動直後の負荷を避ける）
     setTimeout(() => runAutoBackup(), 3000);
+
+    // バッジ: アプリ起動時の判定
+    setTimeout(() => {
+      const newBadges = onAppLaunch();
+      if (newBadges.length > 0) showBadgeUnlock(newBadges);
+    }, 2000);
 
     // 位置情報権限チェック → 必要なら起動時にリクエスト
     const initPermissions = async () => {
@@ -115,6 +124,7 @@ function App(): React.JSX.Element {
       <SafeAreaProvider>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <AppNavigator />
+        <BadgeUnlockModal />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

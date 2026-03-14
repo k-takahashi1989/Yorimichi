@@ -31,6 +31,8 @@ import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareS
 import { LIMITS_ENABLED, FREE_LIMITS, getItemsLimit } from '../config/planLimits';
 import { LimitModal } from '../components/LimitModal';
 import { recordError } from '../services/crashlyticsService';
+import { onMemoCreate, onShareMemo } from '../services/badgeService';
+import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoEdit'>;
@@ -62,6 +64,7 @@ export default function MemoEditScreen(): React.JSX.Element {
   const [title, setTitle] = useState(existingMemo?.title ?? '');
   const [newItemName, setNewItemName] = useState('');
   const [savedMemoId, setSavedMemoId] = useState<string | undefined>(memoId);
+  const [note, setNote] = useState(existingMemo?.note ?? '');
   const [dueDate, setDueDate] = useState<number | undefined>(existingMemo?.dueDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
@@ -214,11 +217,13 @@ export default function MemoEditScreen(): React.JSX.Element {
     }
     const isNew = !memoId; // ルートパラメータがない → 新規作成
     let targetId: string | undefined = savedMemoId;
+    const trimmedNote = note.trim() || undefined;
     if (savedMemoId) {
-      updateMemo(savedMemoId, { title: title.trim(), dueDate });
+      updateMemo(savedMemoId, { title: title.trim(), dueDate, note: trimmedNote });
     } else {
       const newMemo = addMemo(title.trim(), dueDate);
       targetId = newMemo.id;
+      if (trimmedNote) updateMemo(newMemo.id, { note: trimmedNote });
     }
     if (!targetId) {
       navigation.goBack();
@@ -243,6 +248,8 @@ export default function MemoEditScreen(): React.JSX.Element {
     };
     if (isNew) {
       incrementMemoRegistrations();
+      const newBadges = onMemoCreate();
+      if (newBadges.length > 0) showBadgeUnlock(newBadges);
       // totalMemoRegistrations は increment 前の値。
       // 5回目 (index 4) 以降からインタースティシャルを表示する（プレミアムユーザーには表示しない）
       if (!isPremium && totalMemoRegistrations >= 4) {
@@ -314,6 +321,19 @@ export default function MemoEditScreen(): React.JSX.Element {
             }}
           />
         )}
+
+        {/* ノート欄 */}
+        <Text style={styles.label}>{t('memoEdit.noteLabel')}</Text>
+        <TextInput
+          style={styles.noteInput}
+          value={note}
+          onChangeText={setNote}
+          placeholder={t('memoEdit.notePlaceholder')}
+          placeholderTextColor="#BDBDBD"
+          multiline
+          maxLength={500}
+          textAlignVertical="top"
+        />
 
         {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
         <View ref={addRowRef} collapsable={false}>
@@ -415,6 +435,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#212121',
     elevation: 1,
+  },
+  noteInput: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 14,
+    color: '#212121',
+    elevation: 1,
+    minHeight: 60,
+    maxHeight: 120,
+    marginBottom: 4,
   },
   itemRow: {
     flexDirection: 'row',

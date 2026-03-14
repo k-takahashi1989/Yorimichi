@@ -96,6 +96,7 @@ export async function uploadSharedMemo(
     title: memo.title,
     items: memo.items.map(sanitizeItem),
     locations: memo.locations.map(sanitizeLocation),
+    ...(memo.note ? { note: memo.note } : {}),
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],

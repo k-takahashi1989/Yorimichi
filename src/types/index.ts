@@ -39,6 +39,7 @@ export interface Memo {
   autoDisabledNotification?: boolean; // 全チェック時に自動でOFFにした場合 true
   notificationMode?: NotificationMode; // undefined = 'push' 相当（後方互換）
   dueDate?: number;            // 期限日 (Unix ms, 日付のみ)
+  note?: string;               // メモ全体への補足ノート（自由テキスト）
   createdAt: number;           // Unix タイムスタンプ (ms)
   updatedAt: number;
   // 共有機能
@@ -55,6 +56,7 @@ export interface SharedMemoDoc {
   title: string;
   items: ShoppingItem[];
   locations: MemoLocation[];
+  note?: string;
   updatedAt: number;
   ownerDeviceId: string;
   collaborators: string[];
@@ -78,6 +80,7 @@ export type RootStackParamList = {
     existingLocationId?: string;                   // undefined = 新規追加
   };
   Premium: undefined;
+  BadgeList: undefined;
 };
 
 export type MainTabParamList = {
