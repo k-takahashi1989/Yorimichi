@@ -288,7 +288,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
   };
 
   const handleSkip = () => {
-    navigation.navigate('MemoEdit', {});
+    navigation.replace('MemoEdit', {});
   };
 
   const handleSave = () => {
@@ -312,7 +312,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
 
     if (isStandalone) {
       // スタンドアロンモード: store に保存せず MemoEdit に場所データを渡す
-      navigation.navigate('MemoEdit', { pickedLocation: locationData });
+      // replace でスタックから LocationPicker を除去（戻るボタンで MemoList に戻れるようにする）
+      navigation.replace('MemoEdit', { pickedLocation: locationData });
       return;
     }
 
