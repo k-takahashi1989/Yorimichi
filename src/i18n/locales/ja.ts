@@ -40,6 +40,8 @@ const ja = {
     errorEmptyTitle: 'タイトルを入力してください',
     errorNeedTitleFirst: 'メモタイトルを入力してください',
     errorNeedTitleFirstMsg: 'アイテムを追加する前にタイトルを入力してください',
+    autoTitleWithLocation: '{{label}}のメモ',
+    autoTitleDefault: 'メモ{{number}}',
     dueDateLabel: '期限を設定',
     dueDateClear: 'クリア',
     noteLabel: 'メモ',
@@ -95,6 +97,7 @@ const ja = {
     labelPlaceholder: '例: スーパー三和',
     radiusLabel: '通知半径: {{radius}}m',
     saveButton: 'この場所を保存',
+    skipButton: 'スキップ',
     recentTitle: '最近の場所',
     geocodingInProgress: '住所を取得中…',
     triggerEnter: '到着時に通知',
@@ -203,7 +206,7 @@ const ja = {
     memoEdit: {
       step1: '📝 メモのタイトルを入力しましょう',
       step2: '✏️ アイテムを入力したら＋ボタンでリストに追加できます',
-      step3: '✅ 「確認する」で保存。詳細画面で場所を登録すると、近づいたときに通知が届きます！',
+      step3: '✅ 「確認する」で保存。場所を登録していれば、近づいたときに通知が届きます！',
     },
     memoDetail: {
       step1: '🔔 ベルマークで通知の ON / OFF を切り替えられます',

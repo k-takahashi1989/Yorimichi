@@ -39,6 +39,8 @@ const en: Translation = {
     errorEmptyTitle: 'Please enter a title',
     errorNeedTitleFirst: 'Enter a memo title first',
     errorNeedTitleFirstMsg: 'Please enter a title before adding items',
+    autoTitleWithLocation: '{{label}} memo',
+    autoTitleDefault: 'Memo {{number}}',
     dueDateLabel: 'Set due date',
     dueDateClear: 'Clear',
     noteLabel: 'Note',
@@ -92,6 +94,7 @@ const en: Translation = {
     labelPlaceholder: 'e.g. Supermarket',
     radiusLabel: 'Notify radius: {{radius}}m',
     saveButton: 'Save this location',
+    skipButton: 'Skip',
     recentTitle: 'Recent places',
     geocodingInProgress: 'Getting address...',
     triggerEnter: 'Notify on arrival',
@@ -197,7 +200,7 @@ const en: Translation = {
     memoEdit: {
       step1: '📝 Enter the memo title here',
       step2: `✏️ Type an item and tap + to add it to the list`,
-      step3: `✅ Tap "Confirm" to save. Then add a location to get notified when you're nearby!`,
+      step3: `✅ Tap "Confirm" to save. If you added a location, you'll get notified when you're nearby!`,
     },
     memoDetail: {
       step1: '🔔 Tap the bell to toggle location notifications on / off',

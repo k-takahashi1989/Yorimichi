@@ -53,7 +53,8 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
-  const { memoId, existingLocationId } = route.params;
+  const { memoId, existingLocationId } = route.params ?? {};
+  const isStandalone = !memoId; // スタンドアロンモード（新規メモ作成フロー）
 
   const addLocation = useMemoStore(s => s.addLocation);
   const updateLocation = useMemoStore(s => s.updateLocation);
@@ -65,9 +66,11 @@ export default function LocationPickerScreen(): React.JSX.Element {
   // 同一メモの登録済み場所（編集中の場所自体は除外）
   const otherLocations = useMemoStore(
     useShallow(s =>
-      (s.memos.find(m => m.id === memoId)?.locations ?? []).filter(
-        loc => loc.id !== existingLocationId,
-      ),
+      memoId
+        ? (s.memos.find(m => m.id === memoId)?.locations ?? []).filter(
+            loc => loc.id !== existingLocationId,
+          )
+        : [],
     ),
   );
 
@@ -284,6 +287,10 @@ export default function LocationPickerScreen(): React.JSX.Element {
     );
   };
 
+  const handleSkip = () => {
+    navigation.replace('MemoEdit', {});
+  };
+
   const handleSave = () => {
     if (!picked) {
       Alert.alert(t('locationPicker.alertNoLocation'), t('locationPicker.alertNoLocationMsg'));
@@ -303,10 +310,17 @@ export default function LocationPickerScreen(): React.JSX.Element {
       ...(address ? { address } : {}),
     };
 
+    if (isStandalone) {
+      // スタンドアロンモード: store に保存せず MemoEdit に場所データを渡す
+      // replace でスタックから LocationPicker を除去（戻るボタンで MemoList に戻れるようにする）
+      navigation.replace('MemoEdit', { pickedLocation: locationData });
+      return;
+    }
+
     if (existingLocationId) {
-      updateLocation(memoId, existingLocationId, locationData);
+      updateLocation(memoId!, existingLocationId, locationData);
     } else {
-      const result = addLocation(memoId, locationData);
+      const result = addLocation(memoId!, locationData);
       if (!result) {
         setLimitModal({
           title: t('locationPicker.alertMaxTitle'),
@@ -520,16 +534,37 @@ export default function LocationPickerScreen(): React.JSX.Element {
           </View>
         )}
 
-        <TouchableOpacity
-          testID="location-save-button"
-          style={[styles.saveBtn, isGeocoding && !!picked && styles.saveBtnDisabled]}
-          onPress={handleSave}
-          disabled={isGeocoding && !!picked}>
-          {isGeocoding && !!picked
-            ? <ActivityIndicator size="small" color="#fff" />
-            : <Icon name="check" size={20} color="#fff" />}
-          <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
-        </TouchableOpacity>
+        {isStandalone ? (
+          <View style={styles.standaloneButtons}>
+            <TouchableOpacity
+              testID="location-skip-button"
+              style={styles.skipBtn}
+              onPress={handleSkip}>
+              <Text style={styles.skipBtnText}>{t('locationPicker.skipButton')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="location-save-button"
+              style={[styles.saveBtn, styles.saveBtnFlex, isGeocoding && !!picked && styles.saveBtnDisabled]}
+              onPress={handleSave}
+              disabled={isGeocoding && !!picked}>
+              {isGeocoding && !!picked
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Icon name="check" size={20} color="#fff" />}
+              <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            testID="location-save-button"
+            style={[styles.saveBtn, isGeocoding && !!picked && styles.saveBtnDisabled]}
+            onPress={handleSave}
+            disabled={isGeocoding && !!picked}>
+            {isGeocoding && !!picked
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Icon name="check" size={20} color="#fff" />}
+            <Text style={styles.saveBtnText}>{t('locationPicker.saveButton')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <LimitModal
         visible={!!limitModal}
@@ -725,6 +760,19 @@ const styles = StyleSheet.create({
   },
   recentChipText: { fontSize: 13, color: '#424242' },
 
+  /* スタンドアロンモードのボタン行 */
+  standaloneButtons: { flexDirection: 'row', gap: 10 },
+  skipBtn: {
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#BDBDBD',
+    paddingHorizontal: 20,
+  },
+  skipBtnText: { color: '#757575', fontSize: 16, fontWeight: '600' },
+
   /* 保存ボタン */
   saveBtn: {
     backgroundColor: '#4CAF50',
@@ -735,6 +783,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
+  saveBtnFlex: { flex: 1 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   saveBtnDisabled: { backgroundColor: '#A5D6A7', opacity: 0.7 },
 });

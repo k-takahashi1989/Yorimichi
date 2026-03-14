@@ -131,7 +131,7 @@ export default function MemoListScreen(): React.JSX.Element {
       });
       return;
     }
-    navigation.navigate('MemoEdit', {});
+    navigation.navigate('LocationPicker', {});
   }, [memos.length, isPremium, navigation, t]);
 
   const handleDelete = useCallback(

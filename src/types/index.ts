@@ -71,12 +71,24 @@ export interface SharedMemoDoc {
 // ナビゲーション パラメータ型
 // ============================================================
 
+export interface PickedLocationParam {
+  label: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  triggerType?: TriggerType;
+  address?: string;
+}
+
 export type RootStackParamList = {
   MainTabs: undefined;
   MemoDetail: { memoId: string };
-  MemoEdit: { memoId?: string };                   // undefined = 新規作成
+  MemoEdit: {
+    memoId?: string;                               // undefined = 新規作成
+    pickedLocation?: PickedLocationParam;           // 場所選択フローから渡されるデータ
+  };
   LocationPicker: {
-    memoId: string;
+    memoId?: string;                               // undefined = スタンドアロン（新規作成フロー）
     existingLocationId?: string;                   // undefined = 新規追加
   };
   Premium: undefined;
