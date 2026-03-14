@@ -42,6 +42,8 @@ const ja = {
     errorNeedTitleFirstMsg: 'アイテムを追加する前にタイトルを入力してください',
     dueDateLabel: '期限を設定',
     dueDateClear: 'クリア',
+    noteLabel: 'メモ',
+    notePlaceholder: 'このメモについての補足を入力…',
   },
 
   // ── MemoDetailScreen ─────────────────────────────────────
@@ -171,6 +173,15 @@ const ja = {
       endLabel: '終了時刻',
       description: '設定した時間内のみ通知します。時間外は通知されません。',
     },
+    sharedNotif: {
+      sectionTitle: '共有メモの更新通知',
+      enableToggle: '更新通知を受け取る',
+      description: '共有相手がメモの更新を通知した際に、プッシュ通知を受け取ります。',
+    },
+    badgeCard: {
+      title: 'バッジコレクション',
+      subtitle: 'あなたの実績を確認しましょう',
+    },
   },
 
   // ── AppNavigator ──────────────────────────────────────────
@@ -265,6 +276,16 @@ const ja = {
     syncSuccess: 'メモを最新の状態に更新しました',
     roleOwner: 'オーナー',
     roleCollaborator: 'コラボレーター',
+  },
+  // ── 共有メモ更新通知 ───────────────────────────────────
+  shareNotify: {
+    button: '共有相手に更新を通知',
+    cooldownBtn: '通知済み ({{seconds}}秒後に再送可)',
+    sentTitle: '通知を送信しました',
+    sentMessage: '共有相手に更新通知を送りました。',
+    cooldownTitle: 'しばらくお待ちください',
+    cooldownMessage: '通知は5分間隔で送信できます。',
+    errorMessage: '通知の送信に失敗しました。',
   },
   // ── プレミアムプラン ───────────────────────────────────
   premium: {
@@ -371,6 +392,72 @@ const ja = {
       'このアプリは近くの場所に近づいたときに通知するために位置情報を使用します。設定から「アプリの使用中のみ許可」または「常に許可」をオンにしてください。',
     later: 'あとで',
     openSettings: '設定を開く',
+  },
+  // ── バッジ ────────────────────────────────────────────────
+  badges: {
+    screenTitle: 'バッジコレクション',
+    unlocked: 'バッジ解除！',
+    great: 'やったね！',
+    progress: '{{unlocked}} / {{total}} 解除済み',
+    // カテゴリ
+    categoryVisit: '訪問',
+    categoryMemo: 'メモ',
+    categoryShare: '共有',
+    categoryTime: '時間',
+    categoryHidden: '隠し',
+    // ── 訪問系 ──
+    visit_first: 'はじめの一歩',
+    visit_first_desc: 'ジオフェンス通知を初めてタップ',
+    visit_10: 'おつかいマスター',
+    visit_10_desc: '通知タップ 10回達成',
+    visit_50: '買い物の達人',
+    visit_50_desc: '通知タップ 50回達成',
+    visit_100: 'レジェンド',
+    visit_100_desc: '通知タップ 100回達成',
+    visit_places_5: '冒険者',
+    visit_places_5_desc: '5か所の場所を訪問',
+    visit_places_10: '旅人',
+    visit_places_10_desc: '10か所の場所を訪問',
+    visit_places_20: '世界地図',
+    visit_places_20_desc: '20か所の場所を訪問',
+    // ── メモ・リスト系 ──
+    memo_first: 'メモデビュー',
+    memo_first_desc: '初めてメモを作成',
+    memo_5: 'メモコレクター',
+    memo_5_desc: 'メモを5件作成',
+    item_complete_first: 'はじめてのチェック',
+    item_complete_first_desc: 'アイテムを初めて完了',
+    item_complete_50: 'チェックマニア',
+    item_complete_50_desc: 'アイテムを50個完了',
+    item_complete_100: 'コンプリーター',
+    item_complete_100_desc: 'アイテムを100個完了',
+    memo_full_list: 'リストマスター',
+    memo_full_list_desc: '10個以上のアイテムがあるメモを全完了',
+    // ── 共有系 ──
+    share_first: 'シェアデビュー',
+    share_first_desc: '初めてメモを共有',
+    share_collab_3: 'チームワーク',
+    share_collab_3_desc: '3人以上と共有',
+    share_5: '共有の達人',
+    share_5_desc: 'メモを5回共有',
+    share_complete_10: '助け合い',
+    share_complete_10_desc: '共有メモのアイテムを10個完了',
+    // ── 時間系 ──
+    time_night: 'ナイトショッパー',
+    time_night_desc: '22時以降にアイテムを完了',
+    time_morning: 'モーニングバード',
+    time_morning_desc: '7時前にアイテムを完了',
+    time_weekend_10: '週末ハンター',
+    time_weekend_10_desc: '週末に10回訪問',
+    // ── 隠しバッジ ──
+    hidden_midnight: 'ミッドナイトウォーカー',
+    hidden_midnight_desc: '深夜0〜3時にアプリを起動',
+    hidden_anniversary: 'アニバーサリー',
+    hidden_anniversary_desc: 'インストールから1年後にアプリを起動',
+    hidden_streak: '継続は力なり',
+    hidden_streak_desc: '7日連続でアプリを起動',
+    hidden_visit_back: 'おかえりなさい',
+    hidden_visit_back_desc: '30日以上ぶりにアプリを起動',
   },
 } as const;
 

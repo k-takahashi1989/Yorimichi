@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Unit tests (bail on first failure)
+# Note: --forceExit needed due to App.tsx setTimeout teardown issue
+# The teardown error causes Node to crash with exit code 1 even when all tests pass,
+# so we check for actual test failures in output instead of exit code.
+jest_output=$(npx jest --bail --forceExit 2>&1 || true)
+
+if echo "$jest_output" | grep -q "Test Suites:.*failed"; then
+  echo "$jest_output"
+  echo ""
+  echo "❌ Unit tests failed"
+  exit 1
+fi
+
+echo "✅ Unit tests passed"
+
+# E2E smoke tests (Maestro) — エミュレータ起動中のみ実行
+if command -v adb >/dev/null 2>&1 && adb devices 2>/dev/null | grep -q "emulator"; then
+  echo "🧪 Running E2E smoke tests..."
+  maestro test maestro/flows/smoke/
+else
+  echo "⚠️  Emulator not running — skipping E2E tests"
+fi

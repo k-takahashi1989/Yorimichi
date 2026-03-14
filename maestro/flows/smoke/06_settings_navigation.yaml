@@ -1,0 +1,17 @@
+appId: com.yorimichi
+tags:
+  - smoke
+---
+# 06: 設定画面遷移
+- launchApp
+- assertVisible: "よりみちリスト"
+
+# 設定タブをタップ
+- tapOn: "⚙️ 設定"
+
+# 設定画面が表示される
+- assertVisible: "⚙️ 設定"
+
+# メモ一覧タブに戻る
+- tapOn: "よりみちリスト"
+- assertVisible: "よりみちリスト"

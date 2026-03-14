@@ -72,10 +72,12 @@ export default function SettingsScreen(): React.JSX.Element {
   const setDefaultRadius = useSettingsStore(s => s.setDefaultRadius);
   const maxRadius = useSettingsStore(s => s.maxRadius);
   const setMaxRadius = useSettingsStore(s => s.setMaxRadius);
-  const notifWindowEnabled = useSettingsStore(s => s.notifWindowEnabled);
-  const notifWindowStart   = useSettingsStore(s => s.notifWindowStart);
-  const notifWindowEnd     = useSettingsStore(s => s.notifWindowEnd);
-  const setNotifWindow     = useSettingsStore(s => s.setNotifWindow);
+  const notifWindowEnabled       = useSettingsStore(s => s.notifWindowEnabled);
+  const notifWindowStart         = useSettingsStore(s => s.notifWindowStart);
+  const notifWindowEnd           = useSettingsStore(s => s.notifWindowEnd);
+  const setNotifWindow           = useSettingsStore(s => s.setNotifWindow);
+  const sharedMemoNotifEnabled   = useSettingsStore(s => s.sharedMemoNotifEnabled);
+  const setSharedMemoNotifEnabled = useSettingsStore(s => s.setSharedMemoNotifEnabled);
   const isPremium          = useSettingsStore(selectEffectivePremium);
   const trialStartDate     = useSettingsStore(s => s.trialStartDate);
   const isTrialOn          = isTrialActive(trialStartDate);
@@ -275,6 +277,7 @@ export default function SettingsScreen(): React.JSX.Element {
           {t('settings.monitorCard.description')}
         </Text>
         <TouchableOpacity
+          testID="monitor-toggle-button"
           style={[styles.monitorBtn, isMonitoring && styles.monitorBtnStop]}
           onPress={handleToggleMonitoring}>
           <Icon name={isMonitoring ? 'stop' : 'play-arrow'} size={20} color="#fff" />
@@ -376,6 +379,43 @@ export default function SettingsScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
         )}
+      </View>
+
+      {/* バッジ */}
+      <TouchableOpacity
+        style={styles.badgeCard}
+        onPress={() => navigation.navigate('BadgeList')}
+        activeOpacity={0.85}>
+        <View style={styles.premiumCardLeft}>
+          <Text style={styles.premiumCardIcon}>🏆</Text>
+          <View>
+            <Text style={styles.badgeCardTitle}>{t('settings.badgeCard.title')}</Text>
+            <Text style={styles.badgeCardSub}>{t('settings.badgeCard.subtitle')}</Text>
+          </View>
+        </View>
+        <Icon name="chevron-right" size={24} color="#FFC107" />
+      </TouchableOpacity>
+
+      {/* 共有メモ更新通知 */}
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Icon name="notifications-active" size={18} color="#4CAF50" />
+          <Text style={[styles.cardTitle, styles.cardTitleInRow]}>
+            {t('settings.sharedNotif.sectionTitle')}
+          </Text>
+        </View>
+        <Text style={styles.cardDesc}>
+          {t('settings.sharedNotif.description')}
+        </Text>
+        <View style={styles.notifWindowRow}>
+          <Text style={styles.notifWindowLabel}>{t('settings.sharedNotif.enableToggle')}</Text>
+          <Switch
+            value={sharedMemoNotifEnabled}
+            onValueChange={setSharedMemoNotifEnabled}
+            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
+            thumbColor={sharedMemoNotifEnabled ? '#4CAF50' : '#F5F5F5'}
+          />
+        </View>
       </View>
 
       {/* プレミアムプランカード */}
@@ -484,6 +524,20 @@ export default function SettingsScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  badgeCard: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  badgeCardTitle: { fontSize: 15, fontWeight: '700', color: '#F57F17' },
+  badgeCardSub: { fontSize: 12, color: '#F9A825', marginTop: 2 },
   premiumCard: {
     backgroundColor: '#E65100',
     borderRadius: 12,

@@ -39,6 +39,37 @@ jest.mock('../src/services/notificationService', () => ({
   registerBackgroundNotificationHandler: jest.fn(),
   handleForegroundNotification: jest.fn(),
 }));
+jest.mock('../src/services/badgeService', () => ({
+  onAppLaunch: jest.fn(() => []),
+  onGeofenceVisit: jest.fn(() => []),
+  onMemoCreate: jest.fn(() => []),
+  onItemComplete: jest.fn(() => []),
+  onShareMemo: jest.fn(() => []),
+}));
+jest.mock('../src/components/BadgeUnlockModal', () => {
+  const React = require('react');
+  const Modal = () => null;
+  Modal.showBadgeUnlock = jest.fn();
+  return { __esModule: true, default: Modal, showBadgeUnlock: jest.fn() };
+});
+jest.mock('../src/services/fcmService', () => ({
+  registerFcmToken: jest.fn().mockResolvedValue(undefined),
+  listenTokenRefresh: jest.fn(() => jest.fn()),
+  onForegroundMessage: jest.fn(() => jest.fn()),
+  setBackgroundMessageHandler: jest.fn(),
+}));
+jest.mock('../src/services/purchaseService', () => ({
+  initPurchases: jest.fn(),
+  checkEntitlementActive: jest.fn().mockResolvedValue(false),
+}));
+jest.mock('../src/services/backupService', () => ({
+  backupAllMemos: jest.fn().mockResolvedValue(0),
+  shouldAutoBackup: jest.fn(() => false),
+}));
+jest.mock('../src/services/crashlyticsService', () => ({
+  initCrashlytics: jest.fn(),
+  recordError: jest.fn(),
+}));
 jest.mock('../src/services/geofenceService', () => ({
   startGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),
   stopGeofenceMonitoring: jest.fn().mockResolvedValue(undefined),

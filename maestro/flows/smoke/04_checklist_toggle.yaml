@@ -1,0 +1,19 @@
+appId: com.yorimichi
+tags:
+  - smoke
+---
+# 04: チェックリスト操作（全チェック）
+- launchApp
+- assertVisible: "よりみちリスト"
+
+# メモをタップして詳細へ
+- tapOn: "E2Eテストメモ 更新"
+
+# 全チェックボタン
+- tapOn:
+    id: "check-all-button"
+
+# 完了スタンプが表示される（全アイテムチェック済み）
+# 全チェック後は clear-all アイコンに切り替わるので、再度タップで全解除
+- tapOn:
+    id: "check-all-button"

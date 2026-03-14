@@ -33,6 +33,18 @@ export interface SettingsState {
   notifWindowEnd: number;              // 終了時刻 (float, 0.5刻み)
   // クーポンコード
   couponExpiry: number | null;         // クーポン有効期限 (Unix ms)。null = 未使用
+  // 共有メモ更新通知の受信（オプトアウト設定）
+  sharedMemoNotifEnabled: boolean;     // 共有メモの更新通知を受け取るか
+  // バッジシステム（ゲーミフィケーション）
+  unlockedBadges: string[];           // 解除済みバッジIDの配列
+  firstLaunchDate: number;            // hidden_anniversary 判定用（ms）
+  lastLaunchDates: number[];          // hidden_streak 判定用（直近7日分）
+  totalVisitCount: number;            // 訪問系バッジの累計カウント
+  visitedPlaceIds: string[];          // 訪問済み地点IDの重複なしリスト
+  totalItemsCompleted: number;        // リスト系バッジの累計カウント
+  totalSharedMemos: number;           // 共有系バッジの累計カウント
+  weekendVisitCount: number;          // 土日訪問回数
+  sharedItemsCompleted: number;       // 共有メモでのアイテム完了累計
   // クラウドバックアップ（プレミアム機能）
   lastCloudBackupAt: number | null;    // 最後にクラウドバックアップした日時 (Unix ms)
   setDefaultRadius: (radius: number) => void;
@@ -43,6 +55,14 @@ export interface SettingsState {
   setIsPremium: (value: boolean) => void;
   startTrial: () => void;
   setNotifWindow: (enabled: boolean, start: number, end: number) => void;
+  setSharedMemoNotifEnabled: (value: boolean) => void;
+  unlockBadge: (id: string) => void;
+  incrementVisitCount: (placeId: string) => void;
+  incrementItemsCompleted: (count: number) => void;
+  incrementSharedMemos: () => void;
+  incrementWeekendVisits: () => void;
+  incrementSharedItemsCompleted: (count: number) => void;
+  recordLaunchDate: () => void;
   redeemCoupon: (code: string) => Promise<'ok' | 'invalid' | 'already_used' | 'network'>;
   syncPurchaseStatus: () => Promise<void>;
   setLastCloudBackupAt: (ts: number) => void;
@@ -63,6 +83,16 @@ export const useSettingsStore = create<SettingsState>()(
       notifWindowStart: 8.0,
       notifWindowEnd: 22.0,
       couponExpiry: null,
+      sharedMemoNotifEnabled: true,
+      unlockedBadges: [],
+      firstLaunchDate: Date.now(),
+      lastLaunchDates: [],
+      totalVisitCount: 0,
+      visitedPlaceIds: [],
+      totalItemsCompleted: 0,
+      totalSharedMemos: 0,
+      weekendVisitCount: 0,
+      sharedItemsCompleted: 0,
       lastCloudBackupAt: null,
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       incrementMemoRegistrations: () =>
@@ -85,6 +115,36 @@ export const useSettingsStore = create<SettingsState>()(
           return { recentPlaces: updated };
         }),
       setIsPremium: (value: boolean) => set({ isPremium: value }),
+      setSharedMemoNotifEnabled: (value: boolean) => set({ sharedMemoNotifEnabled: value }),
+      unlockBadge: (id: string) =>
+        set(state => ({
+          unlockedBadges: state.unlockedBadges.includes(id)
+            ? state.unlockedBadges
+            : [...state.unlockedBadges, id],
+        })),
+      incrementVisitCount: (placeId: string) =>
+        set(state => ({
+          totalVisitCount: state.totalVisitCount + 1,
+          visitedPlaceIds: state.visitedPlaceIds.includes(placeId)
+            ? state.visitedPlaceIds
+            : [...state.visitedPlaceIds, placeId],
+        })),
+      incrementItemsCompleted: (count: number) =>
+        set(state => ({ totalItemsCompleted: state.totalItemsCompleted + count })),
+      incrementSharedMemos: () =>
+        set(state => ({ totalSharedMemos: state.totalSharedMemos + 1 })),
+      incrementWeekendVisits: () =>
+        set(state => ({ weekendVisitCount: state.weekendVisitCount + 1 })),
+      incrementSharedItemsCompleted: (count: number) =>
+        set(state => ({ sharedItemsCompleted: state.sharedItemsCompleted + count })),
+      recordLaunchDate: () =>
+        set(state => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayMs = today.getTime();
+          if (state.lastLaunchDates.includes(todayMs)) return {};
+          return { lastLaunchDates: [...state.lastLaunchDates, todayMs].slice(-7) };
+        }),
       startTrial: () => set({ trialStartDate: Date.now(), hasUsedTrial: true }),
       setNotifWindow: (enabled: boolean, start: number, end: number) => {
         set({ notifWindowEnabled: enabled, notifWindowStart: start, notifWindowEnd: end });
@@ -114,7 +174,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'settings',
-      version: 9,
+      version: 11,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -147,6 +207,23 @@ export const useSettingsStore = create<SettingsState>()(
           // アプリ起動時の syncPurchaseStatus() で実際の購入者は true に戻る。
           persisted = { ...persisted, isPremium: false };
         }
+        if (version <= 9) {
+          persisted = { ...persisted, sharedMemoNotifEnabled: true };
+        }
+        if (version <= 10) {
+          persisted = {
+            ...persisted,
+            unlockedBadges: [],
+            firstLaunchDate: persisted.firstLaunchDate ?? Date.now(),
+            lastLaunchDates: [],
+            totalVisitCount: persisted.totalVisitCount ?? 0,
+            visitedPlaceIds: persisted.visitedPlaceIds ?? [],
+            totalItemsCompleted: persisted.totalItemsCompleted ?? 0,
+            totalSharedMemos: persisted.totalSharedMemos ?? 0,
+            weekendVisitCount: persisted.weekendVisitCount ?? 0,
+            sharedItemsCompleted: persisted.sharedItemsCompleted ?? 0,
+          };
+        }
         return persisted;
       },
     },
@@ -170,7 +247,7 @@ interface MemoState {
 
   // CRUD
   addMemo: (title: string, dueDate?: number) => Memo;
-  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations' | 'notificationMode' | 'dueDate'>>) => void;
+  updateMemo: (id: string, partial: Partial<Pick<Memo, 'title' | 'notificationEnabled' | 'autoDisabledNotification' | 'items' | 'locations' | 'notificationMode' | 'dueDate' | 'note'>>) => void;
   deleteMemo: (id: string) => void;
   restoreMemo: (memo: Memo) => void;
   getMemoById: (id: string) => Memo | undefined;

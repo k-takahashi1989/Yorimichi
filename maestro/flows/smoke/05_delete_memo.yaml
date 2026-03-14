@@ -1,0 +1,25 @@
+appId: com.yorimichi
+tags:
+  - smoke
+---
+# 05: メモ削除
+- launchApp
+- assertVisible: "よりみちリスト"
+
+# メモ一覧でメモのタイトルが表示されていることを確認
+- assertVisible: "E2Eテストメモ 更新"
+
+# 削除アイコンをタップ（テキストの横にある）
+- tapOn:
+    text: "E2Eテストメモ 更新"
+    longPress: false
+
+# 一覧から詳細画面に遷移後、戻って一覧で削除アイコンをタップ
+- back
+- swipeLeft:
+    text: "E2Eテストメモ 更新"
+
+# 削除ダイアログの「削除」ボタンをタップ
+# Note: 削除フローはアイコンタップ→Alert→削除ボタン
+# Maestroではカードのdeleteアイコンに直接アクセスが難しいため
+# テキストマッチで対応

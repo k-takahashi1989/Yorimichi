@@ -83,7 +83,8 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
     public void syncGeofences(String geofencesJson, final Promise promise) {
         try {
             JSONArray array = new JSONArray(geofencesJson);
-            final List<Geofence> geofences = new ArrayList<>();
+            final List<Geofence> enterGeofences = new ArrayList<>();
+            final List<Geofence> exitGeofences = new ArrayList<>();
 
             // メタデータ (通知文言) を SharedPreferences に永続化
             SharedPreferences prefs = getReactApplicationContext()
@@ -98,15 +99,13 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
             }
 
             for (int i = 0; i < array.length(); i++) {
-                if (geofences.size() >= MAX_GEOFENCES) break;
+                if (enterGeofences.size() + exitGeofences.size() >= MAX_GEOFENCES) break;
                 JSONObject obj = array.getJSONObject(i);
                 String id = obj.getString("id");
                 float radius = Math.max(50f, (float) obj.getDouble("radius"));
                 String triggerType = obj.optString("triggerType", "enter");
-                int transitionType = "exit".equals(triggerType)
-                        ? Geofence.GEOFENCE_TRANSITION_EXIT
-                        : Geofence.GEOFENCE_TRANSITION_ENTER;
-                geofences.add(new Geofence.Builder()
+                boolean isExit = "exit".equals(triggerType);
+                Geofence geofence = new Geofence.Builder()
                         .setRequestId(id)
                         .setCircularRegion(
                                 obj.getDouble("latitude"),
@@ -114,10 +113,16 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
                                 radius
                         )
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setTransitionTypes(transitionType)
+                        .setTransitionTypes(isExit
+                                ? Geofence.GEOFENCE_TRANSITION_EXIT
+                                : Geofence.GEOFENCE_TRANSITION_ENTER)
                         .setLoiteringDelay(0)
-                        .build()
-                );
+                        .build();
+                if (isExit) {
+                    exitGeofences.add(geofence);
+                } else {
+                    enterGeofences.add(geofence);
+                }
                 editor.putString("meta_" + id, obj.toString());
             }
             editor.apply();
@@ -125,7 +130,7 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
             // まず既存をクリア → その後 addGeofences
             getGeofencingClient().removeGeofences(getGeofencePendingIntent())
                     .addOnCompleteListener(task -> {
-                        if (geofences.isEmpty()) {
+                        if (enterGeofences.isEmpty() && exitGeofences.isEmpty()) {
                             promise.resolve(null);
                             return;
                         }
@@ -136,20 +141,43 @@ public class GeofenceModule extends ReactContextBaseJavaModule {
                             promise.reject("PERMISSION_DENIED", "Location permission not granted");
                             return;
                         }
-                        GeofencingRequest request = new GeofencingRequest.Builder()
-                                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER
-                                        | GeofencingRequest.INITIAL_TRIGGER_EXIT)
-                                .addGeofences(geofences)
-                                .build();
-                        getGeofencingClient().addGeofences(request, getGeofencePendingIntent())
-                                .addOnSuccessListener(aVoid -> promise.resolve(null))
-                                .addOnFailureListener(e -> promise.reject("GEOFENCE_ERROR",
-                                        e.getMessage() != null ? e.getMessage() : "Unknown error"));
+                        // enter 用: すでにエリア内にいれば即通知
+                        // exit 用: 初期トリガーなし（エリアに入って→出たときのみ通知）
+                        final List<GeofencingRequest> requests = new ArrayList<>();
+                        if (!enterGeofences.isEmpty()) {
+                            requests.add(new GeofencingRequest.Builder()
+                                    .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                                    .addGeofences(enterGeofences)
+                                    .build());
+                        }
+                        if (!exitGeofences.isEmpty()) {
+                            requests.add(new GeofencingRequest.Builder()
+                                    .setInitialTrigger(0)
+                                    .addGeofences(exitGeofences)
+                                    .build());
+                        }
+                        addGeofenceRequests(requests, 0, promise);
                     });
         } catch (Exception e) {
             promise.reject("JSON_ERROR",
                     e.getMessage() != null ? e.getMessage() : "Parse error");
         }
+    }
+
+    /**
+     * GeofencingRequest のリストを順番に登録するヘルパー。
+     * enter 用と exit 用で初期トリガーが異なるため、2つのリクエストに分割して順次登録する。
+     */
+    @SuppressWarnings("MissingPermission")
+    private void addGeofenceRequests(List<GeofencingRequest> requests, int index, Promise promise) {
+        if (index >= requests.size()) {
+            promise.resolve(null);
+            return;
+        }
+        getGeofencingClient().addGeofences(requests.get(index), getGeofencePendingIntent())
+                .addOnSuccessListener(aVoid -> addGeofenceRequests(requests, index + 1, promise))
+                .addOnFailureListener(e -> promise.reject("GEOFENCE_ERROR",
+                        e.getMessage() != null ? e.getMessage() : "Unknown error"));
     }
 
     /**

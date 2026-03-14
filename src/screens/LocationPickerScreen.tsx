@@ -369,6 +369,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
           <View style={styles.searchInputRow}>
             <Icon name="search" size={18} color="#9E9E9E" style={styles.searchIcon} />
             <TextInput
+              testID="location-search-input"
               style={styles.searchInput}
               placeholder={t('locationPicker.searchPlaceholder')}
               placeholderTextColor="#9E9E9E"
@@ -437,6 +438,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>{t('locationPicker.labelInput')}</Text>
           <TextInput
+            testID="location-label-input"
             style={styles.input}
             value={label}
             onChangeText={setLabel}
@@ -467,6 +469,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>{t('locationPicker.radiusLabel', { radius })}</Text>
           <Slider
+            testID="radius-slider"
             style={styles.slider}
             minimumValue={100}
             maximumValue={maxRadius}
@@ -518,6 +521,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
         )}
 
         <TouchableOpacity
+          testID="location-save-button"
           style={[styles.saveBtn, isGeocoding && !!picked && styles.saveBtnDisabled]}
           onPress={handleSave}
           disabled={isGeocoding && !!picked}>

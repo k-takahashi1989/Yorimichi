@@ -34,7 +34,10 @@ import {
   updateSharedMemoItems,
   updateSharedMemoLocations,
 } from '../services/shareService';
+import { notifySharedMemoUpdate, getCooldownRemaining } from '../services/fcmService';
 import { recordError } from '../services/crashlyticsService';
+import { onItemComplete, onShareMemo } from '../services/badgeService';
+import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoDetail'>;
@@ -83,9 +86,41 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [presences, setPresences] = useState<Record<string, SharePresence>>({});
   const [isSharingLoading, setIsSharingLoading] = useState(false);
   const [isSyncLoading, setIsSyncLoading] = useState(false);
+  const [isNotifyLoading, setIsNotifyLoading] = useState(false);
+  const [notifyCooldown, setNotifyCooldown] = useState(0);
   const [hideChecked, setHideChecked] = useState(false);
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const deviceId = getDeviceId();
+
+  // 共有メモ通知のクールダウンタイマー
+  useEffect(() => {
+    if (!memo?.shareId) return;
+    setNotifyCooldown(getCooldownRemaining(memo.shareId));
+    const timer = setInterval(() => {
+      const remaining = getCooldownRemaining(memo.shareId!);
+      setNotifyCooldown(remaining);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [memo?.shareId]);
+
+  const handleNotifyCollaborators = async () => {
+    if (!memo?.shareId) return;
+    setIsNotifyLoading(true);
+    try {
+      const result = await notifySharedMemoUpdate(memo.shareId, memo.title);
+      if (result === 'ok') {
+        Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
+      } else if (result === 'cooldown') {
+        Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
+      } else {
+        Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
+      }
+    } catch {
+      Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
+    } finally {
+      setIsNotifyLoading(false);
+    }
+  };
 
   // ローカルのチェック状態を保持しつつ Firestore の最新データをマージするヘルパー
   // Firestore を items の存在源（追加・削除）の真実源とし、
@@ -100,8 +135,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
         : docItem;
     });
-    // オーナーもコラボレーターも Firestore を真実源として locations を取得
-    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations });
+    // オーナーもコラボレーターも Firestore を真実源として locations, note を取得
+    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations, note: doc.note });
   }, [memoId, updateMemo]);
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
@@ -180,6 +215,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
       const shareId = await uploadSharedMemo(memo, deviceId);
       if (!memo.shareId) {
         setMemoShareId(memoId, shareId, true);
+        const newBadges = onShareMemo();
+        if (newBadges.length > 0) showBadgeUnlock(newBadges);
       }
       await Share.share({
         message: `${t('share.shareMessage')}\n\n${t('share.shareCodeLabel')}: ${shareId}\n\n${t('share.shareCodeHint')}`,
@@ -242,6 +279,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
       setUndoTarget(item);
       setSnackbarVisible(true);
     } else {
+      // チェック時: バッジ判定
+      const newBadges = onItemComplete(1, !!memo?.shareId);
+      if (newBadges.length > 0) showBadgeUnlock(newBadges);
       // チェック時: 全アイテムがチェックされたか確認
       const allOthersChecked = memo
         ? memo.items.filter(it => it.id !== item.id).every(it => it.isChecked)
@@ -284,6 +324,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         : null;
     return (
       <TouchableOpacity
+        testID={`checklist-item-${item.id}`}
         key={item.id}
         style={styles.itemRow}
         onPress={() => handleToggleItem(item)}
@@ -335,6 +376,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
         </View>
         <View ref={shareRef} collapsable={false}>
           <TouchableOpacity
+            testID="memo-share-button"
             onPress={handleShare}
             disabled={isSharingLoading}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -366,6 +408,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
           </View>
         )}
         <TouchableOpacity
+          testID="memo-edit-button"
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.pencilBtn}>
@@ -414,9 +457,37 @@ export default function MemoDetailScreen(): React.JSX.Element {
         );
       })()}
 
+      {/* ノート表示 */}
+      {memo.note ? (
+        <View style={styles.noteSection}>
+          <Icon name="sticky-note-2" size={14} color="#9E9E9E" />
+          <Text style={styles.noteText}>{memo.note}</Text>
+        </View>
+      ) : null}
+
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
         <Text style={styles.monitoringWarning}>{t('memoDetailExtra.monitoringStopped')}</Text>
+      )}
+
+      {/* 共有メモ更新通知ボタン（プレミアム限定） */}
+      {memo.shareId && isPremium && (
+        <TouchableOpacity
+          style={[styles.notifyBtn, (isNotifyLoading || notifyCooldown > 0) && styles.notifyBtnDisabled]}
+          disabled={isNotifyLoading || notifyCooldown > 0}
+          onPress={handleNotifyCollaborators}
+          activeOpacity={0.7}>
+          {isNotifyLoading ? (
+            <ActivityIndicator size={16} color="#fff" />
+          ) : (
+            <Icon name="campaign" size={18} color="#fff" />
+          )}
+          <Text style={styles.notifyBtnText}>
+            {notifyCooldown > 0
+              ? t('shareNotify.cooldownBtn', { seconds: notifyCooldown })
+              : t('shareNotify.button')}
+          </Text>
+        </TouchableOpacity>
       )}
 
       {/* 場所セクション */}
@@ -436,6 +507,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
             )}
             {memo.isOwner !== false && memo.locations.length < getLocationsLimit(isPremium) && (
               <TouchableOpacity
+                testID="location-add-button"
                 onPress={() => navigation.navigate('LocationPicker', { memoId })}
                 style={styles.addLocBtn}>
                 <Icon name="add-location" size={18} color="#4CAF50" />
@@ -528,6 +600,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
                 <View style={{ flexDirection: 'row', gap: 4 }}>
                   <View ref={checkAllRef} collapsable={false}>
                     <TouchableOpacity
+                      testID="check-all-button"
                       onPress={handleCheckAllToggle}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       style={{ padding: 4 }}>
@@ -835,4 +908,26 @@ const styles = StyleSheet.create({
   notifModeNameDisabled: { color: '#9E9E9E' },
   notifModeDesc: { fontSize: 12, color: '#757575', marginTop: 2 },
   notifModeComingSoon: { fontSize: 11, color: '#FF9800', fontWeight: '500' as const },
+  noteSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: '#FFFDE7',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  noteText: { fontSize: 13, color: '#616161', flex: 1, lineHeight: 20 },
+  notifyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#2196F3',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginBottom: 14,
+  },
+  notifyBtnDisabled: { backgroundColor: '#B0BEC5' },
+  notifyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

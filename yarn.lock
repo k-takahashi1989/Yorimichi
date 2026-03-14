@@ -2076,6 +2076,16 @@
   dependencies:
     react-native-url-polyfill "3.0.0"
 
+"@react-native-firebase/functions@^23.8.8":
+  version "23.8.8"
+  resolved "https://registry.npmjs.org/@react-native-firebase/functions/-/functions-23.8.8.tgz"
+  integrity sha512-VMvNILUoEWeIf9BC2Smyh0IeG1E1Ajri48XwI91n5LAkW8YRFKx49p0Ch4sghMJs28z/7Q+JN1/k30A10QrTyA==
+
+"@react-native-firebase/messaging@^23.8.8":
+  version "23.8.8"
+  resolved "https://registry.npmjs.org/@react-native-firebase/messaging/-/messaging-23.8.8.tgz"
+  integrity sha512-7Po3/0M9SjYftWFZDueNqvbYDgycE/p7rYrcPDBjxWXsVPO98woLPIFRDuYIJDlTVFyYFjpCTF8kDIGBWPTFzQ==
+
 "@react-native/assets-registry@0.84.0":
   version "0.84.0"
   resolved "https://registry.npmjs.org/@react-native/assets-registry/-/assets-registry-0.84.0.tgz"
@@ -4442,6 +4452,11 @@ human-signals@^2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/human-signals/-/human-signals-2.1.0.tgz"
   integrity sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==
+
+husky@^9.1.7:
+  version "9.1.7"
+  resolved "https://registry.npmjs.org/husky/-/husky-9.1.7.tgz"
+  integrity sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==
 
 i18next@^25.8.13:
   version "25.8.13"

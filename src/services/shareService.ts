@@ -37,6 +37,7 @@ function sanitizeLocation(loc: MemoLocation): MemoLocation {
     radius: loc.radius,
   };
   if (loc.address !== undefined) result.address = loc.address;
+  if (loc.triggerType !== undefined) result.triggerType = loc.triggerType;
   return result;
 }
 
@@ -95,6 +96,7 @@ export async function uploadSharedMemo(
     title: memo.title,
     items: memo.items.map(sanitizeItem),
     locations: memo.locations.map(sanitizeLocation),
+    ...(memo.note ? { note: memo.note } : {}),
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],

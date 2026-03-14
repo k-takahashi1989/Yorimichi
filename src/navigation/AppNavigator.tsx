@@ -10,6 +10,9 @@ import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { handleForegroundNotification } from '../services/notificationService';
+import { registerFcmToken, listenTokenRefresh, onForegroundMessage } from '../services/fcmService';
+import { onGeofenceVisit } from '../services/badgeService';
+import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
@@ -22,6 +25,7 @@ import MemoEditScreen from '../screens/MemoEditScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PremiumScreen from '../screens/PremiumScreen';
+import BadgeListScreen from '../screens/BadgeListScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -138,8 +142,31 @@ export function AppNavigator(): React.JSX.Element {
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
     handleForegroundNotification((memoId: string) => {
+      // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
+      const newBadges = onGeofenceVisit(memoId);
+      if (newBadges.length > 0) showBadgeUnlock(newBadges);
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
+  }, []);
+
+  // FCM: トークン登録 + フォアグラウンドメッセージリスナー
+  useEffect(() => {
+    registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken'));
+    const unsubRefresh = listenTokenRefresh();
+    const unsubMessage = onForegroundMessage((data) => {
+      // フォアグラウンドで共有メモ更新通知を受信した場合
+      // notification フィールド付きで送信しているため、Android は自動的にヘッドアップ通知を表示する。
+      // 追加のローカル通知生成は不要。
+      // 必要に応じて shareId を使って画面リフレッシュも可能。
+      if (data.type === 'memo_updated' && data.shareId) {
+        // オプトアウトチェックはAndroid通知チャンネル側で制御
+        // 現在のメモ詳細画面を自動リフレッシュすることも将来的に検討
+      }
+    });
+    return () => {
+      unsubRefresh();
+      unsubMessage();
+    };
   }, []);
 
   // アプリ起動時のディープリンク処理
@@ -203,6 +230,11 @@ export function AppNavigator(): React.JSX.Element {
           name="Premium"
           component={PremiumScreen}
           options={{ title: t('premium.screenTitle') }}
+        />
+        <Stack.Screen
+          name="BadgeList"
+          component={BadgeListScreen}
+          options={{ title: t('badges.screenTitle') }}
         />
       </Stack.Navigator>
     </NavigationContainer>
