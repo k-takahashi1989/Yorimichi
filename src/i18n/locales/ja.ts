@@ -140,6 +140,7 @@ const ja = {
       title: 'アプリ情報',
       version: 'バージョン: {{version}}',
       name: 'Yorimichi',
+      usageGuide: '使い方ガイド',
       privacyPolicy: 'プライバシーポリシー',
       contact: 'お問い合わせ',
     },
@@ -196,6 +197,18 @@ const ja = {
     memoEditNew: '新しいメモ',
     memoEditExisting: 'メモを編集',
     locationPicker: '場所を選択',
+  },
+
+  // ── オンボーディング ─────────────────────────────────────
+  onboarding: {
+    page1Title: 'Yorimichi へようこそ',
+    page1Desc: '場所に着いたら買い物リストを通知。\n忘れ物をなくすリマインダーアプリです。',
+    page2Title: 'かんたん3ステップ',
+    page2Desc: '① 場所を選ぶ\n② 買い物リストを作る\n③ 通知をONにして出発',
+    page3Title: 'もっと便利に',
+    page3Desc: 'メモを共有して家族と買い物リストを共同編集。\nプレミアムでクラウドバックアップも。',
+    skip: 'スキップ',
+    start: 'はじめる',
   },
 
   // ── Tutorial ──────────────────────────────────────────────

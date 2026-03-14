@@ -19,10 +19,8 @@ import { isGeofencingActive } from '../services/geofenceService';
 import { getLocationsLimit, getItemsLimit, LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
-import TutorialTooltip from '../components/TutorialTooltip';
 import { useTranslation } from 'react-i18next';
 import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store/memoStore';
-import { useTutorial } from '../hooks/useTutorial';
 import { RootStackParamList, ShoppingItem, MemoLocation, SharePresence } from '../types';
 import { getDeviceId } from '../utils/deviceId';
 import {
@@ -58,26 +56,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
   const checkAllItems = useMemoStore(s => s.checkAllItems);
   const isPremium = useSettingsStore(selectEffectivePremium);
-  const seenTutorials = useSettingsStore(s => s.seenTutorials);
   // 自分がオーナーとして共有中のメモ数（memos ストアを唯一の真実源とする）
   const ownedSharedCount = useMemoStore(s => s.memos.filter(m => !!m.shareId && m.isOwner === true).length);
 
-  const bellRef = useRef<View>(null);
-  const shareRef = useRef<View>(null);
-  const checkAllRef = useRef<View>(null);
-  const hideCheckedRef = useRef<View>(null);
-  const syncRef = useRef<View>(null);
   // 初回フォーカス判定（LocationPickerScreen から戻ってきた場合のみ地点プッシュ）
   const isFirstFocus = useRef(true);
-
-  const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
-    useTutorial('memoDetail', 1, [bellRef], 800);
-  const { isActive: tutShareActive, targetLayout: tutShareLayout, advance: tutShareAdvance, skip: tutShareSkip } =
-    useTutorial('memoDetailShare', 1, [shareRef], 800, seenTutorials.includes('memoDetail'));
-  const { step: tutItemsStep, isActive: tutItemsActive, targetLayout: tutItemsLayout, advance: tutItemsAdvance, skip: tutItemsSkip } =
-    useTutorial('memoDetailItems', 2, [checkAllRef, hideCheckedRef], 800, seenTutorials.includes('memoDetailShare') && memo != null && memo.items.length > 0);
-  const { isActive: tutSyncActive, targetLayout: tutSyncLayout, advance: tutSyncAdvance, skip: tutSyncSkip } =
-    useTutorial('memoDetailSync', 1, [syncRef], 800, seenTutorials.includes('memoDetailShare') && !!memo?.shareId);
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [undoTarget, setUndoTarget] = useState<ShoppingItem | null>(null);
@@ -373,59 +356,53 @@ export default function MemoDetailScreen(): React.JSX.Element {
       {/* タイトル + 通知トグル + 共有ボタン + 編集ボタン */}
       <View style={styles.titleRow}>
         <Text style={styles.title}>{memo.title}</Text>
-        <View ref={bellRef} collapsable={false}>
-          <TouchableOpacity
-            onPress={handleToggleNotification}
-            onLongPress={() => memo.notificationEnabled && setNotifModeModalVisible(true)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.headerIcon}>
+        <TouchableOpacity
+          onPress={handleToggleNotification}
+          onLongPress={() => memo.notificationEnabled && setNotifModeModalVisible(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerIcon}>
+          <Icon
+            name={
+              !memo.notificationEnabled ? 'notifications-off'
+              : memo.notificationMode === 'silent' ? 'notifications-none'
+              : 'notifications'
+            }
+            size={22}
+            color={
+              !memo.notificationEnabled ? '#9E9E9E'
+              : isMonitoring ? '#4CAF50'
+              : '#FF9800'
+            }
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          testID="memo-share-button"
+          onPress={handleShare}
+          disabled={isSharingLoading}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerIcon}>
+          {isSharingLoading ? (
+            <ActivityIndicator size={22} color="#4CAF50" />
+          ) : (
             <Icon
-              name={
-                !memo.notificationEnabled ? 'notifications-off'
-                : memo.notificationMode === 'silent' ? 'notifications-none'
-                : 'notifications'
-              }
+              name={memo.shareId ? 'people' : 'share'}
               size={22}
-              color={
-                !memo.notificationEnabled ? '#9E9E9E'
-                : isMonitoring ? '#4CAF50'
-                : '#FF9800'
-              }
+              color={memo.shareId ? '#4CAF50' : '#757575'}
             />
-          </TouchableOpacity>
-        </View>
-        <View ref={shareRef} collapsable={false}>
+          )}
+        </TouchableOpacity>
+        {memo.shareId && (
           <TouchableOpacity
-            testID="memo-share-button"
-            onPress={handleShare}
-            disabled={isSharingLoading}
+            onPress={handleSyncSharedMemo}
+            disabled={isSyncLoading}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.headerIcon}>
-            {isSharingLoading ? (
-              <ActivityIndicator size={22} color="#4CAF50" />
+            {isSyncLoading ? (
+              <ActivityIndicator size={22} color="#2196F3" />
             ) : (
-              <Icon
-                name={memo.shareId ? 'people' : 'share'}
-                size={22}
-                color={memo.shareId ? '#4CAF50' : '#757575'}
-              />
+              <Icon name="sync" size={22} color="#2196F3" />
             )}
           </TouchableOpacity>
-        </View>
-        {memo.shareId && (
-          <View ref={syncRef} collapsable={false}>
-            <TouchableOpacity
-              onPress={handleSyncSharedMemo}
-              disabled={isSyncLoading}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.headerIcon}>
-              {isSyncLoading ? (
-                <ActivityIndicator size={22} color="#2196F3" />
-              ) : (
-                <Icon name="sync" size={22} color="#2196F3" />
-              )}
-            </TouchableOpacity>
-          </View>
         )}
         <TouchableOpacity
           testID="memo-edit-button"
@@ -612,24 +589,20 @@ export default function MemoDetailScreen(): React.JSX.Element {
               </View>
               {memo.items.length > 0 && (
                 <View style={{ flexDirection: 'row', gap: 4 }}>
-                  <View ref={checkAllRef} collapsable={false}>
-                    <TouchableOpacity
-                      testID="check-all-button"
-                      onPress={handleCheckAllToggle}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={{ padding: 4 }}>
-                      <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
-                    </TouchableOpacity>
-                  </View>
-                  <View ref={hideCheckedRef} collapsable={false}>
-                    <TouchableOpacity
-                      onPress={() => setHideChecked(v => !v)}
-                      disabled={!hasChecked && !hideChecked}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
-                      <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity
+                    testID="check-all-button"
+                    onPress={handleCheckAllToggle}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={{ padding: 4 }}>
+                    <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setHideChecked(v => !v)}
+                    disabled={!hasChecked && !hideChecked}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
+                    <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -657,50 +630,6 @@ export default function MemoDetailScreen(): React.JSX.Element {
       <View style={styles.bottomBar}>
         <AdBanner />
       </View>
-      <TutorialTooltip
-        visible={tutActive}
-        targetLayout={tutLayout}
-        text={t('tutorial.memoDetail.step1')}
-        stepLabel={`STEP 1 / 1`}
-        isLast
-        nextLabel={t('tutorial.ok')}
-        skipLabel={t('tutorial.skip')}
-        onNext={tutAdvance}
-        onSkip={tutSkip}
-      />
-      <TutorialTooltip
-        visible={tutShareActive}
-        targetLayout={tutShareLayout}
-        text={t('tutorial.memoDetailShare.step1')}
-        stepLabel={`STEP 1 / 1`}
-        isLast
-        nextLabel={t('tutorial.ok')}
-        skipLabel={t('tutorial.skip')}
-        onNext={tutShareAdvance}
-        onSkip={tutShareSkip}
-      />
-      <TutorialTooltip
-        visible={tutItemsActive}
-        targetLayout={tutItemsLayout}
-        text={[t('tutorial.memoDetailItems.step1'), t('tutorial.memoDetailItems.step2')][tutItemsStep] ?? ''}
-        stepLabel={`STEP ${tutItemsStep + 1} / 2`}
-        isLast={tutItemsStep === 1}
-        nextLabel={tutItemsStep === 1 ? t('tutorial.ok') : t('tutorial.next')}
-        skipLabel={t('tutorial.skip')}
-        onNext={tutItemsAdvance}
-        onSkip={tutItemsSkip}
-      />
-      <TutorialTooltip
-        visible={tutSyncActive}
-        targetLayout={tutSyncLayout}
-        text={t('tutorial.memoDetailSync.step1')}
-        stepLabel={`STEP 1 / 1`}
-        isLast
-        nextLabel={t('tutorial.ok')}
-        skipLabel={t('tutorial.skip')}
-        onNext={tutSyncAdvance}
-        onSkip={tutSyncSkip}
-      />
       <Snackbar
         visible={snackbarVisible}
         message={t('memoDetail.uncheckDone')}

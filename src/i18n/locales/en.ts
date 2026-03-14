@@ -136,6 +136,7 @@ const en: Translation = {
       title: 'App Info',
       version: 'Version: {{version}}',
       name: 'Nearist',
+      usageGuide: 'Usage Guide',
       privacyPolicy: 'Privacy Policy',
       contact: 'Contact Us',
     },
@@ -191,6 +192,17 @@ const en: Translation = {
     memoEditNew: 'New Memo',
     memoEditExisting: 'Edit Memo',
     locationPicker: 'Pick Location',
+  },
+
+  onboarding: {
+    page1Title: 'Welcome to Yorimichi',
+    page1Desc: 'Get notified with your shopping list\nwhen you arrive at a location.',
+    page2Title: '3 Simple Steps',
+    page2Desc: '① Pick a location\n② Add shopping items\n③ Turn on notifications & go',
+    page3Title: 'Do More',
+    page3Desc: 'Share memos to collaborate with family.\nGo Premium for cloud backup & more.',
+    skip: 'Skip',
+    start: 'Get Started',
   },
 
   tutorial: {

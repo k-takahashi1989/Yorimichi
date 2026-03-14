@@ -81,6 +81,7 @@ export interface PickedLocationParam {
 }
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   MainTabs: undefined;
   MemoDetail: { memoId: string };
   MemoEdit: {

@@ -26,6 +26,7 @@ import LocationPickerScreen from '../screens/LocationPickerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PremiumScreen from '../screens/PremiumScreen';
 import BadgeListScreen from '../screens/BadgeListScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -78,6 +79,8 @@ export function AppNavigator(): React.JSX.Element {
   const { t } = useTranslation();
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
+  const seenTutorials = useSettingsStore(s => s.seenTutorials);
+  const hasSeenOnboarding = seenTutorials.includes('onboarding');
 
   // ディープリンクを処理するハンドラ（共有 / ウィジェット）
   const handleSharedUrl = async (url: string | null) => {
@@ -200,10 +203,16 @@ export function AppNavigator(): React.JSX.Element {
         }
       }}>
       <Stack.Navigator
+        initialRouteName={hasSeenOnboarding ? 'MainTabs' : 'Onboarding'}
         screenOptions={{
           headerTintColor: '#4CAF50',
           headerBackTitle: t('nav.backButton'),
         }}>
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}

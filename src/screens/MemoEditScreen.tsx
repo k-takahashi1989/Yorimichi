@@ -24,8 +24,6 @@ import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList, ShoppingItem } from '../types';
-import TutorialTooltip from '../components/TutorialTooltip';
-import { useTutorial } from '../hooks/useTutorial';
 import { getDeviceId } from '../utils/deviceId';
 import { setPresence, clearPresence, uploadSharedMemo } from '../services/shareService';
 import { LIMITS_ENABLED, FREE_LIMITS, getItemsLimit } from '../config/planLimits';
@@ -78,13 +76,6 @@ export default function MemoEditScreen(): React.JSX.Element {
   const [dueDate, setDueDate] = useState<number | undefined>(existingMemo?.dueDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
-
-  // チュートリアル用 refs
-  const titleInputRef = useRef<View>(null);
-  const addRowRef = useRef<View>(null);
-  const doneBtnRef = useRef<View>(null);
-  const { step: tutStep, isActive: tutActive, targetLayout: tutLayout, advance: tutAdvance, skip: tutSkip } =
-    useTutorial('memoEdit', 3, [titleInputRef, addRowRef, doneBtnRef]);
 
   const currentItems = useMemoStore(
     useShallow((s): ShoppingItem[] => {
@@ -290,20 +281,17 @@ export default function MemoEditScreen(): React.JSX.Element {
             scrollRef.current?.scrollToEnd({ animated: true });
           }
         }}>
-        {/* タイトル: ラベル＋入力欄をセットで spotlight */}
-        <View ref={titleInputRef} collapsable={false}>
-          <Text style={styles.label}>{t('memoEdit.titleLabel')}</Text>
-          <TextInput
-            testID="memo-title-input"
-            style={styles.titleInput}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('memoEdit.titlePlaceholder')}
-            placeholderTextColor="#BDBDBD"
-            onBlur={handleSaveTitle}
-            returnKeyType="done"
-          />
-        </View>
+        <Text style={styles.label}>{t('memoEdit.titleLabel')}</Text>
+        <TextInput
+          testID="memo-title-input"
+          style={styles.titleInput}
+          value={title}
+          onChangeText={setTitle}
+          placeholder={t('memoEdit.titlePlaceholder')}
+          placeholderTextColor="#BDBDBD"
+          onBlur={handleSaveTitle}
+          returnKeyType="done"
+        />
 
         {/* 期限設定 */}
         <View style={styles.dueDateRow}>
@@ -351,9 +339,7 @@ export default function MemoEditScreen(): React.JSX.Element {
           textAlignVertical="top"
         />
 
-        {/* アイテム: ラベル＋リスト＋入力行をセットで spotlight */}
-        <View ref={addRowRef} collapsable={false}>
-          <View style={styles.labelRow}>
+        <View style={styles.labelRow}>
             <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
             {LIMITS_ENABLED && !isPremium && savedMemoId && (
               <Text style={[
@@ -389,27 +375,13 @@ export default function MemoEditScreen(): React.JSX.Element {
               <Icon name="add" size={20} color="#4CAF50" />
             </TouchableOpacity>
           )}
-          </View>{/* /addRow */}
-        </View>{/* /addRowRef wrapper */}
+        </View>{/* /addRow */}
       </ScrollView>
 
       {/* 確認する */}
-      <View ref={doneBtnRef} collapsable={false}>
-        <TouchableOpacity testID="memo-done-button" style={[styles.doneBtn, { marginBottom: Math.max(insets.bottom, 16) }]} onPress={handleDone}>
-          <Text style={styles.doneBtnText}>{t('memoEdit.doneButton')}</Text>
-        </TouchableOpacity>
-      </View>
-      <TutorialTooltip
-        visible={tutActive}
-        targetLayout={tutLayout}
-        text={[t('tutorial.memoEdit.step1'), t('tutorial.memoEdit.step2'), t('tutorial.memoEdit.step3')][tutStep] ?? ''}
-        stepLabel={`STEP ${tutStep + 1} / 3`}
-        isLast={tutStep === 2}
-        nextLabel={tutStep === 2 ? t('tutorial.ok') : t('tutorial.next')}
-        skipLabel={t('tutorial.skip')}
-        onNext={tutAdvance}
-        onSkip={tutSkip}
-      />
+      <TouchableOpacity testID="memo-done-button" style={[styles.doneBtn, { marginBottom: Math.max(insets.bottom, 16) }]} onPress={handleDone}>
+        <Text style={styles.doneBtnText}>{t('memoEdit.doneButton')}</Text>
+      </TouchableOpacity>
       <LimitModal
         visible={!!limitModal}
         title={limitModal?.title ?? ''}
