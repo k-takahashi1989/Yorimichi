@@ -232,6 +232,9 @@ export default function SettingsScreen(): React.JSX.Element {
     <ScrollView style={styles.container}>
       <Text style={styles.pageTitle}>{t('settings.screenTitle')}</Text>
 
+      {/* ── ジオフェンス設定 ── */}
+      <Text style={styles.sectionLabel}>{t('settings.sectionGeofence')}</Text>
+
       {/* 権限セクション */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('settings.permCard.title')}</Text>
@@ -325,22 +328,8 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </View>
 
-      {/* 表示言語 */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('settings.langCard.title')}</Text>
-        <View style={styles.langRow}>
-          <TouchableOpacity
-            style={[styles.langBtn, currentLang === 'ja' && styles.langBtnActive]}
-            onPress={() => handleChangeLang('ja')}>
-            <Text style={[styles.langBtnText, currentLang === 'ja' && styles.langBtnTextActive]}>🇯🇵 日本語</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.langBtn, currentLang === 'en' && styles.langBtnActive]}
-            onPress={() => handleChangeLang('en')}>
-            <Text style={[styles.langBtnText, currentLang === 'en' && styles.langBtnTextActive]}>🇺🇸 English</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* ── 通知設定 ── */}
+      <Text style={styles.sectionLabel}>{t('settings.sectionNotifications')}</Text>
 
       {/* 通知時間帯 */}
       <View style={styles.card}>
@@ -381,21 +370,6 @@ export default function SettingsScreen(): React.JSX.Element {
         )}
       </View>
 
-      {/* バッジ */}
-      <TouchableOpacity
-        style={styles.badgeCard}
-        onPress={() => navigation.navigate('BadgeList')}
-        activeOpacity={0.85}>
-        <View style={styles.premiumCardLeft}>
-          <Text style={styles.premiumCardIcon}>🏆</Text>
-          <View>
-            <Text style={styles.badgeCardTitle}>{t('settings.badgeCard.title')}</Text>
-            <Text style={styles.badgeCardSub}>{t('settings.badgeCard.subtitle')}</Text>
-          </View>
-        </View>
-        <Icon name="chevron-right" size={24} color="#FFC107" />
-      </TouchableOpacity>
-
       {/* 共有メモ更新通知 */}
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
@@ -418,6 +392,44 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </View>
 
+      {/* ── カスタマイズ ── */}
+      <Text style={styles.sectionLabel}>{t('settings.sectionPersonalization')}</Text>
+
+      {/* 表示言語 */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t('settings.langCard.title')}</Text>
+        <View style={styles.langRow}>
+          <TouchableOpacity
+            style={[styles.langBtn, currentLang === 'ja' && styles.langBtnActive]}
+            onPress={() => handleChangeLang('ja')}>
+            <Text style={[styles.langBtnText, currentLang === 'ja' && styles.langBtnTextActive]}>🇯🇵 日本語</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.langBtn, currentLang === 'en' && styles.langBtnActive]}
+            onPress={() => handleChangeLang('en')}>
+            <Text style={[styles.langBtnText, currentLang === 'en' && styles.langBtnTextActive]}>🇺🇸 English</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* バッジ */}
+      <TouchableOpacity
+        style={styles.badgeCard}
+        onPress={() => navigation.navigate('BadgeList')}
+        activeOpacity={0.85}>
+        <View style={styles.premiumCardLeft}>
+          <Text style={styles.premiumCardIcon}>🏆</Text>
+          <View>
+            <Text style={styles.badgeCardTitle}>{t('settings.badgeCard.title')}</Text>
+            <Text style={styles.badgeCardSub}>{t('settings.badgeCard.subtitle')}</Text>
+          </View>
+        </View>
+        <Icon name="chevron-right" size={24} color="#FFC107" />
+      </TouchableOpacity>
+
+      {/* ── アカウント ── */}
+      <Text style={styles.sectionLabel}>{t('settings.sectionAccount')}</Text>
+
       {/* プレミアムプランカード */}
       <TouchableOpacity
         style={styles.premiumCard}
@@ -438,6 +450,9 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
         <Icon name="chevron-right" size={24} color="#FFF" />
       </TouchableOpacity>
+
+      {/* ── アプリ情報 ── */}
+      <Text style={styles.sectionLabel}>{t('settings.sectionAppInfo')}</Text>
 
       {/* アプリ情報 */}
       <View style={styles.card}>
@@ -531,6 +546,16 @@ export default function SettingsScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9E9E9E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 10,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
   badgeCard: {
     backgroundColor: '#FFF8E1',
     borderRadius: 12,

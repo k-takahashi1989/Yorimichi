@@ -182,6 +182,11 @@ const en: Translation = {
       title: 'Badge Collection',
       subtitle: 'Check your achievements',
     },
+    sectionGeofence: 'Geofence Settings',
+    sectionNotifications: 'Notifications',
+    sectionPersonalization: 'Personalization',
+    sectionAccount: 'Account',
+    sectionAppInfo: 'About',
   },
 
   nav: {
