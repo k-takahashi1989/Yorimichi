@@ -78,7 +78,7 @@
       <!-- ウィジェット: メモ一覧 -->
       <receiver
           android:name=".widget.MemoListWidgetProvider"
-          android:exported="false">
+          android:exported="true">
           <intent-filter>
               <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
           </intent-filter>
