@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../store/memoStore';
+import { initPermissions } from '../services/permissionService';
 import { RootStackParamList } from '../types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -43,6 +44,8 @@ export default function OnboardingScreen(): React.JSX.Element {
   const handleComplete = useCallback(() => {
     markTutorialSeen('onboarding');
     navigation.replace('MainTabs');
+    // オンボーディング完了後に位置情報・通知の権限をリクエスト
+    initPermissions();
   }, [markTutorialSeen, navigation]);
 
   const onViewableItemsChanged = useCallback(
