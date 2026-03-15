@@ -178,7 +178,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- マウント時に1度だけ現在地を取得する。animateWhenReady は ref 経由のため依存不要
   }, []);
 
   // 既存場所の編集時はフォームに初期値をセット
@@ -196,7 +196,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
     const region: Region = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
     setInitialRegion(region);
     setTimeout(() => animateWhenReady(region), 300);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- マウント時に1度だけ既存データを読み込む。route params は画面遷移中に変わらない
   }, []);
 
   const handleMapPress = (e: LongPressEvent) => {

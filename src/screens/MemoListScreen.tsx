@@ -24,6 +24,7 @@ import { joinSharedMemo, syncAllSharedMemos } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
 import { recordError } from '../services/crashlyticsService';
+import { getDueDateInfo } from '../utils/helpers';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -66,7 +67,7 @@ export default function MemoListScreen(): React.JSX.Element {
           });
         })
         .catch(e => recordError(e, '[MemoList] syncSharedMemos'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 画面フォーカス時に1度だけ同期する意図。依存に memos を入れるとメモ変更のたびに無限ループする
     }, []),
   );
 
@@ -180,22 +181,16 @@ export default function MemoListScreen(): React.JSX.Element {
               </Text>
             )}
             {item.dueDate != null && (() => {
-              const now = new Date();
-              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-              const due = new Date(item.dueDate);
-              const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
-              const dateStr = `${due.getMonth() + 1}/${due.getDate()}`;
-              const isToday = dueDay === today;
-              const isOverdue = dueDay < today;
+              const { status, dateStr } = getDueDateInfo(item.dueDate);
               return (
                 <Text style={[
                   styles.cardDueDate,
-                  isToday && styles.cardDueDateWarning,
-                  isOverdue && styles.cardDueDateOverdue,
+                  status === 'today' && styles.cardDueDateWarning,
+                  status === 'overdue' && styles.cardDueDateOverdue,
                 ]}>
-                  {isOverdue
+                  {status === 'overdue'
                     ? t('memoDetail.dueDateOverdue', { date: dateStr })
-                    : isToday
+                    : status === 'today'
                       ? t('memoDetail.dueDateToday')
                       : t('memoDetail.dueDate', { date: dateStr })}
                 </Text>

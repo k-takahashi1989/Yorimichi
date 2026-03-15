@@ -446,6 +446,13 @@ export default function SettingsScreen(): React.JSX.Element {
         <Text style={styles.infoText}>{t('settings.appInfo.name')}</Text>
         <TouchableOpacity
           style={styles.privacyPolicyRow}
+          onPress={() => Linking.openURL('https://example.com/yorimichi-guide')}>
+          <Icon name="menu-book" size={16} color="#4CAF50" />
+          <Text style={styles.privacyPolicyText}>{t('settings.appInfo.usageGuide')}</Text>
+          <Icon name="open-in-new" size={14} color="#9E9E9E" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.privacyPolicyRow}
           onPress={() => Linking.openURL('https://k-takahashi1989.github.io/Yorimichi/privacy.html')}>
           <Icon name="privacy-tip" size={16} color="#4CAF50" />
           <Text style={styles.privacyPolicyText}>{t('settings.appInfo.privacyPolicy')}</Text>

@@ -60,14 +60,22 @@ function App(): React.JSX.Element {
         recordError(e, '[App] autoCloudBackup');
       }
     };
-    // 少し遅延して実行（起動直後の負荷を避ける）
-    setTimeout(() => runAutoBackup(), 3000);
+    // UI がアイドル状態になってから遅延タスクを実行
+    // requestIdleCallback が利用可能な場合はそちらを使い、なければ setTimeout にフォールバック
+    const scheduleWhenIdle = (fn: () => void) => {
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(() => fn());
+      } else {
+        setTimeout(fn, 2000);
+      }
+    };
+    scheduleWhenIdle(() => {
+      runAutoBackup();
 
-    // バッジ: アプリ起動時の判定
-    setTimeout(() => {
+      // バッジ: アプリ起動時の判定
       const newBadges = onAppLaunch();
       if (newBadges.length > 0) showBadgeUnlock(newBadges);
-    }, 2000);
+    });
 
     // 位置情報権限チェック → 必要なら起動時にリクエスト
     const initPermissions = async () => {
@@ -115,8 +123,8 @@ function App(): React.JSX.Element {
       }
     };
 
-    // レンダリング後に少し遅らせてダイアログを表示
-    setTimeout(() => initPermissions(), 500);
+    // UI がアイドル状態になった後に権限ダイアログを表示
+    scheduleWhenIdle(() => initPermissions());
   }, []);
 
   return (
