@@ -186,6 +186,11 @@ const ja = {
       title: 'バッジコレクション',
       subtitle: 'あなたの実績を確認しましょう',
     },
+    sectionGeofence: 'ジオフェンス設定',
+    sectionNotifications: '通知設定',
+    sectionPersonalization: 'カスタマイズ',
+    sectionAccount: 'アカウント',
+    sectionAppInfo: 'アプリ情報',
   },
 
   // ── AppNavigator ──────────────────────────────────────────
