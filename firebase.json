@@ -8,5 +8,9 @@
       "codebase": "default",
       "runtime": "nodejs22"
     }
-  ]
+  ],
+  "hosting": {
+    "public": "hosting/public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  }
 }

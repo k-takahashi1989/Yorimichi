@@ -282,6 +282,7 @@ const en: Translation = {
     importByCodePrompt: 'Enter the share code',
     shareCodeLabel: 'Share Code',
     shareCodeHint: 'Enter this code via "Import by Share Code" in the app',
+    shareCodeFallback: 'If the link does not open, enter this code in the app',
     importByCodeInvalid: 'Invalid share code',
     syncButton: 'Sync',
     syncSuccess: 'Memo updated to latest version',

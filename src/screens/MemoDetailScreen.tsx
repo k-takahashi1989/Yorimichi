@@ -18,6 +18,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { AlertSignSvg, CalendarSvg, ChecklistSvg, CrownSvg, CycleSvg, EditSvg, GroupSvg, LocationPinSvg } from '../assets/icons';
 import { isGeofencingActive } from '../services/geofenceService';
 import { getLocationsLimit, getItemsLimit, LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
+import { buildShareUrl } from '../config/sharing';
 import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import { useTranslation } from 'react-i18next';
@@ -238,8 +239,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
         const newBadges = onShareMemo();
         if (newBadges.length > 0) showBadgeUnlock(newBadges);
       }
+      const shareUrl = buildShareUrl(shareId);
       await Share.share({
-        message: `${t('share.shareMessage')}\n\n${t('share.shareCodeLabel')}: ${shareId}\n\n${t('share.shareCodeHint')}`,
+        message: `${t('share.shareMessage')}\n\n${shareUrl}\n\n${t('share.shareCodeFallback')}: ${shareId}`,
         title: t('share.shareTitle'),
       });
     } catch (e: unknown) {
