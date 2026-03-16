@@ -327,7 +327,7 @@ const ja = {
     featureCollaborators: '共有人数',
     featureAlarm: '通知モード',
     featureAds: '広告',
-    freeVal: '5件',
+    freeVal: '3件',
     freeValItems: '10個',
     freeValLocations: '2か所',
     freeValCollaborators: '1対1',

@@ -19,7 +19,7 @@ export const LIMITS_ENABLED = true;
 
 /** 無料プランの上限値 */
 export const FREE_LIMITS = {
-  memos: 5,            // メモ数
+  memos: 3,            // メモ数
   itemsPerMemo: 10,    // 1メモあたりのアイテム数
   locationsPerMemo: 2, // 1メモあたりの登録地点数
   collaborators: 1,    // 共有相手数（1対1まで）

@@ -316,7 +316,7 @@ const en: Translation = {
     featureCollaborators: 'Sharing',
     featureAlarm: 'Notification mode',
     featureAds: 'Ads',
-    freeVal: '5',
+    freeVal: '3',
     freeValItems: '10',
     freeValLocations: '2',
     freeValCollaborators: '1-to-1',
