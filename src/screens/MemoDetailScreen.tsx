@@ -57,8 +57,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const uncheckAllItems = useMemoStore(s => s.uncheckAllItems);
   const checkAllItems = useMemoStore(s => s.checkAllItems);
   const isPremium = useSettingsStore(selectEffectivePremium);
-  // 自分がオーナーとして共有中のメモ数（memos ストアを唯一の真実源とする）
-  const ownedSharedCount = useMemoStore(s => s.memos.filter(m => !!m.shareId && m.isOwner === true).length);
+
 
   // 初回フォーカス判定（LocationPickerScreen から戻ってきた場合のみ地点プッシュ）
   const isFirstFocus = useRef(true);
@@ -227,7 +226,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   };
 
   const handleShare = async () => {
-    if (LIMITS_ENABLED && !isPremium && ownedSharedCount >= 1 && !memo.shareId) {
+    if (LIMITS_ENABLED && !isPremium && !memo.shareId) {
       Alert.alert(t('share.limitReached'), t('share.limitReachedMsg'));
       return;
     }

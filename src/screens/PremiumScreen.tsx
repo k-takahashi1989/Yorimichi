@@ -34,7 +34,7 @@ const FEATURE_ROWS: Array<{
   { icon: 'note',           label: 'featureMemos',         freeVal: 'freeVal',             premiumVal: 'premiumVal' },
   { icon: 'list',           label: 'featureItems',         freeVal: 'freeValItems',        premiumVal: 'premiumVal' },
   { icon: 'place',          label: 'featureLocations',     freeVal: 'freeValLocations',    premiumVal: 'premiumValLocations' },
-  { icon: 'people',         label: 'featureCollaborators', freeVal: 'freeValCollaborators',premiumVal: 'premiumVal' },
+  { icon: 'people',         label: 'featureCollaborators', freeVal: 'freeValCollaborators',premiumVal: 'premiumValCollaborators' },
   { icon: 'notifications',  label: 'featureAlarm',         freeVal: 'freeValAlarm',        premiumVal: 'premiumValAlarm',       comingSoon: true },
   { icon: 'sync',            label: 'featureRealtimeSync',  freeVal: 'freeValRealtimeSync',  premiumVal: 'premiumValRealtimeSync' },
   { icon: 'cloud-upload',    label: 'featureCloudBackup',   freeVal: 'freeValCloudBackup',   premiumVal: 'premiumValCloudBackup' },

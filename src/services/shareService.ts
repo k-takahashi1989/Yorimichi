@@ -3,7 +3,6 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { Memo, SharedMemoDoc, SharePresence, ShoppingItem, MemoLocation } from '../types';
-import { getCollaboratorsLimit } from '../config/planLimits';
 import { recordError } from './crashlyticsService';
 
 const COLLECTION = 'sharedMemos';
@@ -166,7 +165,6 @@ export async function syncAllSharedMemos(
 export async function joinSharedMemo(
   shareId: string,
   deviceId: string,
-  isPremium: boolean = false,
 ): Promise<SharedMemoDoc | null> {
   await ensureSignedIn();
   const ref = firestore().collection(COLLECTION).doc(shareId);
@@ -176,11 +174,6 @@ export async function joinSharedMemo(
   if (!snap.exists || !data) return null;
   // collaborators への追記: Security Rules で弾かれても import 自体は続行する
   if (Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId)) {
-    // 参加者上限チェック（オーナーを除く非オーナー数で判定）
-    const nonOwnerCount = data.collaborators.filter((id: string) => id !== data.ownerDeviceId).length;
-    if (nonOwnerCount >= getCollaboratorsLimit(isPremium)) {
-      throw new Error('COLLABORATORS_FULL');
-    }
     try {
       const uid = getCurrentUid();
       await ref.update({
