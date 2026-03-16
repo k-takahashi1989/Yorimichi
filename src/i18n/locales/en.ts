@@ -50,12 +50,12 @@ const en: Translation = {
   memoDetail: {
     screenTitle: 'Memo Detail',
     notFound: 'Memo not found',
-    locationSection: '📍 Locations ({{count}})',
+    locationSection: 'Locations ({{count}})',
     addLocation: 'Add',
     locationEmpty: 'Add a location to get notified when you arrive nearby',
     showMoreLocations: 'Show {{count}} more',
     collapseLocations: 'Collapse',
-    itemSection: '🛒 Checklist',
+    itemSection: 'Checklist',
     itemEmpty: 'Add items in the edit screen',
     radiusLabel: 'Radius {{radius}}m',
     notificationOn: 'Notification on',
@@ -71,9 +71,9 @@ const en: Translation = {
     allCheckedMessage: 'Turn off notifications for this memo?',
     triggerEnter: 'On arrival',
     triggerExit: 'On departure',
-    dueDate: '📅 Due: {{date}}',
-    dueDateToday: '📅 Due today',
-    dueDateOverdue: '📅 Overdue ({{date}})',
+    dueDate: 'Due: {{date}}',
+    dueDateToday: 'Due today',
+    dueDateOverdue: 'Overdue ({{date}})',
   },
 
   locationPicker: {
@@ -102,7 +102,7 @@ const en: Translation = {
   },
 
   settings: {
-    screenTitle: '⚙️ Settings',
+    screenTitle: 'Settings',
     permCard: {
       title: 'Permissions',
       foreground: 'Location access',
@@ -156,11 +156,11 @@ const en: Translation = {
       message: 'Please enable location permission first',
     },
     alertPermsAlreadyGranted: {
-      title: '✅ Already enabled',
+      title: 'Already enabled',
       message: 'Location and notification permissions are already granted.',
     },
     alertPermsSuccess: {
-      title: '✅ Setup complete',
+      title: 'Setup complete',
       message: 'Location and notifications are now enabled. You can start reminders.',
     },
     langCard: {
@@ -215,22 +215,22 @@ const en: Translation = {
     next: 'Next',
     ok: 'OK',
     memoEdit: {
-      step1: '📝 Enter the memo title here',
-      step2: `✏️ Type an item and tap + to add it to the list`,
-      step3: `✅ Tap "Confirm" to save. If you added a location, you'll get notified when you're nearby!`,
+      step1: 'Enter the memo title here',
+      step2: `Type an item and tap + to add it to the list`,
+      step3: `Tap "Confirm" to save. If you added a location, you'll get notified when you're nearby!`,
     },
     memoDetail: {
-      step1: '🔔 Tap the bell to toggle location notifications on / off',
+      step1: 'Tap the bell to toggle location notifications on / off',
     },
     memoDetailShare: {
-      step1: '👥 Share this memo by tapping Share. Send the code to anyone to view the same list',
+      step1: 'Share this memo by tapping Share. Send the code to anyone to view the same list',
     },
     memoDetailItems: {
-      step1: '☑️ Tap here to check or uncheck all items at once',
-      step2: '👁️ Hide completed items to focus on what is left',
+      step1: 'Tap here to check or uncheck all items at once',
+      step2: 'Hide completed items to focus on what is left',
     },
     memoDetailSync: {
-      step1: '🔄 Shared memos are not auto-updated. Tap here to fetch the latest content',
+      step1: 'Shared memos are not auto-updated. Tap here to fetch the latest content',
     },
   },
   geofence: {
@@ -238,11 +238,11 @@ const en: Translation = {
   },
 
   memoDetailExtra: {
-    monitoringStopped: '⚠️ Reminders are stopped. Start them in Settings.',
+    monitoringStopped: 'Reminders are stopped. Start them in Settings.',
   },
 
   notification: {
-    arrivalTitle: '📍 Approaching {{label}}',
+    arrivalTitle: 'Approaching {{label}}',
     arrivalBody: '"{{title}}" checklist ({{count}} items) — tap to review',
     arrivalBodyBig: '"{{title}}" checklist ({{count}} items)\n\nTap to open the memo',
     modeTitle: 'Notification Mode',
@@ -254,9 +254,9 @@ const en: Translation = {
     modeAlarmDesc: 'Screen wake-up, loud alert',
     modeAlarmComingSoon: 'Alarm notifications are coming soon.',
     comingSoon: '(Coming soon)',
-    departureTitle: '📍 Leaving {{label}}',
+    departureTitle: 'Leaving {{label}}',
     departureBody: '"{{title}}" checklist ({{count}} items) — tap to review',
-    dueDateTitle: '📅 "{{title}}" is due today',
+    dueDateTitle: '"{{title}}" is due today',
     dueDateBody: 'Check your list before the deadline',
   },
 

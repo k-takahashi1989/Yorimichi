@@ -25,6 +25,7 @@ import {
 } from 'react-native-permissions';
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { CheckCircleSvg, CrownSvg, MapSvg, NotificationSvg, StarSvg } from '../assets/icons';
 import AdBanner from '../components/AdBanner';
 import DeviceInfo from 'react-native-device-info';
 import { useTranslation } from 'react-i18next';
@@ -233,7 +234,10 @@ export default function SettingsScreen(): React.JSX.Element {
       <Text style={styles.pageTitle}>{t('settings.screenTitle')}</Text>
 
       {/* ── ジオフェンス設定 ── */}
-      <Text style={styles.sectionLabel}>{t('settings.sectionGeofence')}</Text>
+      <View style={styles.sectionLabelRow}>
+        <MapSvg width={14} height={14} />
+        <Text style={styles.sectionLabel}>{t('settings.sectionGeofence')}</Text>
+      </View>
 
       {/* 権限セクション */}
       <View style={styles.card}>
@@ -329,7 +333,10 @@ export default function SettingsScreen(): React.JSX.Element {
       </View>
 
       {/* ── 通知設定 ── */}
-      <Text style={styles.sectionLabel}>{t('settings.sectionNotifications')}</Text>
+      <View style={styles.sectionLabelRow}>
+        <NotificationSvg width={14} height={14} />
+        <Text style={styles.sectionLabel}>{t('settings.sectionNotifications')}</Text>
+      </View>
 
       {/* 通知時間帯 */}
       <View style={styles.card}>
@@ -393,7 +400,10 @@ export default function SettingsScreen(): React.JSX.Element {
       </View>
 
       {/* ── カスタマイズ ── */}
-      <Text style={styles.sectionLabel}>{t('settings.sectionPersonalization')}</Text>
+      <View style={styles.sectionLabelRow}>
+        <StarSvg width={14} height={14} />
+        <Text style={styles.sectionLabel}>{t('settings.sectionPersonalization')}</Text>
+      </View>
 
       {/* 表示言語 */}
       <View style={styles.card}>
@@ -418,7 +428,7 @@ export default function SettingsScreen(): React.JSX.Element {
         onPress={() => navigation.navigate('BadgeList')}
         activeOpacity={0.85}>
         <View style={styles.premiumCardLeft}>
-          <Text style={styles.premiumCardIcon}>🏆</Text>
+          <StarSvg width={28} height={28} />
           <View>
             <Text style={styles.badgeCardTitle}>{t('settings.badgeCard.title')}</Text>
             <Text style={styles.badgeCardSub}>{t('settings.badgeCard.subtitle')}</Text>
@@ -428,7 +438,10 @@ export default function SettingsScreen(): React.JSX.Element {
       </TouchableOpacity>
 
       {/* ── アカウント ── */}
-      <Text style={styles.sectionLabel}>{t('settings.sectionAccount')}</Text>
+      <View style={styles.sectionLabelRow}>
+        <CrownSvg width={14} height={14} />
+        <Text style={styles.sectionLabel}>{t('settings.sectionAccount')}</Text>
+      </View>
 
       {/* プレミアムプランカード */}
       <TouchableOpacity
@@ -436,7 +449,7 @@ export default function SettingsScreen(): React.JSX.Element {
         onPress={() => navigation.navigate('Premium')}
         activeOpacity={0.85}>
         <View style={styles.premiumCardLeft}>
-          <Text style={styles.premiumCardIcon}>✨</Text>
+          <CrownSvg width={28} height={28} />
           <View>
             <Text style={styles.premiumCardTitle}>{t('premium.screenTitle')}</Text>
             <Text style={styles.premiumCardSub}>
@@ -452,7 +465,10 @@ export default function SettingsScreen(): React.JSX.Element {
       </TouchableOpacity>
 
       {/* ── アプリ情報 ── */}
-      <Text style={styles.sectionLabel}>{t('settings.sectionAppInfo')}</Text>
+      <View style={styles.sectionLabelRow}>
+        <CheckCircleSvg width={14} height={14} />
+        <Text style={styles.sectionLabel}>{t('settings.sectionAppInfo')}</Text>
+      </View>
 
       {/* アプリ情報 */}
       <View style={styles.card}>
@@ -475,9 +491,17 @@ export default function SettingsScreen(): React.JSX.Element {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.privacyPolicyRow}
-          onPress={() => Linking.openURL('https://k-takahashi1989.github.io/Yorimichi/')}>
+          onPress={() => Linking.openURL('https://k-takahashi1989.github.io/Yorimichi/')}
+        >
           <Icon name="mail-outline" size={16} color="#4CAF50" />
           <Text style={styles.privacyPolicyText}>{t('settings.appInfo.contact')}</Text>
+          <Icon name="open-in-new" size={14} color="#9E9E9E" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.privacyPolicyRow}
+          onPress={() => Linking.openURL('https://www.flaticon.com')}>
+          <Icon name="image" size={16} color="#4CAF50" />
+          <Text style={styles.privacyPolicyText}>Icons by Flaticon</Text>
           <Icon name="open-in-new" size={14} color="#9E9E9E" />
         </TouchableOpacity>
       </View>
@@ -546,15 +570,20 @@ export default function SettingsScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#9E9E9E',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: 10,
-    marginBottom: 8,
-    marginLeft: 4,
   },
   badgeCard: {
     backgroundColor: '#FFF8E1',

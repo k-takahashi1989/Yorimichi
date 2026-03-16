@@ -19,6 +19,7 @@ module.exports = {
     '@react-native-firebase/messaging': '<rootDir>/__mocks__/@react-native-firebase/messaging.js',
     '@react-native-firebase/functions': '<rootDir>/__mocks__/@react-native-firebase/functions.js',
     'react-native-device-info': '<rootDir>/__mocks__/react-native-device-info.js',
+    '\\.svg$': '<rootDir>/__mocks__/svgMock.js',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-safe-area-context|react-native-screens|react-native-gesture-handler)/)',

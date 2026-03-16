@@ -19,6 +19,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { CalendarSvg, ChecklistSvg } from '../assets/icons';
 import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useShallow } from 'zustand/react/shallow';
@@ -298,10 +299,10 @@ export default function MemoEditScreen(): React.JSX.Element {
           <TouchableOpacity
             style={styles.dueDateBtn}
             onPress={() => setShowDatePicker(true)}>
-            <Icon name="event" size={18} color={dueDate ? '#4CAF50' : '#9E9E9E'} />
+            <CalendarSvg width={18} height={18} />
             <Text style={[styles.dueDateText, dueDate != null && styles.dueDateTextSet]}>
               {dueDate
-                ? `📅 ${new Date(dueDate).getFullYear()}/${new Date(dueDate).getMonth() + 1}/${new Date(dueDate).getDate()}`
+                ? `${new Date(dueDate).getFullYear()}/${new Date(dueDate).getMonth() + 1}/${new Date(dueDate).getDate()}`
                 : t('memoEdit.dueDateLabel')}
             </Text>
           </TouchableOpacity>
@@ -340,7 +341,10 @@ export default function MemoEditScreen(): React.JSX.Element {
         />
 
         <View style={styles.labelRow}>
-            <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <ChecklistSvg width={16} height={16} />
+              <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
+            </View>
             {LIMITS_ENABLED && !isPremium && savedMemoId && (
               <Text style={[
                 styles.limitCounter,
