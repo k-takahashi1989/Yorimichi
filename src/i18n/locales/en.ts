@@ -290,6 +290,7 @@ const en: Translation = {
   },
   shareNotify: {
     button: 'Notify collaborators',
+    noChanges: 'No changes',
     cooldownBtn: 'Sent (resend in {{seconds}}s)',
     sentTitle: 'Notification sent',
     sentMessage: 'Your collaborators have been notified.',

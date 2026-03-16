@@ -77,6 +77,20 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const [locationsExpanded, setLocationsExpanded] = useState(false);
   const deviceId = getDeviceId();
 
+  // 更新通知: メモが変更されたかどうかを検知するためのベースラインスナップショット
+  const memoSnapshotRef = useRef<string>('');
+  const getMemoFingerprint = useCallback(() => {
+    if (!memo) return '';
+    return JSON.stringify({ t: memo.title, n: memo.note, i: memo.items, l: memo.locations });
+  }, [memo]);
+  // 初回マウント時にベースラインを設定
+  useEffect(() => {
+    if (memo && !memoSnapshotRef.current) {
+      memoSnapshotRef.current = getMemoFingerprint();
+    }
+  }, [memo, getMemoFingerprint]);
+  const hasLocalChanges = memo ? getMemoFingerprint() !== memoSnapshotRef.current : false;
+
   // 共有メモの Firestore 書き込みをデバウンス（連続チェック操作のバッチ化）
   const sharedItemsSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flushSharedItemsSync = useCallback(() => {
@@ -115,6 +129,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
     try {
       const result = await notifySharedMemoUpdate(memo.shareId, memo.title);
       if (result === 'ok') {
+        memoSnapshotRef.current = getMemoFingerprint();
         Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
       } else if (result === 'cooldown') {
         Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
@@ -469,11 +484,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
         </View>
       )}
 
-      {/* 共有メモ更新通知ボタン（プレミアム限定） */}
+      {/* 共有メモ更新通知ボタン（プレミアム限定・変更時のみ有効） */}
       {memo.shareId && isPremium && (
         <TouchableOpacity
-          style={[styles.notifyBtn, (isNotifyLoading || notifyCooldown > 0) && styles.notifyBtnDisabled]}
-          disabled={isNotifyLoading || notifyCooldown > 0}
+          style={[styles.notifyBtn, (isNotifyLoading || notifyCooldown > 0 || !hasLocalChanges) && styles.notifyBtnDisabled]}
+          disabled={isNotifyLoading || notifyCooldown > 0 || !hasLocalChanges}
           onPress={handleNotifyCollaborators}
           activeOpacity={0.7}>
           {isNotifyLoading ? (
@@ -484,7 +499,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
           <Text style={styles.notifyBtnText}>
             {notifyCooldown > 0
               ? t('shareNotify.cooldownBtn', { seconds: notifyCooldown })
-              : t('shareNotify.button')}
+              : !hasLocalChanges
+                ? t('shareNotify.noChanges')
+                : t('shareNotify.button')}
           </Text>
         </TouchableOpacity>
       )}

@@ -301,6 +301,7 @@ const ja = {
   // ── 共有メモ更新通知 ───────────────────────────────────
   shareNotify: {
     button: '共有相手に更新を通知',
+    noChanges: '変更なし',
     cooldownBtn: '通知済み ({{seconds}}秒後に再送可)',
     sentTitle: '通知を送信しました',
     sentMessage: '共有相手に更新通知を送りました。',
