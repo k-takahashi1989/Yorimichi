@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { EditSvg, LocationPinSvg, TodoListSvg } from '../assets/icons';
 import { useMemoStore, useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { Memo, RootStackParamList } from '../types';
 import AdBanner from '../components/AdBanner';
@@ -176,9 +177,12 @@ export default function MemoListScreen(): React.JSX.Element {
               {total > 0 ? t('memoList.itemsLeft', { unchecked, total }) : t('memoList.noItems')}
             </Text>
             {item.locations.length > 0 && (
-              <Text style={styles.cardLoc}>
-                📍 {item.locations.map(l => l.label).join(' / ')}
-              </Text>
+              <View style={styles.cardLocRow}>
+                <LocationPinSvg width={14} height={14} />
+                <Text style={styles.cardLoc}>
+                  {item.locations.map(l => l.label).join(' / ')}
+                </Text>
+              </View>
             )}
             {item.dueDate != null && (() => {
               const { status, dateStr } = getDueDateInfo(item.dueDate);
@@ -202,7 +206,7 @@ export default function MemoListScreen(): React.JSX.Element {
               testID={`memo-edit-icon-${item.id}`}
               onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Icon name="edit" size={22} color="#757575" />
+              <EditSvg width={22} height={22} />
             </TouchableOpacity>
             <TouchableOpacity
               testID={`memo-delete-icon-${item.id}`}
@@ -249,7 +253,7 @@ export default function MemoListScreen(): React.JSX.Element {
 
       {memos.length === 0 ? (
         <View style={styles.empty}>
-          <Icon name="alt-route" size={64} color="#E0E0E0" />
+          <TodoListSvg width={64} height={64} />
           <Text style={styles.emptyText}>{t('memoList.emptyText')}</Text>
           <Text style={styles.emptySubText}>{t('memoList.emptySubText')}</Text>
         </View>
@@ -369,7 +373,8 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '600', color: '#212121', flexShrink: 1 },
   cardTitleCompleted: { flexShrink: 1 },
   cardSub: { fontSize: 13, color: '#757575' },
-  cardLoc: { fontSize: 12, color: '#4CAF50', marginTop: 4 },
+  cardLocRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  cardLoc: { fontSize: 12, color: '#4CAF50' },
   cardDueDate: { fontSize: 12, color: '#9E9E9E', marginTop: 2 },
   cardDueDateWarning: { color: '#FF9800', fontWeight: '600' as const },
   cardDueDateOverdue: { color: '#EF5350', fontWeight: '600' as const },

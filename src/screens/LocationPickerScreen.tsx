@@ -24,6 +24,7 @@ import MapView, { Marker, Circle, LongPressEvent, PROVIDER_GOOGLE, Region } from
 import Geolocation from 'react-native-geolocation-service';
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { LocationPinSvg, MapSvg } from '../assets/icons';
 import { useTranslation } from 'react-i18next';
 import Config from 'react-native-config';
 import { useMemoStore } from '../store/memoStore';
@@ -466,16 +467,22 @@ export default function LocationPickerScreen(): React.JSX.Element {
           <TouchableOpacity
             style={[styles.triggerBtn, triggerType === 'enter' && styles.triggerBtnActive]}
             onPress={() => setTriggerType('enter')}>
-            <Text style={[styles.triggerBtnText, triggerType === 'enter' && styles.triggerBtnTextActive]}>
-              📍 {t('locationPicker.triggerEnter')}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <LocationPinSvg width={14} height={14} />
+              <Text style={[styles.triggerBtnText, triggerType === 'enter' && styles.triggerBtnTextActive]}>
+                {t('locationPicker.triggerEnter')}
+              </Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.triggerBtn, triggerType === 'exit' && styles.triggerBtnActive]}
             onPress={() => setTriggerType('exit')}>
-            <Text style={[styles.triggerBtnText, triggerType === 'exit' && styles.triggerBtnTextActive]}>
-              🚶 {t('locationPicker.triggerExit')}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <MapSvg width={14} height={14} />
+              <Text style={[styles.triggerBtnText, triggerType === 'exit' && styles.triggerBtnTextActive]}>
+                {t('locationPicker.triggerExit')}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 

@@ -13,6 +13,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { StarSvg } from '../assets/icons';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../store/memoStore';
 import {
@@ -34,7 +35,7 @@ export default function BadgeListScreen(): React.JSX.Element {
     <View style={styles.container}>
       {/* 進捗サマリー */}
       <View style={styles.summary}>
-        <Icon name="emoji-events" size={28} color="#FFC107" />
+        <StarSvg width={28} height={28} />
         <Text style={styles.summaryText}>
           {t('badges.progress', { unlocked: totalUnlocked, total: totalBadges })}
         </Text>

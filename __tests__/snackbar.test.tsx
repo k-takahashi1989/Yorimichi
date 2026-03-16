@@ -12,12 +12,19 @@ import ReactTestRenderer from 'react-test-renderer';
 import Snackbar from '../src/components/Snackbar';
 
 describe('Snackbar', () => {
-  it('アクションボタン押下で onAction と onDismiss が即時呼ばれる', async () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('アクションボタン押下で onAction と onDismiss が即時呼ばれる', () => {
     const onDismiss = jest.fn();
     const onAction = jest.fn();
     let renderer!: ReactTestRenderer.ReactTestRenderer;
 
-    await ReactTestRenderer.act(async () => {
+    ReactTestRenderer.act(() => {
       renderer = ReactTestRenderer.create(
         <Snackbar
           visible={true}
@@ -34,7 +41,7 @@ describe('Snackbar', () => {
     const buttons = renderer.root.findAllByType(TouchableOpacity);
     const actionBtn = buttons[buttons.length - 1];
 
-    await ReactTestRenderer.act(async () => {
+    ReactTestRenderer.act(() => {
       actionBtn.props.onPress();
     });
 
@@ -42,11 +49,11 @@ describe('Snackbar', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
-  it('visible=false のとき pointerEvents が none になる', async () => {
+  it('visible=false のとき pointerEvents が none になる', () => {
     const onDismiss = jest.fn();
     let renderer!: ReactTestRenderer.ReactTestRenderer;
 
-    await ReactTestRenderer.act(async () => {
+    ReactTestRenderer.act(() => {
       renderer = ReactTestRenderer.create(
         <Snackbar
           visible={false}

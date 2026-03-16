@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { StarSvg } from '../assets/icons';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore, useMemoStore, selectEffectivePremium } from '../store/memoStore';
 import { isTrialActive, trialDaysRemaining } from '../utils/trialUtils';
@@ -218,11 +219,7 @@ export default function PremiumScreen(): React.JSX.Element {
 
       {/* 現在のプランバッジ */}
       <View style={[styles.planBadge, isPremium ? styles.planBadgePremium : styles.planBadgeFree]}>
-        <Icon
-          name={isPremium ? 'star' : 'star-border'}
-          size={18}
-          color={isPremium ? '#FFF' : '#757575'}
-        />
+        <StarSvg width={18} height={18} />
         <Text style={[styles.planBadgeText, isPremium ? styles.planBadgeTextPremium : styles.planBadgeTextFree]}>
           {isPremium ? t('premium.currentPremium') : t('premium.currentFree')}
         </Text>

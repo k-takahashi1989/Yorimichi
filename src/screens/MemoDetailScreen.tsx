@@ -15,6 +15,7 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { AlertSignSvg, CalendarSvg, ChecklistSvg, CrownSvg, CycleSvg, EditSvg, GroupSvg, LocationPinSvg } from '../assets/icons';
 import { isGeofencingActive } from '../services/geofenceService';
 import { getLocationsLimit, getItemsLimit, LIMITS_ENABLED, FREE_LIMITS } from '../config/planLimits';
 import AdBanner from '../components/AdBanner';
@@ -400,24 +401,25 @@ export default function MemoDetailScreen(): React.JSX.Element {
             {isSyncLoading ? (
               <ActivityIndicator size={22} color="#2196F3" />
             ) : (
-              <Icon name="sync" size={22} color="#2196F3" />
+              <CycleSvg width={22} height={22} />
             )}
           </TouchableOpacity>
         )}
-        <TouchableOpacity
+          <TouchableOpacity
           testID="memo-edit-button"
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.pencilBtn}>
-          <Icon name="edit" size={22} color="#757575" />
+          <EditSvg width={22} height={22} />
         </TouchableOpacity>
       </View>
 
       {/* ロールバッジ（共有メモのみ）*/}
       {memo.shareId && (
-        <View style={[styles.roleBadge, memo.isOwner ? styles.roleBadgeOwner : styles.roleBadgeCollaborator]}>
+        <View style={[styles.roleBadge, memo.isOwner ? styles.roleBadgeOwner : styles.roleBadgeCollaborator, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+          {memo.isOwner ? <CrownSvg width={14} height={14} /> : <GroupSvg width={14} height={14} />}
           <Text style={[styles.roleBadgeText, memo.isOwner ? styles.roleBadgeTextOwner : styles.roleBadgeTextCollaborator]}>
-            {memo.isOwner ? `👑 ${t('share.roleOwner')}` : `👥 ${t('share.roleCollaborator')}`}
+            {memo.isOwner ? t('share.roleOwner') : t('share.roleCollaborator')}
           </Text>
         </View>
       )}
@@ -434,17 +436,20 @@ export default function MemoDetailScreen(): React.JSX.Element {
       {memo.dueDate != null && (() => {
         const { status, dateStr } = getDueDateInfo(memo.dueDate);
         return (
-          <Text style={[
-            styles.dueDateBadge,
-            status === 'overdue' && styles.dueDateOverdue,
-            status === 'today' && styles.dueDateToday,
-          ]}>
-            {status === 'overdue'
-              ? t('memoDetail.dueDateOverdue', { date: dateStr })
-              : status === 'today'
-                ? t('memoDetail.dueDateToday')
-                : t('memoDetail.dueDate', { date: dateStr })}
-          </Text>
+          <View style={styles.dueDateRow}>
+            <CalendarSvg width={16} height={16} />
+            <Text style={[
+              styles.dueDateBadge,
+              status === 'overdue' && styles.dueDateOverdue,
+              status === 'today' && styles.dueDateToday,
+            ]}>
+              {status === 'overdue'
+                ? t('memoDetail.dueDateOverdue', { date: dateStr })
+                : status === 'today'
+                  ? t('memoDetail.dueDateToday')
+                  : t('memoDetail.dueDate', { date: dateStr })}
+            </Text>
+          </View>
         );
       })()}
 
@@ -458,7 +463,10 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
       {/* 監視停止警告 */}
       {memo.notificationEnabled && !isMonitoring && (
-        <Text style={styles.monitoringWarning}>{t('memoDetailExtra.monitoringStopped')}</Text>
+        <View style={styles.monitoringWarningRow}>
+          <AlertSignSvg width={16} height={16} />
+          <Text style={styles.monitoringWarning}>{t('memoDetailExtra.monitoringStopped')}</Text>
+        </View>
       )}
 
       {/* 共有メモ更新通知ボタン（プレミアム限定） */}
@@ -484,9 +492,12 @@ export default function MemoDetailScreen(): React.JSX.Element {
       {/* 場所セクション */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {t('memoDetail.locationSection', { count: memo.locations.length })}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <LocationPinSvg width={18} height={18} />
+            <Text style={styles.sectionTitle}>
+              {t('memoDetail.locationSection', { count: memo.locations.length })}
+            </Text>
+          </View>
           <View style={styles.sectionHeaderRight}>
             {LIMITS_ENABLED && !isPremium && (
               <Text style={[
@@ -579,6 +590,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <ChecklistSvg width={18} height={18} />
                 <Text style={styles.sectionTitle}>{t('memoDetail.itemSection')}</Text>
                 <Text style={[
                   styles.limitCounter,
@@ -731,19 +743,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   presenceBannerText: { fontSize: 12, color: '#757575' },
-  dueDateBadge: {
-    fontSize: 13,
-    color: '#757575',
+  dueDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 8,
     paddingHorizontal: 4,
   },
+  dueDateBadge: {
+    fontSize: 13,
+    color: '#757575',
+  },
   dueDateToday: { color: '#FF9800', fontWeight: '600' },
   dueDateOverdue: { color: '#EF5350', fontWeight: '600' },
+  monitoringWarningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
   monitoringWarning: {
     fontSize: 12,
     color: '#FF9800',
-    marginBottom: 8,
-    paddingHorizontal: 4,
   },
   section: {
     backgroundColor: '#fff',

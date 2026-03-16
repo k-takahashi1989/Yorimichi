@@ -9,6 +9,8 @@ import {
   ViewToken,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MagicSvg, NotificationSvg, StarSvg } from '../assets/icons';
+import { SvgProps } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -21,16 +23,16 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Page {
   key: string;
-  icon: string;
+  SvgIcon: React.FC<SvgProps>;
   titleKey: string;
   descKey: string;
-  color: string;
+  bgColor: string;
 }
 
 const PAGES: Page[] = [
-  { key: '1', icon: 'notifications-active', titleKey: 'onboarding.page1Title', descKey: 'onboarding.page1Desc', color: '#4CAF50' },
-  { key: '2', icon: 'touch-app', titleKey: 'onboarding.page2Title', descKey: 'onboarding.page2Desc', color: '#2196F3' },
-  { key: '3', icon: 'star', titleKey: 'onboarding.page3Title', descKey: 'onboarding.page3Desc', color: '#FF9800' },
+  { key: '1', SvgIcon: NotificationSvg, titleKey: 'onboarding.page1Title', descKey: 'onboarding.page1Desc', bgColor: '#FFF3E0' },
+  { key: '2', SvgIcon: MagicSvg, titleKey: 'onboarding.page2Title', descKey: 'onboarding.page2Desc', bgColor: '#F3E5F5' },
+  { key: '3', SvgIcon: StarSvg, titleKey: 'onboarding.page3Title', descKey: 'onboarding.page3Desc', bgColor: '#FFFDE7' },
 ];
 
 export default function OnboardingScreen(): React.JSX.Element {
@@ -58,8 +60,8 @@ export default function OnboardingScreen(): React.JSX.Element {
 
   const renderPage = ({ item }: { item: Page }) => (
     <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-      <View style={[styles.iconCircle, { backgroundColor: item.color + '20' }]}>
-        <Icon name={item.icon} size={64} color={item.color} />
+      <View style={[styles.iconCircle, { backgroundColor: item.bgColor }]}>
+        <item.SvgIcon width={64} height={64} />
       </View>
       <Text style={styles.pageTitle}>{t(item.titleKey)}</Text>
       <Text style={styles.pageDesc}>{t(item.descKey)}</Text>

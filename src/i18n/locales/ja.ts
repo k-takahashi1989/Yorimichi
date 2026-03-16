@@ -52,12 +52,12 @@ const ja = {
   memoDetail: {
     screenTitle: 'メモ詳細',
     notFound: 'メモが見つかりません',
-    locationSection: '📍 場所 ({{count}}件)',
+    locationSection: '場所 ({{count}}件)',
     addLocation: '追加',
     locationEmpty: '場所を追加するとそこに近づいたとき通知が来ます',
     showMoreLocations: '他{{count}}件を表示',
     collapseLocations: '折りたたむ',
-    itemSection: '📝 チェックリスト',
+    itemSection: 'チェックリスト',
     itemEmpty: '編集画面でアイテムを追加してください',
     radiusLabel: '半径 {{radius}}m',
     notificationOn: '通知オン',
@@ -73,9 +73,9 @@ const ja = {
     allCheckedMessage: 'このメモの通知をオフにしますか？',
     triggerEnter: '到着時',
     triggerExit: '出発時',
-    dueDate: '📅 期限: {{date}}',
-    dueDateToday: '📅 今日が期限',
-    dueDateOverdue: '📅 期限切れ ({{date}})',
+    dueDate: '期限: {{date}}',
+    dueDateToday: '今日が期限',
+    dueDateOverdue: '期限切れ ({{date}})',
   },
 
   // ── LocationPickerScreen ──────────────────────────────────
@@ -106,7 +106,7 @@ const ja = {
 
   // ── SettingsScreen ────────────────────────────────────────
   settings: {
-    screenTitle: '⚙️ 設定',
+    screenTitle: '設定',
     permCard: {
       title: '通知・位置情報の権限',
       foreground: '現在地の取得',
@@ -160,11 +160,11 @@ const ja = {
       message: '先に位置情報を許可してください',
     },
     alertPermsAlreadyGranted: {
-      title: '✅ すでに設定済みです',
+      title: 'すでに設定済みです',
       message: '位置情報と通知の許可はすでに有効になっています。',
     },
     alertPermsSuccess: {
-      title: '✅ 設定が完了しました',
+      title: '設定が完了しました',
       message: '位置情報と通知が有効になりました。リマインドを開始できます。',
     },
     langCard: {
@@ -222,22 +222,22 @@ const ja = {
     next: '次へ',
     ok: 'OK',
     memoEdit: {
-      step1: '📝 メモのタイトルを入力しましょう',
-      step2: '✏️ アイテムを入力したら＋ボタンでリストに追加できます',
-      step3: '✅ 「確認する」で保存。場所を登録していれば、近づいたときに通知が届きます！',
+      step1: 'メモのタイトルを入力しましょう',
+      step2: 'アイテムを入力したら＋ボタンでリストに追加できます',
+      step3: '「確認する」で保存。場所を登録していれば、近づいたときに通知が届きます！',
     },
     memoDetail: {
-      step1: '🔔 ベルマークで通知の ON / OFF を切り替えられます',
+      step1: 'ベルマークで通知の ON / OFF を切り替えられます',
     },
     memoDetailShare: {
-      step1: '👥 共有ボタンでメモを他の人と共有できます。コードを送るだけで同じリストを見られます',
+      step1: '共有ボタンでメモを他の人と共有できます。コードを送るだけで同じリストを見られます',
     },
     memoDetailItems: {
-      step1: '☑️ このボタンでアイテムを一括でチェック／解除できます',
-      step2: '👁️ チェック済みのアイテムを非表示にして、残りタスクだけに集中できます',
+      step1: 'このボタンでアイテムを一括でチェック／解除できます',
+      step2: 'チェック済みのアイテムを非表示にして、残りタスクだけに集中できます',
     },
     memoDetailSync: {
-      step1: '🔄 共有メモは自動では更新されません。このボタンで最新の内容を取得できます',
+      step1: '共有メモは自動では更新されません。このボタンで最新の内容を取得できます',
     },
   },
   // ── ジオフェンスサービス ─────────────────────────────────
@@ -247,12 +247,12 @@ const ja = {
 
   // ── MemoDetailScreen 監視停止警告 ────────────────────────
   memoDetailExtra: {
-    monitoringStopped: '⚠️ リマインドが停止中です。設定画面で開始してください。',
+    monitoringStopped: 'リマインドが停止中です。設定画面で開始してください。',
   },
 
   // ── 通知文言 ────────────────────────────────────────────
   notification: {
-    arrivalTitle: '📍 {{label}} に近づいています',
+    arrivalTitle: '{{label}} に近づいています',
     arrivalBody: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう',
     arrivalBodyBig: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう\n\nタップしてメモを開く',
     modeTitle: '通知モード',
@@ -264,9 +264,9 @@ const ja = {
     modeAlarmDesc: '画面点灯・大音量',
     modeAlarmComingSoon: 'アラーム通知は現在準備中です。近日公開予定です。',
     comingSoon: '（近日公開）',
-    departureTitle: '📍 {{label}} を離れます',
+    departureTitle: '{{label}} を離れます',
     departureBody: '「{{title}}」のチェックリスト ({{count}}点) を確認しましょう',
-    dueDateTitle: '📅 「{{title}}」の期限です',
+    dueDateTitle: '「{{title}}」の期限です',
     dueDateBody: 'チェックリストを確認しましょう',
   },
   // ── 共有機能 ──────────────────────────────────────
