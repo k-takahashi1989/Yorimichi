@@ -20,6 +20,9 @@
 -keep class com.facebook.hermes.unicode.** { *; }
 -keep class com.facebook.jni.** { *; }
 
+# SoLoader (libreactnative.so ロードに必須)
+-keep class com.facebook.soloader.** { *; }
+
 # ── Firebase ──────────────────────────────────────────────
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }

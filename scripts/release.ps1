@@ -56,7 +56,7 @@ if ($LASTEXITCODE -ne 0) { Write-Error "Bundle failed"; exit 1 }
 Write-Host "[3/4] Building release AAB (incremental)..." -ForegroundColor Cyan
 Set-Location "android"
 
-.\gradlew.bat bundleRelease 2>&1
+.\gradlew.bat bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64 2>&1
 
 if ($LASTEXITCODE -ne 0) { Write-Error "Build failed"; exit 1 }
 Set-Location $ROOT
