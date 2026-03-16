@@ -19,10 +19,9 @@ export const LIMITS_ENABLED = true;
 
 /** 無料プランの上限値 */
 export const FREE_LIMITS = {
-  memos: 5,            // メモ数
+  memos: 3,            // メモ数
   itemsPerMemo: 10,    // 1メモあたりのアイテム数
   locationsPerMemo: 2, // 1メモあたりの登録地点数
-  collaborators: 1,    // 共有相手数（1対1まで）
 } as const;
 
 /** プレミアムプランの上限値（実質無制限だが安全キャップとして設定） */
@@ -30,7 +29,6 @@ export const PREMIUM_LIMITS = {
   memos: 1000,
   itemsPerMemo: 100,
   locationsPerMemo: 10,
-  collaborators: 20,
 } as const;
 
 /**
@@ -50,9 +48,4 @@ export function getMemosLimit(isPremium: boolean): number {
 export function getItemsLimit(isPremium: boolean): number {
   if (!LIMITS_ENABLED) return PREMIUM_LIMITS.itemsPerMemo;
   return isPremium ? PREMIUM_LIMITS.itemsPerMemo : FREE_LIMITS.itemsPerMemo;
-}
-
-export function getCollaboratorsLimit(isPremium: boolean): number {
-  if (!LIMITS_ENABLED) return PREMIUM_LIMITS.collaborators;
-  return isPremium ? PREMIUM_LIMITS.collaborators : FREE_LIMITS.collaborators;
 }

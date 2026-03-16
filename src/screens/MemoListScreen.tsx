@@ -85,7 +85,7 @@ export default function MemoListScreen(): React.JSX.Element {
     setImportLoading(true);
     try {
       const deviceId = getDeviceId();
-      const doc = await joinSharedMemo(code, deviceId, isPremium);
+      const doc = await joinSharedMemo(code, deviceId);
       if (!doc) {
         Alert.alert(t('common.error'), t('share.notFound'));
         return;
@@ -110,15 +110,8 @@ export default function MemoListScreen(): React.JSX.Element {
         ],
       );
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg === 'COLLABORATORS_FULL') {
-        setLimitModal({
-          title: t('errors.collaboratorLimitTitle'),
-          message: t('errors.collaboratorLimitMsg', { count: FREE_LIMITS.collaborators }),
-        });
-        return;
-      }
       recordError(e, '[MemoList] importByCode');
+      const msg = e instanceof Error ? e.message : String(e);
       Alert.alert(t('common.error'), msg || t('share.importError'));
     } finally {
       setImportLoading(false);
