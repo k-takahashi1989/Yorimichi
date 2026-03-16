@@ -92,7 +92,7 @@ export async function notifySharedMemoUpdate(
   }
 
   try {
-    const callable = functions().httpsCallable('notifyCollaborators');
+    const callable = functions('asia-northeast1').httpsCallable('notifyCollaborators');
     await callable({ shareId, memoTitle });
     lastNotifiedMap.set(shareId, now);
     return 'ok';
