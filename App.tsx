@@ -123,8 +123,21 @@ function App(): React.JSX.Element {
       }
     };
 
-    // UI がアイドル状態になった後に権限ダイアログを表示
-    scheduleWhenIdle(() => initPermissions());
+    // 権限リクエスト: オンボーディング完了後に実行
+    // 既存ユーザーは即時実行、新規ユーザーはオンボーディング完了を待つ
+    const hasSeenOnboarding = useSettingsStore.getState().seenTutorials.includes('onboarding');
+    if (hasSeenOnboarding) {
+      scheduleWhenIdle(() => initPermissions());
+    } else {
+      const unsub = useSettingsStore.subscribe((state) => {
+        if (state.seenTutorials.includes('onboarding')) {
+          unsub();
+          scheduleWhenIdle(() => initPermissions());
+        }
+      });
+      // クリーンアップ用に返却（useEffect の return で解除）
+      return () => unsub();
+    }
   }, []);
 
   return (

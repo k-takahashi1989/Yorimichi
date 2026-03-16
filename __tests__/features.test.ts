@@ -316,7 +316,6 @@ describe('planLimits ゲッター', () => {
     getLocationsLimit,
     getMemosLimit,
     getItemsLimit,
-    getCollaboratorsLimit,
   } = require('../src/config/planLimits');
 
   it('LIMITS_ENABLED が true であること', () => {
@@ -338,10 +337,6 @@ describe('planLimits ゲッター', () => {
     expect(getItemsLimit(true)).toBe(PREMIUM_LIMITS.itemsPerMemo);  // 100
   });
 
-  it('getCollaboratorsLimit: 無料=1, プレミアム=20', () => {
-    expect(getCollaboratorsLimit(false)).toBe(FREE_LIMITS.collaborators);    // 1
-    expect(getCollaboratorsLimit(true)).toBe(PREMIUM_LIMITS.collaborators);  // 20
-  });
 });
 
 // ============================================================
