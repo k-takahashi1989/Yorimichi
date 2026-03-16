@@ -97,13 +97,17 @@ android {
 
         versionCode versionProps['VERSION_CODE'].toInteger()
         versionName versionProps['VERSION_NAME']
-        // .env 縺�E�E�E� GOOGLE_MAPS_API_KEY 繧・manifestPlaceholders 邨檎罰縺�E�E�E�豕ｨ蜈･
+        // .env 縺�E�E�E� GOOGLE_MAPS_API_KEY 繧・manifestPlaceholders 邨檎罰縺�E�E�E�豕ｨ蜈･
+
         manifestPlaceholders = [
             GOOGLE_MAPS_API_KEY: project.env.get("GOOGLE_MAPS_API_KEY") ?: "",
             ADMOB_APP_ID: project.env.get("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"
         ]
 
-        // ABI Filter 縺�E�E�E� debug 縺�E�E�E�荳玖ｨ倥↓險�E�E�E�螳夲�E�E�E�・elease 縺�E�E�E�蜈ｨ繧�E�E�E�繝ｼ繧�E�E�E�繝�E・�E�E�E�・�E�E�E�繝�EΕ�E�E�E�E�E・�E�E�E�E
+        // reactNativeArchitectures に合わせて全ビルドタイプで ABI を制限
+        ndk {
+            abiFilters(*project.getProperty("reactNativeArchitectures").split(","))
+        }
     }
     signingConfigs {
         debug {
@@ -137,10 +141,6 @@ android {
             signingConfig signingConfigs.debug
             // Metro (cleartext HTTP) 縺�E�E�E�謗･邯壹�E�E�E�險�E�E�E�蜿�E�E�E�
             manifestPlaceholders += [usesCleartextTraffic: "true"]
-            // 繝�E・�E�E�E�・�E�E�E�繝�E・�E�E�E�・�E�E�E�縺�E�E�E� arm64 縺�E�E�E�縺�E�E�E�縺�E�E�E�繝薙Ν繝蛾�E�E�E�倬溷喧
-            ndk {
-                abiFilters "arm64-v8a"
-            }
         }
         release {
             signingConfig signingConfigs.release
