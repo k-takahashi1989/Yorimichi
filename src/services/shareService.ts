@@ -184,10 +184,14 @@ export async function joinSharedMemo(
   // exists は boolean property だが snap.data() が undefined の場合も守る
   const data = snap.data() as SharedMemoDoc | undefined;
   if (!snap.exists || !data) return null;
-  // collaborators への追記: Security Rules で弾かれても import 自体は続行する
-  if (Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId)) {
+  // collaborators / collaboratorUids への追記: Security Rules で弾かれても import 自体は続行する。
+  // deviceId と uid は独立して判定する。アプリ再インストール等で uid だけ変わるケースがあるため、
+  // deviceId が既存でも uid が未登録なら追記が必要。
+  const uid = getCurrentUid();
+  const needsDeviceId = Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId);
+  const needsUid = Array.isArray(data.collaboratorUids) && !data.collaboratorUids.includes(uid);
+  if (needsDeviceId || needsUid) {
     try {
-      const uid = getCurrentUid();
       await ref.update({
         collaborators: firestore.FieldValue.arrayUnion(deviceId),
         collaboratorUids: firestore.FieldValue.arrayUnion(uid),
