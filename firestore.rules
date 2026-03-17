@@ -31,13 +31,25 @@ service cloud.firestore {
         && request.resource.data.collaborators.size() <= 21
         && request.resource.data.items.size() <= 100;
 
+      // self-join ヘルパー: collaboratorUids / collaborators に自分を追加するだけの更新か判定。
+      // joinSharedMemo() で受信者が自分の UID を追加する際、まだ collaboratorUids に
+      // 含まれていないためメインの update ルールに弾かれる問題を回避する。
+      function isSelfJoin() {
+        return request.auth.uid in request.resource.data.collaboratorUids
+          && !(request.auth.uid in resource.data.collaboratorUids)
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['collaborators', 'collaboratorUids']);
+      }
+
       // 更新: オーナーまたは参加者（移行期間中は認証済みユーザー）
       // ownerDeviceId と ownerUid の書き換えは禁止
+      // self-join: 共有メモの読み取り権限を持つユーザーが自分を collaboratorUids に追加する場合も許可
       allow update: if request.auth != null
         && (isLegacyDoc()
             || resource.data.ownerUid == request.auth.uid
             || (resource.data.collaboratorUids is list
-                && request.auth.uid in resource.data.collaboratorUids))
+                && request.auth.uid in resource.data.collaboratorUids)
+            || isSelfJoin())
         && request.resource.data.ownerDeviceId == resource.data.ownerDeviceId
         && (!('ownerUid' in resource.data) || request.resource.data.ownerUid == resource.data.ownerUid)
         && request.resource.data.collaborators.size() <= 21
