@@ -10,6 +10,7 @@ import {
   Share,
   ActivityIndicator,
   BackHandler,
+  Animated,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -112,16 +113,42 @@ export default function MemoDetailScreen(): React.JSX.Element {
     };
   }, [flushSharedItemsSync]);
 
-  // 共有メモ通知のクールダウンタイマー
+  // 共有メモ通知のクールダウンタイマー＋プログレスバー
+  const cooldownProgress = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     if (!memo?.shareId) return;
-    setNotifyCooldown(getCooldownRemaining(memo.shareId));
+    const remaining = getCooldownRemaining(memo.shareId);
+    setNotifyCooldown(remaining);
+    if (remaining > 0) {
+      // クールダウン中：残り時間に応じたプログレスアニメーション
+      const totalCooldown = 60; // 1分
+      const elapsed = totalCooldown - remaining;
+      cooldownProgress.setValue(elapsed / totalCooldown);
+      Animated.timing(cooldownProgress, {
+        toValue: 1,
+        duration: remaining * 1000,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      cooldownProgress.setValue(1);
+    }
     const timer = setInterval(() => {
-      const remaining = getCooldownRemaining(memo.shareId!);
-      setNotifyCooldown(remaining);
+      const r = getCooldownRemaining(memo.shareId!);
+      setNotifyCooldown(r);
+      if (r <= 0) cooldownProgress.setValue(1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [memo?.shareId]);
+  }, [memo?.shareId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 通知送信成功時にプログレスバーをリセット＆開始
+  const startCooldownAnimation = useCallback(() => {
+    cooldownProgress.setValue(0);
+    Animated.timing(cooldownProgress, {
+      toValue: 1,
+      duration: 60 * 1000,
+      useNativeDriver: false,
+    }).start();
+  }, [cooldownProgress]);
 
   const handleNotifyCollaborators = async () => {
     if (!memo?.shareId) return;
@@ -130,6 +157,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
       const result = await notifySharedMemoUpdate(memo.shareId, memo.title);
       if (result.status === 'ok') {
         memoSnapshotRef.current = getMemoFingerprint();
+        startCooldownAnimation();
         Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
       } else if (result.status === 'cooldown') {
         Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
@@ -492,6 +520,20 @@ export default function MemoDetailScreen(): React.JSX.Element {
           disabled={isNotifyLoading || notifyCooldown > 0 || !hasLocalChanges}
           onPress={handleNotifyCollaborators}
           activeOpacity={0.7}>
+          {/* クールダウン中のプログレスバー */}
+          {notifyCooldown > 0 && (
+            <Animated.View
+              style={[
+                styles.notifyProgressBar,
+                {
+                  width: cooldownProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0%', '100%'],
+                  }),
+                },
+              ]}
+            />
+          )}
           {isNotifyLoading ? (
             <ActivityIndicator size={16} color="#fff" />
           ) : (
@@ -910,7 +952,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     marginBottom: 14,
+    overflow: 'hidden',
+    position: 'relative',
   },
   notifyBtnDisabled: { backgroundColor: '#B0BEC5' },
-  notifyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  notifyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14, zIndex: 1 },
+  notifyProgressBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#2196F3',
+    borderRadius: 10,
+    zIndex: 0,
+  },
 });

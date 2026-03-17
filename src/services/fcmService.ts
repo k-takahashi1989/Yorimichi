@@ -72,7 +72,7 @@ export function listenTokenRefresh(): () => void {
 // 共有メモ更新通知の送信
 // ============================================================
 
-const COOLDOWN_MS = 5 * 60 * 1000; // 5分
+const COOLDOWN_MS = 60 * 1000; // 1分
 
 // クライアント側クールダウン管理
 const lastNotifiedMap = new Map<string, number>();

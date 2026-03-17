@@ -50,6 +50,6 @@ describe('notifySharedMemoUpdate', () => {
     await notifySharedMemoUpdate('share-cd', 'テストメモ');
     const remaining = getCooldownRemaining('share-cd');
     expect(remaining).toBeGreaterThan(0);
-    expect(remaining).toBeLessThanOrEqual(300); // 5分 = 300秒
+    expect(remaining).toBeLessThanOrEqual(60); // 1分 = 60秒
   });
 });

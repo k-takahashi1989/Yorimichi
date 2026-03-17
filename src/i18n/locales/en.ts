@@ -296,7 +296,7 @@ const en: Translation = {
     sentTitle: 'Notification sent',
     sentMessage: 'Your collaborators have been notified.',
     cooldownTitle: 'Please wait',
-    cooldownMessage: 'Notifications can be sent every 5 minutes.',
+    cooldownMessage: 'Notifications can be sent every 1 minute.',
     errorMessage: 'Failed to send notification.',
   },
   // ── Premium plan ────────────────────────────────────────

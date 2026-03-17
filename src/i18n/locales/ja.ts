@@ -307,7 +307,7 @@ const ja = {
     sentTitle: '通知を送信しました',
     sentMessage: '共有相手に更新通知を送りました。',
     cooldownTitle: 'しばらくお待ちください',
-    cooldownMessage: '通知は5分間隔で送信できます。',
+    cooldownMessage: '通知は1分間隔で送信できます。',
     errorMessage: '通知の送信に失敗しました。',
   },
   // ── プレミアムプラン ───────────────────────────────────
