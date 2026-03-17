@@ -50,6 +50,9 @@ export interface SettingsState {
   // プレミアムプロモ（10日周期表示）
   lastPremiumPromoAt: number | null;   // 最後にプロモモーダルを表示した日時 (Unix ms)
   setLastPremiumPromoAt: (ts: number) => void;
+  // レビュー依頼（90日間隔）
+  lastReviewPromptAt: number | null;   // 最後にレビュー依頼を表示した日時 (Unix ms)
+  setLastReviewPromptAt: (ts: number) => void;
   // デバッグ専用（DEV ビルドのみ使用）
   debugForcePremium: boolean | null;   // null=実際の値を使用, true/false=強制上書き
   setDefaultRadius: (radius: number) => void;
@@ -103,6 +106,8 @@ export const useSettingsStore = create<SettingsState>()(
       lastCloudBackupAt: null,
       lastPremiumPromoAt: null,
       setLastPremiumPromoAt: (ts: number) => set({ lastPremiumPromoAt: ts }),
+      lastReviewPromptAt: null,
+      setLastReviewPromptAt: (ts: number) => set({ lastReviewPromptAt: ts }),
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       incrementMemoRegistrations: () =>
         set(state => ({ totalMemoRegistrations: state.totalMemoRegistrations + 1 })),

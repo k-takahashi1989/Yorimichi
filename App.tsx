@@ -21,6 +21,7 @@ import { initCrashlytics, recordError } from './src/services/crashlyticsService'
 import { onAppLaunch } from './src/services/badgeService';
 import { showBadgeUnlock } from './src/components/BadgeUnlockModal';
 import BadgeUnlockModal from './src/components/BadgeUnlockModal';
+import ReviewPromptModal from './src/components/ReviewPromptModal';
 import { shouldShowPremiumPromo } from './src/utils/premiumPromoUtils';
 import { showPremiumPromo } from './src/components/PremiumPromoModal';
 
@@ -165,6 +166,7 @@ function App(): React.JSX.Element {
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <AppNavigator />
         <BadgeUnlockModal />
+        <ReviewPromptModal />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

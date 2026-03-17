@@ -466,6 +466,13 @@ const en: Translation = {
     hidden_visit_back: 'Welcome Back',
     hidden_visit_back_desc: 'Open the app after 30+ days away',
   },
+  reviewPrompt: {
+    title: 'Enjoying Yorimichi?',
+    message: "We'd love to hear from you! A quick review helps us improve.",
+    yes: 'Leave a Review',
+    no: 'Send Feedback',
+    later: 'Later',
+  },
   premiumPromo: {
     title: 'Thanks for {{days}} days with us!',
     message: 'Go ad-free with cloud backup and more on the Premium plan.',

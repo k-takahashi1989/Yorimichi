@@ -18,6 +18,8 @@ import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
 import { recordError } from '../services/crashlyticsService';
 import PremiumPromoModal, { setPremiumPromoNavigator } from '../components/PremiumPromoModal';
+import { shouldTriggerOnVisit } from '../utils/reviewPromptUtils';
+import { showReviewPrompt } from '../components/ReviewPromptModal';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import MemoListScreen from '../screens/MemoListScreen';
@@ -149,6 +151,11 @@ export function AppNavigator(): React.JSX.Element {
       // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
       const newBadges = onGeofenceVisit(memoId);
       if (newBadges.length > 0) showBadgeUnlock(newBadges);
+      // レビュー依頼: 通知タップ3回目で条件を満たしていれば表示
+      const settings = useSettingsStore.getState();
+      if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
+        setTimeout(() => showReviewPrompt(), 1500);
+      }
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
   }, []);

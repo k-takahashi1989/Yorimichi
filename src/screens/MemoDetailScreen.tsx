@@ -40,6 +40,8 @@ import { recordError } from '../services/crashlyticsService';
 import { getDueDateInfo } from '../utils/helpers';
 import { onItemComplete, onShareMemo } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
+import { shouldTriggerOnAllItemsCompleted } from '../utils/reviewPromptUtils';
+import { showReviewPrompt } from '../components/ReviewPromptModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'MemoDetail'>;
@@ -339,6 +341,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
         // Alert の代わりに Snackbar で通知 → back ボタンをブロックしない
         setSnackbarVisible(false);
         setAllCheckedSnackbarVisible(true);
+        // レビュー依頼: 全アイテム完了 & 条件を満たしていれば表示
+        const settings = useSettingsStore.getState();
+        if (shouldTriggerOnAllItemsCompleted(settings.totalItemsCompleted, settings.lastReviewPromptAt)) {
+          setTimeout(() => showReviewPrompt(), 2000);
+        }
       }
     }
   }, [memoId, toggleItem, memo, t, updateMemo, debouncedSharedItemsSync]);
