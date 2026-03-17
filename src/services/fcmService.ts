@@ -89,6 +89,7 @@ const lastNotifiedMap = new Map<string, number>();
  */
 export type NotifyResult =
   | { status: 'ok' }
+  | { status: 'no_targets' }
   | { status: 'cooldown' }
   | { status: 'error'; detail: string };
 
@@ -125,7 +126,11 @@ export async function notifySharedMemoUpdate(
       const errMsg = body?.error?.message ?? resp.statusText;
       throw { code: errCode, message: errMsg };
     }
+    const sent: number = body?.result?.sent ?? 0;
     lastNotifiedMap.set(shareId, now);
+    if (sent === 0) {
+      return { status: 'no_targets' };
+    }
     return { status: 'ok' };
   } catch (e: any) {
     const code: string = e?.code ?? '';

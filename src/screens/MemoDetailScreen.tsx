@@ -161,6 +161,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         memoSnapshotRef.current = getMemoFingerprint();
         startCooldownAnimation();
         Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
+      } else if (result.status === 'no_targets') {
+        Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.noTargetsMessage'));
       } else if (result.status === 'cooldown') {
         Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
       } else {

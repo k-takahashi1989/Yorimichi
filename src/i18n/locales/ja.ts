@@ -307,6 +307,7 @@ const ja = {
     cooldownBtn: '通知済み ({{seconds}}秒後に再送可)',
     sentTitle: '通知を送信しました',
     sentMessage: '共有相手に更新通知を送りました。',
+    noTargetsMessage: '通知先の共有相手が見つかりませんでした。相手がアプリを起動して共有メモを開いているか確認してください。',
     cooldownTitle: 'しばらくお待ちください',
     cooldownMessage: '通知は1分間隔で送信できます。',
     errorMessage: '通知の送信に失敗しました。',
