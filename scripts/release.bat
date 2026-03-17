@@ -139,7 +139,7 @@ echo [5/5] Building release AAB...
 cd android
 
 if exist "gradlew.bat" (
-    call gradlew.bat bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+    call gradlew.bat bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
 ) else (
     echo ERROR: gradlew.bat not found
     exit /b 1
