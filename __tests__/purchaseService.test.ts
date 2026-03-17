@@ -49,7 +49,7 @@ describe('initPurchases', () => {
 // getPremiumOffering
 // ============================================================
 describe('getPremiumOffering', () => {
-  it('current offering がある場合 monthly/annual を返す', async () => {
+  it('current offering がある場合 ok:true と monthly/annual を返す', async () => {
     const mockMonthly = { identifier: '$rc_monthly', product: { price: 500 } };
     const mockAnnual = { identifier: '$rc_annual', product: { price: 4800 } };
 
@@ -62,23 +62,44 @@ describe('getPremiumOffering', () => {
 
     const result = await getPremiumOffering();
 
-    expect(result).not.toBeNull();
-    expect(result!.monthly).toBe(mockMonthly);
-    expect(result!.annual).toBe(mockAnnual);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.monthly).toBe(mockMonthly);
+      expect(result.data.annual).toBe(mockAnnual);
+    }
   });
 
-  it('current offering がない場合 null を返す', async () => {
+  it('current offering がない場合 ok:false を返す', async () => {
     MockPurchases.getOfferings.mockResolvedValue({ current: null });
 
     const result = await getPremiumOffering();
-    expect(result).toBeNull();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain('No default offering');
+    }
   });
 
-  it('getOfferings がエラーを投げた場合 null を返す', async () => {
+  it('getOfferings がエラーを投げた場合 ok:false を返す（リトライ後）', async () => {
     MockPurchases.getOfferings.mockRejectedValue(new Error('Network error'));
 
     const result = await getPremiumOffering();
-    expect(result).toBeNull();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('Network error');
+    }
+    // 3回リトライされること
+    expect(MockPurchases.getOfferings).toHaveBeenCalledTimes(3);
+  }, 15000);
+
+  it('API キーが未設定の場合 ok:false を返す', async () => {
+    configMock.REVENUECAT_ANDROID_API_KEY = '';
+
+    const result = await getPremiumOffering();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain('REVENUECAT_ANDROID_API_KEY');
+    }
+    expect(MockPurchases.getOfferings).not.toHaveBeenCalled();
   });
 });
 

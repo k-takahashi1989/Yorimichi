@@ -19,6 +19,7 @@ import {
   purchasePackage,
   restorePurchases,
   PremiumOffering,
+  OfferingResult,
 } from '../services/purchaseService';
 import { backupAllMemos, restoreFromBackup } from '../services/backupService';
 import { getDeviceId } from '../utils/deviceId';
@@ -65,15 +66,27 @@ export default function PremiumScreen(): React.JSX.Element {
   // サブスクオファリング
   const [offering, setOffering] = useState<PremiumOffering | null>(null);
   const [offeringLoading, setOfferingLoading] = useState(true);
+  const [offeringError, setOfferingError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
-  useEffect(() => {
-    getPremiumOffering().then(o => {
-      setOffering(o);
+  const loadOffering = () => {
+    setOfferingLoading(true);
+    setOfferingError(null);
+    getPremiumOffering().then(result => {
+      if (result.ok) {
+        setOffering(result.data);
+      } else {
+        setOffering(null);
+        setOfferingError(result.error);
+      }
       setOfferingLoading(false);
     });
+  };
+
+  useEffect(() => {
+    loadOffering();
   }, []);
 
   const isTrialCurrentlyActive = isTrialActive(trialStartDate);
@@ -438,6 +451,14 @@ export default function PremiumScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
 
+          {/* プラン読み込みエラー時のリトライ */}
+          {offeringError && !offeringLoading && (
+            <TouchableOpacity style={styles.retryBtn} onPress={loadOffering}>
+              <Icon name="refresh" size={18} color="#E65100" />
+              <Text style={styles.retryBtnText}>{t('premium.retryLoad')}</Text>
+            </TouchableOpacity>
+          )}
+
           {/* アップグレードCTA */}
           <TouchableOpacity
             testID="purchase-button"
@@ -630,6 +651,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   restoreBtnText: { fontSize: 13, color: '#9E9E9E', textDecorationLine: 'underline' },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    marginTop: 4,
+    gap: 6,
+  },
+  retryBtnText: { fontSize: 13, color: '#E65100', fontWeight: '600' },
 
   // プレミアムお試し
   trialContainer: {

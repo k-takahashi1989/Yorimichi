@@ -42,24 +42,49 @@ export interface PremiumOffering {
   annual: PurchasesPackage | null;
 }
 
+/** getPremiumOffering の戻り値 */
+export type OfferingResult =
+  | { ok: true; data: PremiumOffering }
+  | { ok: false; error: string };
+
 /**
  * 現在のオファリングを取得する。
  * RevenueCat ダッシュボードで default offering に月額・年額パッケージを設定しておく。
+ * 最大 2 回リトライ（計 3 回試行）する。
  */
-export async function getPremiumOffering(): Promise<PremiumOffering | null> {
-  try {
-    const offerings = await Purchases.getOfferings();
-    const current = offerings.current;
-    if (!current) return null;
-    return {
-      offering: current,
-      monthly: current.monthly ?? null,
-      annual: current.annual ?? null,
-    };
-  } catch (e) {
-    if (__DEV__) console.error('[purchaseService] getOfferings エラー:', e);
-    return null;
+export async function getPremiumOffering(): Promise<OfferingResult> {
+  const MAX_ATTEMPTS = 3;
+  const apiKey = Config.REVENUECAT_ANDROID_API_KEY;
+  if (!apiKey) {
+    return { ok: false, error: 'REVENUECAT_ANDROID_API_KEY is not configured' };
   }
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const offerings = await Purchases.getOfferings();
+      const current = offerings.current;
+      if (!current) {
+        return { ok: false, error: 'No default offering configured' };
+      }
+      return {
+        ok: true,
+        data: {
+          offering: current,
+          monthly: current.monthly ?? null,
+          annual: current.annual ?? null,
+        },
+      };
+    } catch (e: any) {
+      if (__DEV__) console.error(`[purchaseService] getOfferings attempt ${attempt} エラー:`, e);
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+      return { ok: false, error: e?.message ?? 'Failed to load offerings' };
+    }
+  }
+  // TypeScript: unreachable, but satisfy return type
+  return { ok: false, error: 'Failed to load offerings' };
 }
 
 // ============================================================
