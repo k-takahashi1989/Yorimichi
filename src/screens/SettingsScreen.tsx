@@ -233,6 +233,8 @@ export default function SettingsScreen(): React.JSX.Element {
     <ScrollView style={styles.container}>
       <Text style={styles.pageTitle}>{t('settings.screenTitle')}</Text>
 
+      <DebugPremiumCard />
+
       {/* ── ジオフェンス設定 ── */}
       <View style={styles.sectionLabelRow}>
         <MapSvg width={14} height={14} />
@@ -566,6 +568,47 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </Modal>
     </ScrollView>
+  );
+}
+
+function DebugPremiumCard(): React.JSX.Element {
+  const debugForce = useSettingsStore(s => s.debugForcePremium);
+  const setDebugForcePremium = useSettingsStore(s => s.setDebugForcePremium);
+  const rawIsPremium = useSettingsStore(s => s.isPremium);
+  const trialStartDate = useSettingsStore(s => s.trialStartDate);
+  const effectivePremium = useSettingsStore(selectEffectivePremium);
+
+  const modes: Array<{ label: string; value: boolean | null }> = [
+    { label: '無料', value: false },
+    { label: 'Auto', value: null },
+    { label: 'プレミアム', value: true },
+  ];
+
+  return (
+    <View style={{ marginTop: 16, marginHorizontal: 12, borderColor: '#FF9800', borderWidth: 1, borderRadius: 12, padding: 12, backgroundColor: '#fff' }}>
+      <Text style={{ fontWeight: 'bold', color: '#FF9800', marginBottom: 8 }}>🛠 Debug: プランの切替</Text>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {modes.map(m => (
+          <TouchableOpacity
+            key={String(m.value)}
+            onPress={() => setDebugForcePremium(m.value)}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              borderRadius: 8,
+              alignItems: 'center',
+              backgroundColor: debugForce === m.value ? '#FF9800' : '#F5F5F5',
+            }}>
+            <Text style={{ fontSize: 13, color: debugForce === m.value ? '#fff' : '#333', fontWeight: debugForce === m.value ? 'bold' : 'normal' }}>
+              {m.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={{ fontSize: 11, color: '#999', marginTop: 6 }}>
+        effective: {effectivePremium ? 'PREMIUM' : 'FREE'}  |  raw: {rawIsPremium ? 'true' : 'false'}  |  trial: {isTrialActive(trialStartDate) ? 'ON' : 'OFF'}
+      </Text>
+    </View>
   );
 }
 

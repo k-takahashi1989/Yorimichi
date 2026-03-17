@@ -128,16 +128,16 @@ export default function MemoDetailScreen(): React.JSX.Element {
     setIsNotifyLoading(true);
     try {
       const result = await notifySharedMemoUpdate(memo.shareId, memo.title);
-      if (result === 'ok') {
+      if (result.status === 'ok') {
         memoSnapshotRef.current = getMemoFingerprint();
         Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
-      } else if (result === 'cooldown') {
+      } else if (result.status === 'cooldown') {
         Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
       } else {
-        Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
+        Alert.alert(t('common.error'), `${t('shareNotify.errorMessage')}\n\n[DEBUG] ${result.detail}`);
       }
-    } catch {
-      Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
+    } catch (e: any) {
+      Alert.alert(t('common.error'), `${t('shareNotify.errorMessage')}\n\n[DEBUG] ${e?.code ?? ''} ${e?.message ?? String(e)}`);
     } finally {
       setIsNotifyLoading(false);
     }

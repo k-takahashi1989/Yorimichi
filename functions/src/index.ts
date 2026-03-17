@@ -1,5 +1,6 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
@@ -7,31 +8,40 @@ initializeApp();
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5分クールダウン
 
-interface NotifyRequest {
-  shareId: string;
-  memoTitle: string;
-}
-
 /**
- * 共有メモの更新通知を共有相手に送信する (プレミアム限定)。
- *
- * - 呼び出し者が本当にそのメモの共有者か検証
- * - 5分間のクールダウンをチェック
- * - 送信者以外の全コラボレーター/オーナーに FCM 通知を送信
- * - 無効なトークンを自動クリーンアップ
+ * 共有メモの更新通知を共有相手に送信する。
+ * HTTP POST で呼び出し。Authorization ヘッダーで認証。
  */
-export const notifyCollaborators = onCall<NotifyRequest>(
-  { region: "asia-northeast1" },
-  async (request) => {
-    // 認証チェック
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Authentication required");
+export const notifyCollaborators = onRequest(
+  { region: "asia-northeast1", invoker: "public" },
+  async (req, res) => {
+    // POST のみ
+    if (req.method !== "POST") {
+      res.status(405).json({ error: { message: "Method not allowed" } });
+      return;
     }
-    const callerUid = request.auth.uid;
-    const { shareId, memoTitle } = request.data;
+
+    // Authorization ヘッダーから ID トークンを取得
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ error: { status: "unauthenticated", message: "Missing Authorization header" } });
+      return;
+    }
+    const idToken = authHeader.split("Bearer ")[1];
+    let callerUid: string;
+    try {
+      const decoded = await getAuth().verifyIdToken(idToken);
+      callerUid = decoded.uid;
+    } catch {
+      res.status(401).json({ error: { status: "unauthenticated", message: "Invalid ID token" } });
+      return;
+    }
+
+    const { shareId, memoTitle } = req.body?.data ?? req.body ?? {};
 
     if (!shareId || !memoTitle) {
-      throw new HttpsError("invalid-argument", "shareId and memoTitle are required");
+      res.status(400).json({ error: { status: "invalid-argument", message: "shareId and memoTitle are required" } });
+      return;
     }
 
     const db = getFirestore();
@@ -39,7 +49,8 @@ export const notifyCollaborators = onCall<NotifyRequest>(
     const memoSnap = await memoRef.get();
 
     if (!memoSnap.exists) {
-      throw new HttpsError("not-found", "Shared memo not found");
+      res.status(404).json({ error: { status: "not-found", message: "Shared memo not found" } });
+      return;
     }
 
     const memoData = memoSnap.data()!;
@@ -50,7 +61,8 @@ export const notifyCollaborators = onCall<NotifyRequest>(
     const allUids = [ownerUid, ...collaboratorUids].filter(Boolean) as string[];
 
     if (!allUids.includes(callerUid)) {
-      throw new HttpsError("permission-denied", "You are not a collaborator of this memo");
+      res.status(403).json({ error: { status: "permission-denied", message: "You are not a collaborator of this memo" } });
+      return;
     }
 
     // クールダウンチェック
@@ -58,13 +70,15 @@ export const notifyCollaborators = onCall<NotifyRequest>(
     const now = Date.now();
     if (lastNotifiedAt && now - lastNotifiedAt < COOLDOWN_MS) {
       const remainingSec = Math.ceil((COOLDOWN_MS - (now - lastNotifiedAt)) / 1000);
-      throw new HttpsError("resource-exhausted", `Please wait ${remainingSec} seconds before sending again`);
+      res.status(429).json({ error: { status: "resource-exhausted", message: `Please wait ${remainingSec} seconds before sending again` } });
+      return;
     }
 
     // 送信先: 呼び出し者以外の全 UID
     const targetUids = allUids.filter((uid) => uid !== callerUid);
     if (targetUids.length === 0) {
-      return { sent: 0 };
+      res.json({ result: { sent: 0 } });
+      return;
     }
 
     // FCM トークンを取得
@@ -81,7 +95,8 @@ export const notifyCollaborators = onCall<NotifyRequest>(
 
     if (tokens.length === 0) {
       // トークンなし → lastNotifiedAt は更新しない
-      return { sent: 0 };
+      res.json({ result: { sent: 0 } });
+      return;
     }
 
     // FCM 送信
@@ -132,6 +147,6 @@ export const notifyCollaborators = onCall<NotifyRequest>(
     // lastNotifiedAt を更新
     await memoRef.update({ lastNotifiedAt: FieldValue.serverTimestamp() });
 
-    return { sent: response.successCount };
+    res.json({ result: { sent: response.successCount } });
   }
 );

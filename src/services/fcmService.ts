@@ -14,9 +14,12 @@ import { Platform } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
-import functions from '@react-native-firebase/functions';
 import { getDeviceId } from '../utils/deviceId';
 import { recordError } from './crashlyticsService';
+import { ensureSignedIn } from './shareService';
+
+const CLOUD_FUNCTION_URL =
+  'https://asia-northeast1-yorimichi-app-dev.cloudfunctions.net/notifyCollaborators';
 
 // ============================================================
 // FCM トークン登録
@@ -80,30 +83,56 @@ const lastNotifiedMap = new Map<string, number>();
  *
  * @returns 'ok' | 'cooldown' | 'error'
  */
+export type NotifyResult =
+  | { status: 'ok' }
+  | { status: 'cooldown' }
+  | { status: 'error'; detail: string };
+
 export async function notifySharedMemoUpdate(
   shareId: string,
   memoTitle: string,
-): Promise<'ok' | 'cooldown' | 'error'> {
+): Promise<NotifyResult> {
   // クライアント側クールダウン
   const lastTime = lastNotifiedMap.get(shareId) ?? 0;
   const now = Date.now();
   if (now - lastTime < COOLDOWN_MS) {
-    return 'cooldown';
+    return { status: 'cooldown' };
   }
 
   try {
-    const callable = functions('asia-northeast1').httpsCallable('notifyCollaborators');
-    await callable({ shareId, memoTitle });
-    lastNotifiedMap.set(shareId, now);
-    return 'ok';
-  } catch (e: any) {
-    if (e?.code === 'functions/resource-exhausted') {
-      // サーバー側クールダウン
-      lastNotifiedMap.set(shareId, now);
-      return 'cooldown';
+    await ensureSignedIn();
+    const user = auth().currentUser;
+    if (!user) {
+      return { status: 'error', detail: 'Not signed in after ensureSignedIn' };
     }
-    recordError(e, '[fcmService] notifySharedMemoUpdate');
-    return 'error';
+    // ID トークンを取得して fetch で直接呼び出す
+    const idToken = await user.getIdToken(true);
+    const resp = await fetch(CLOUD_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ data: { shareId, memoTitle } }),
+    });
+    const body = await resp.json();
+    if (!resp.ok) {
+      const errCode = body?.error?.status ?? `HTTP${resp.status}`;
+      const errMsg = body?.error?.message ?? resp.statusText;
+      throw { code: errCode, message: errMsg };
+    }
+    lastNotifiedMap.set(shareId, now);
+    return { status: 'ok' };
+  } catch (e: any) {
+    const code: string = e?.code ?? '';
+    const msg: string = e?.message ?? String(e);
+    console.error('[NOTIFY_DEBUG] code=', code, 'msg=', msg, 'raw=', JSON.stringify(e, Object.getOwnPropertyNames(e)));
+    if (code === 'functions/resource-exhausted') {
+      lastNotifiedMap.set(shareId, now);
+      return { status: 'cooldown' };
+    }
+    recordError(e, `[fcmService] notifySharedMemoUpdate code=${code}`);
+    return { status: 'error', detail: `${code} ${msg}` };
   }
 }
 

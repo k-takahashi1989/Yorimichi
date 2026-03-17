@@ -47,6 +47,8 @@ export interface SettingsState {
   sharedItemsCompleted: number;       // 共有メモでのアイテム完了累計
   // クラウドバックアップ（プレミアム機能）
   lastCloudBackupAt: number | null;    // 最後にクラウドバックアップした日時 (Unix ms)
+  // デバッグ専用（DEV ビルドのみ使用）
+  debugForcePremium: boolean | null;   // null=実際の値を使用, true/false=強制上書き
   setDefaultRadius: (radius: number) => void;
   setMaxRadius: (max: number) => void;
   incrementMemoRegistrations: () => void;
@@ -66,6 +68,7 @@ export interface SettingsState {
   redeemCoupon: (code: string) => Promise<'ok' | 'invalid' | 'already_used' | 'network'>;
   syncPurchaseStatus: () => Promise<void>;
   setLastCloudBackupAt: (ts: number) => void;
+  setDebugForcePremium: (v: boolean | null) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -76,6 +79,7 @@ export const useSettingsStore = create<SettingsState>()(
       totalMemoRegistrations: 0,
       seenTutorials: [],
       isPremium: false,
+      debugForcePremium: null,
       recentPlaces: [],
       trialStartDate: null,
       hasUsedTrial: false,
@@ -171,10 +175,11 @@ export const useSettingsStore = create<SettingsState>()(
         }
       },
       setLastCloudBackupAt: (ts: number) => set({ lastCloudBackupAt: ts }),
+      setDebugForcePremium: (v: boolean | null) => set({ debugForcePremium: v }),
     }),
     {
       name: 'settings',
-      version: 11,
+      version: 12,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -224,6 +229,9 @@ export const useSettingsStore = create<SettingsState>()(
             sharedItemsCompleted: persisted.sharedItemsCompleted ?? 0,
           };
         }
+        if (version <= 11) {
+          persisted = { ...persisted, debugForcePremium: null };
+        }
         return persisted;
       },
     },
@@ -234,10 +242,14 @@ export const useSettingsStore = create<SettingsState>()(
  * 有効なプレミアム判定セレクター。
  * 課金プレミアム OR 7日間トライアル中 OR クーポン有効期限内 のどれかが true なら true を返す。
  */
-export const selectEffectivePremium = (s: SettingsState): boolean =>
-  s.isPremium ||
-  isTrialActive(s.trialStartDate) ||
-  (s.couponExpiry != null && Date.now() < s.couponExpiry);
+export const selectEffectivePremium = (s: SettingsState): boolean => {
+  if (s.debugForcePremium !== null) return s.debugForcePremium;
+  return (
+    s.isPremium ||
+    isTrialActive(s.trialStartDate) ||
+    (s.couponExpiry != null && Date.now() < s.couponExpiry)
+  );
+};
 
 // ============================================================
 // メモストア

@@ -6,11 +6,20 @@ import { getCooldownRemaining, notifySharedMemoUpdate } from '../src/services/fc
 
 beforeEach(() => {
   jest.clearAllMocks();
-  // auth をサインイン済み扱いにする
+  // auth をサインイン済み + onAuthStateChanged/getIdToken 付きでモック
   const authMock = require('@react-native-firebase/auth');
   (authMock as jest.Mock).mockReturnValue({
-    currentUser: { uid: 'test-uid' },
+    currentUser: { uid: 'test-uid', getIdToken: jest.fn().mockResolvedValue('mock-id-token') },
+    onAuthStateChanged: jest.fn((cb: (u: object | null) => void) => {
+      cb({ uid: 'test-uid' });
+      return () => {};
+    }),
   });
+  // fetch をモック（成功レスポンス）
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: jest.fn().mockResolvedValue({ result: { sent: 1 } }),
+  }) as jest.Mock;
 });
 
 // ============================================================
@@ -28,13 +37,13 @@ describe('getCooldownRemaining', () => {
 describe('notifySharedMemoUpdate', () => {
   it('初回は ok を返す', async () => {
     const result = await notifySharedMemoUpdate('share-new', 'テストメモ');
-    expect(result).toBe('ok');
+    expect(result.status).toBe('ok');
   });
 
   it('連続呼び出しは cooldown を返す', async () => {
     await notifySharedMemoUpdate('share-dup', 'テストメモ');
     const result = await notifySharedMemoUpdate('share-dup', 'テストメモ');
-    expect(result).toBe('cooldown');
+    expect(result.status).toBe('cooldown');
   });
 
   it('送信後のクールダウン残り秒数が 0 より大きい', async () => {
