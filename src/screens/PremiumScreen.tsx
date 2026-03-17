@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -69,12 +69,24 @@ export default function PremiumScreen(): React.JSX.Element {
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
-  useEffect(() => {
-    getPremiumOffering().then(o => {
-      setOffering(o);
-      setOfferingLoading(false);
-    });
+  const loadOffering = useCallback(() => {
+    setOfferingLoading(true);
+    getPremiumOffering()
+      .then(o => {
+        setOffering(o);
+      })
+      .catch(e => {
+        console.error('[PremiumScreen] Failed to load offering:', e);
+        setOffering(null);
+      })
+      .finally(() => {
+        setOfferingLoading(false);
+      });
   }, []);
+
+  useEffect(() => {
+    loadOffering();
+  }, [loadOffering]);
 
   const isTrialCurrentlyActive = isTrialActive(trialStartDate);
   const daysLeft = trialDaysRemaining(trialStartDate);
@@ -424,6 +436,14 @@ export default function PremiumScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
 
+          {/* 読み込み失敗時のリトライ */}
+          {!offeringLoading && !offering && (
+            <TouchableOpacity style={styles.retryBtn} onPress={loadOffering}>
+              <Icon name="refresh" size={16} color="#E65100" />
+              <Text style={styles.retryBtnText}>{t('premium.planRetry')}</Text>
+            </TouchableOpacity>
+          )}
+
           {/* アップグレードCTA */}
           <TouchableOpacity
             testID="purchase-button"
@@ -555,6 +575,21 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   upgradeBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+
+  // リトライボタン
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    marginBottom: 8,
+    gap: 6,
+  },
+  retryBtnText: {
+    fontSize: 14,
+    color: '#E65100',
+    fontWeight: '600',
+  },
 
   // プラン選択カード
   planCardsRow: {
