@@ -49,7 +49,7 @@ function sanitizeLocation(loc: MemoLocation): MemoLocation {
  * 起動時クラッシュが起きることがあった。
  */
 let _authReady: Promise<void> | null = null;
-function waitForAuthReady(): Promise<void> {
+export function waitForAuthReady(): Promise<void> {
   if (!_authReady) {
     _authReady = new Promise<void>(resolve => {
       // let で宣言することで、コールバックが同期的に呼ばれても TDZ エラーを回避

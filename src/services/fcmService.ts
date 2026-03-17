@@ -16,7 +16,7 @@ import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
 import { getDeviceId } from '../utils/deviceId';
 import { recordError } from './crashlyticsService';
-import { ensureSignedIn } from './shareService';
+import { ensureSignedIn, waitForAuthReady } from './shareService';
 
 const CLOUD_FUNCTION_URL =
   'https://asia-northeast1-yorimichi-app-dev.cloudfunctions.net/notifyCollaborators';
@@ -32,6 +32,10 @@ const CLOUD_FUNCTION_URL =
 export async function registerFcmToken(): Promise<void> {
   if (Platform.OS !== 'android') return;
   try {
+    // Firebase Auth のセッション復元を待ってから currentUser を取得する。
+    // これを待たないと起動直後は currentUser が null になり、
+    // FCM トークンが Firestore に保存されず通知が届かない問題が起きる。
+    await waitForAuthReady();
     const user = auth().currentUser;
     if (!user) return;
     const token = await messaging().getToken();
