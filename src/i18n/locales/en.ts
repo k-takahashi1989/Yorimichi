@@ -186,6 +186,7 @@ const en: Translation = {
     sectionNotifications: 'Notifications',
     sectionPersonalization: 'Personalization',
     sectionAccount: 'Account',
+    sectionPlan: 'Plan',
     sectionAppInfo: 'About',
   },
 
@@ -465,6 +466,11 @@ const en: Translation = {
     hidden_streak_desc: 'Open the app 7 days in a row',
     hidden_visit_back: 'Welcome Back',
     hidden_visit_back_desc: 'Open the app after 30+ days away',
+  },
+  planCard: {
+    freeSub: 'Discover more features →',
+    trialSub: 'View plan details →',
+    thankYou: 'Thank you for your support ✨',
   },
   reviewPrompt: {
     title: 'Enjoying Yorimichi?',

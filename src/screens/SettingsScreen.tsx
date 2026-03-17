@@ -439,27 +439,40 @@ export default function SettingsScreen(): React.JSX.Element {
         <Icon name="chevron-right" size={24} color="#FFC107" />
       </TouchableOpacity>
 
-      {/* ── アカウント ── */}
+      {/* ── プラン ── */}
       <View style={styles.sectionLabelRow}>
         <CrownSvg width={14} height={14} />
-        <Text style={styles.sectionLabel}>{t('settings.sectionAccount')}</Text>
+        <Text style={styles.sectionLabel}>{t('settings.sectionPlan')}</Text>
       </View>
 
-      {/* プレミアムプランカード */}
+      {/* プランカード（状態に応じて色・文言を切替） */}
       <TouchableOpacity
-        style={styles.premiumCard}
+        style={[
+          styles.premiumCard,
+          isPremium
+            ? styles.premiumCardPremium
+            : isTrialOn
+            ? styles.premiumCardTrial
+            : styles.premiumCardFree,
+        ]}
         onPress={() => navigation.navigate('Premium')}
         activeOpacity={0.85}>
         <View style={styles.premiumCardLeft}>
           <CrownSvg width={28} height={28} />
           <View>
-            <Text style={styles.premiumCardTitle}>{t('premium.screenTitle')}</Text>
-            <Text style={styles.premiumCardSub}>
+            <Text style={styles.premiumCardTitle}>
               {isPremium
-                ? t('premium.currentPremium')
+                ? t('premium.premiumPlan')
                 : isTrialOn
                 ? t('premium.trialActive', { days: daysLeft })
-                : t('premium.upgradeButton')}
+                : t('premium.freePlan')}
+            </Text>
+            <Text style={styles.premiumCardSub}>
+              {isPremium
+                ? t('planCard.thankYou')
+                : isTrialOn
+                ? t('planCard.trialSub')
+                : t('planCard.freeSub')}
             </Text>
           </View>
         </View>
@@ -643,7 +656,6 @@ const styles = StyleSheet.create({
   badgeCardTitle: { fontSize: 15, fontWeight: '700', color: '#F57F17' },
   badgeCardSub: { fontSize: 12, color: '#F9A825', marginTop: 2 },
   premiumCard: {
-    backgroundColor: '#E65100',
     borderRadius: 12,
     padding: 16,
     marginBottom: 14,
@@ -652,6 +664,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     elevation: 2,
   },
+  premiumCardFree: { backgroundColor: '#4CAF50' },
+  premiumCardTrial: { backgroundColor: '#2196F3' },
+  premiumCardPremium: { backgroundColor: '#E65100' },
   premiumCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',

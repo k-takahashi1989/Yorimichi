@@ -190,6 +190,7 @@ const ja = {
     sectionNotifications: '通知設定',
     sectionPersonalization: 'カスタマイズ',
     sectionAccount: 'アカウント',
+    sectionPlan: 'プラン',
     sectionAppInfo: 'アプリ情報',
   },
 
@@ -480,6 +481,12 @@ const ja = {
     hidden_streak_desc: '7日連続でアプリを起動',
     hidden_visit_back: 'おかえりなさい',
     hidden_visit_back_desc: '30日以上ぶりにアプリを起動',
+  },
+  // ── プランカード（設定画面）─────────────────────────────
+  planCard: {
+    freeSub: 'もっと便利な機能を見てみる →',
+    trialSub: 'プランの詳細を見る →',
+    thankYou: 'ご利用ありがとうございます ✨',
   },
   // ── レビュー依頼 ──────────────────────────────────────
   reviewPrompt: {
