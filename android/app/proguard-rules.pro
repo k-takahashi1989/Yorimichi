@@ -45,5 +45,9 @@
 -keep class io.invertase.notifee.** { *; }
 -dontwarn io.invertase.notifee.**
 
+# ── react-native-config ──────────────────────────────────
+-keep class com.lugg.RNCConfig.** { *; }
+-keep class com.ktakahashi.yorimichi.BuildConfig { *; }
+
 # ── MMKV ──────────────────────────────────────────────────
 -keep class com.tencent.mmkv.** { *; }
