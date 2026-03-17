@@ -228,10 +228,10 @@ export default function PremiumScreen(): React.JSX.Element {
       {/* 比較テーブルヘッダー */}
       <View style={styles.tableHeader}>
         <View style={styles.tableHeaderFeature} />
-        <View style={[styles.tableHeaderCol, styles.tableHeaderFree]}>
+        <View style={[styles.tableHeaderCol, styles.tableHeaderFree, !isPremium && styles.tableHeaderCurrent]}>
           <Text style={styles.tableHeaderFreeText}>{t('premium.freePlan')}</Text>
         </View>
-        <View style={[styles.tableHeaderCol, styles.tableHeaderPremium]}>
+        <View style={[styles.tableHeaderCol, styles.tableHeaderPremium, isPremium && styles.tableHeaderCurrent]}>
           <Icon name="star" size={14} color="#FFF" />
           <Text style={styles.tableHeaderPremiumText}>{t('premium.premiumPlan')}</Text>
         </View>
@@ -272,22 +272,8 @@ export default function PremiumScreen(): React.JSX.Element {
         ))}
       </View>
 
-      {/* 現在選択中の列をハイライト */}
-      <View style={styles.currentPlanRow}>
-        <View style={styles.currentPlanSpacer} />
-        <View style={[styles.currentPlanCol, !isPremium && styles.currentPlanColActive]}>
-          {!isPremium && (
-            <Text style={styles.currentPlanLabel}>▲ {t('premium.freePlan')}</Text>
-          )}
-        </View>
-        <View style={[styles.currentPlanCol, isPremium && styles.currentPlanColActive]}>
-          {isPremium && (
-            <Text style={[styles.currentPlanLabel, styles.currentPlanLabelPremium]}>
-              ▲ {t('premium.premiumPlan')}
-            </Text>
-          )}
-        </View>
-      </View>
+      {/* テーブル下の余白 */}
+      <View style={{ height: 20 }} />
 
       {/* CTAボタン / お試しセクション */}
       {isPremium ? (
@@ -504,8 +490,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  tableHeaderFree: { backgroundColor: '#EEEEEE' },
+  tableHeaderFree: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', borderBottomWidth: 0 },
   tableHeaderPremium: { backgroundColor: '#FF8F00', marginLeft: 2 },
+  tableHeaderCurrent: { borderWidth: 2, borderColor: '#E65100', borderBottomWidth: 0 },
   tableHeaderFreeText: { fontSize: 13, fontWeight: '700', color: '#616161' },
   tableHeaderPremiumText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
 
@@ -554,21 +541,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   comingSoonText: { fontSize: 11, fontWeight: '700' as const, color: '#7B1FA2' },
-
-  // 現在選択中表示
-  currentPlanRow: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  currentPlanSpacer: { flex: 1 },
-  currentPlanCol: {
-    width: COL_FREE_WIDTH,
-    alignItems: 'center',
-    paddingTop: 4,
-  },
-  currentPlanColActive: {},
-  currentPlanLabel: { fontSize: 12, color: '#616161', fontWeight: '600' },
-  currentPlanLabelPremium: { color: '#E65100' },
 
   // CTAボタン
   upgradeBtn: {
