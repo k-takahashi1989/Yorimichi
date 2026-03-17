@@ -9,7 +9,7 @@ import {
   ViewToken,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { MagicSvg, NotificationSvg, StarSvg } from '../assets/icons';
+import { ChecklistSvg, GroupSvg, PlaceholderBellSvg } from '../assets/icons';
 import { SvgProps } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,12 +27,13 @@ interface Page {
   titleKey: string;
   descKey: string;
   bgColor: string;
+  descAlign?: 'left' | 'center';
 }
 
 const PAGES: Page[] = [
-  { key: '1', SvgIcon: NotificationSvg, titleKey: 'onboarding.page1Title', descKey: 'onboarding.page1Desc', bgColor: '#FFF3E0' },
-  { key: '2', SvgIcon: MagicSvg, titleKey: 'onboarding.page2Title', descKey: 'onboarding.page2Desc', bgColor: '#F3E5F5' },
-  { key: '3', SvgIcon: StarSvg, titleKey: 'onboarding.page3Title', descKey: 'onboarding.page3Desc', bgColor: '#FFFDE7' },
+  { key: '1', SvgIcon: PlaceholderBellSvg, titleKey: 'onboarding.page1Title', descKey: 'onboarding.page1Desc', bgColor: '#FFF3E0' },
+  { key: '2', SvgIcon: ChecklistSvg, titleKey: 'onboarding.page2Title', descKey: 'onboarding.page2Desc', bgColor: '#F3E5F5', descAlign: 'left' },
+  { key: '3', SvgIcon: GroupSvg, titleKey: 'onboarding.page3Title', descKey: 'onboarding.page3Desc', bgColor: '#FFFDE7' },
 ];
 
 export default function OnboardingScreen(): React.JSX.Element {
@@ -64,7 +65,13 @@ export default function OnboardingScreen(): React.JSX.Element {
         <item.SvgIcon width={64} height={64} />
       </View>
       <Text style={styles.pageTitle}>{t(item.titleKey)}</Text>
-      <Text style={styles.pageDesc}>{t(item.descKey)}</Text>
+      <Text
+        style={[
+          styles.pageDesc,
+          item.descAlign === 'left' && styles.pageDescLeft,
+        ]}>
+        {t(item.descKey)}
+      </Text>
     </View>
   );
 
@@ -153,6 +160,10 @@ const styles = StyleSheet.create({
     color: '#757575',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  pageDescLeft: {
+    textAlign: 'left',
+    alignSelf: 'center',
   },
   dotsRow: {
     flexDirection: 'row',

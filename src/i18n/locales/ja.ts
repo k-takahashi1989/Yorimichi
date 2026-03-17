@@ -190,6 +190,7 @@ const ja = {
     sectionNotifications: '通知設定',
     sectionPersonalization: 'カスタマイズ',
     sectionAccount: 'アカウント',
+    sectionPlan: 'プラン',
     sectionAppInfo: 'アプリ情報',
   },
 
@@ -207,11 +208,11 @@ const ja = {
   // ── オンボーディング ─────────────────────────────────────
   onboarding: {
     page1Title: 'Yorimichi へようこそ',
-    page1Desc: '場所に着いたら買い物リストを通知。\n忘れ物をなくすリマインダーアプリです。',
+    page1Desc: '場所に着いたらやることリストを通知。\n忘れ物をなくすリマインダーアプリです。',
     page2Title: 'かんたん3ステップ',
-    page2Desc: '① 場所を選ぶ\n② 買い物リストを作る\n③ 通知をONにして出発',
+    page2Desc: '① 場所を登録する\n② やることリストを作る\n③ 近づいたら自動で通知',
     page3Title: 'もっと便利に',
-    page3Desc: 'メモを共有して家族と買い物リストを共同編集。\nプレミアムでクラウドバックアップも。',
+    page3Desc: 'メモを共有して家族やチームと共同編集。\nプレミアムならクラウドバックアップや広告非表示も。',
     skip: 'スキップ',
     start: 'はじめる',
   },
@@ -307,7 +308,7 @@ const ja = {
     sentTitle: '通知を送信しました',
     sentMessage: '共有相手に更新通知を送りました。',
     cooldownTitle: 'しばらくお待ちください',
-    cooldownMessage: '通知は5分間隔で送信できます。',
+    cooldownMessage: '通知は1分間隔で送信できます。',
     errorMessage: '通知の送信に失敗しました。',
   },
   // ── プレミアムプラン ───────────────────────────────────
@@ -331,8 +332,8 @@ const ja = {
     freeVal: '3件',
     freeValItems: '10個',
     freeValLocations: '2か所',
-    freeValCollaborators: 'インポートのみ',
-    premiumValCollaborators: '作成＆インポート',
+    freeValCollaborators: '閲覧のみ',
+    premiumValCollaborators: '作成＆共有',
     freeValAlarm: 'サイレント/標準',
     freeValAds: 'あり',
     premiumVal: '無制限',
@@ -340,9 +341,9 @@ const ja = {
     premiumValAlarm: 'アラーム対応',
     comingSoonApril: '4月開始予定',
     featureRealtimeSync: '共有メモの同期',
-    freeValRealtimeSync: '画面起動時',
-    premiumValRealtimeSync: '詳細画面を開く間',
-    featureCloudBackup: 'クラウドバックアップ',
+    freeValRealtimeSync: '手動',
+    premiumValRealtimeSync: 'リアルタイム',
+    featureCloudBackup: 'クラウド保管',
     freeValCloudBackup: 'なし',
     premiumValCloudBackup: '日次自動',
     premiumValAds: 'なし',
@@ -480,6 +481,27 @@ const ja = {
     hidden_streak_desc: '7日連続でアプリを起動',
     hidden_visit_back: 'おかえりなさい',
     hidden_visit_back_desc: '30日以上ぶりにアプリを起動',
+  },
+  // ── プランカード（設定画面）─────────────────────────────
+  planCard: {
+    freeSub: 'もっと便利な機能を見てみる →',
+    trialSub: 'プランの詳細を見る →',
+    thankYou: 'ご利用ありがとうございます ✨',
+  },
+  // ── レビュー依頼 ──────────────────────────────────────
+  reviewPrompt: {
+    title: 'Yorimichi を気に入っていますか？',
+    message: 'よろしければストアでの評価をお願いします。アプリの改善に役立てます。',
+    yes: 'レビューする',
+    no: '改善してほしい点がある',
+    later: 'あとで',
+  },
+  // ── プレミアムプロモ（定期提案）──────────────────────────
+  premiumPromo: {
+    title: '{{days}}日間ご利用ありがとうございます！',
+    message: 'プレミアムプランで広告なし・クラウドバックアップなど、もっと快適にお使いいただけます。',
+    upgradeButton: 'プレミアムを見てみる',
+    later: 'あとで',
   },
 } as const;
 

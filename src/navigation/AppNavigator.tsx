@@ -17,6 +17,9 @@ import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
 import { storage } from '../storage/mmkvStorage';
 import { recordError } from '../services/crashlyticsService';
+import PremiumPromoModal, { setPremiumPromoNavigator } from '../components/PremiumPromoModal';
+import { shouldTriggerOnVisit } from '../utils/reviewPromptUtils';
+import { showReviewPrompt } from '../components/ReviewPromptModal';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import MemoListScreen from '../screens/MemoListScreen';
@@ -148,6 +151,11 @@ export function AppNavigator(): React.JSX.Element {
       // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
       const newBadges = onGeofenceVisit(memoId);
       if (newBadges.length > 0) showBadgeUnlock(newBadges);
+      // レビュー依頼: 通知タップ3回目で条件を満たしていれば表示
+      const settings = useSettingsStore.getState();
+      if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
+        setTimeout(() => showReviewPrompt(), 1500);
+      }
       navigationRef.current?.navigate('MemoDetail', { memoId });
     });
   }, []);
@@ -187,6 +195,11 @@ export function AppNavigator(): React.JSX.Element {
         useSettingsStore.getState().syncPurchaseStatus().catch(e => recordError(e, '[AppNavigator] syncPurchaseStatus'));
       }}
       onReady={() => {
+        // プレミアムプロモモーダルからPremium画面への遷移を登録
+        setPremiumPromoNavigator(() => {
+          navigationRef.current?.navigate('Premium');
+        });
+
         // killed 状態から通知タップで起動した場合: getInitialNotification で memoId を取得し遷移
         notifee.getInitialNotification().then(initial => {
           const memoId = initial?.notification?.data?.memoId as string | undefined;
@@ -246,6 +259,7 @@ export function AppNavigator(): React.JSX.Element {
           options={{ title: t('badges.screenTitle') }}
         />
       </Stack.Navigator>
+      <PremiumPromoModal />
     </NavigationContainer>
   );
 }

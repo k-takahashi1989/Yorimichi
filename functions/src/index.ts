@@ -6,7 +6,7 @@ import { getMessaging } from "firebase-admin/messaging";
 
 initializeApp();
 
-const COOLDOWN_MS = 5 * 60 * 1000; // 5分クールダウン
+const COOLDOWN_MS = 60 * 1000; // 1分クールダウン
 
 /**
  * 共有メモの更新通知を共有相手に送信する。
