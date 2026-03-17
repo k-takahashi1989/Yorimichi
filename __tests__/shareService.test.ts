@@ -132,12 +132,24 @@ describe('uploadSharedMemo', () => {
     expect(addArg.collaboratorUids).toEqual(['test-uid']);
   });
 
-  it('既存共有 (shareId あり): set が呼ばれる', async () => {
+  it('既存共有 (shareId あり): update が呼ばれ collaboratorUids を上書きしない', async () => {
     const memoWithShare: Memo = { ...baseMemo, shareId: 'existing-share-id' };
     await uploadSharedMemo(memoWithShare, 'device-1');
 
-    expect(mockDoc.set).toHaveBeenCalledTimes(1);
+    expect(mockDoc.update).toHaveBeenCalledTimes(1);
     expect(firestoreMock._mockCollection.add).not.toHaveBeenCalled();
+    // collaboratorUids / collaborators / presences / ownerUid が含まれないこと
+    const updateArg = mockDoc.update.mock.calls[0][0];
+    expect(updateArg).not.toHaveProperty('collaboratorUids');
+    expect(updateArg).not.toHaveProperty('collaborators');
+    expect(updateArg).not.toHaveProperty('presences');
+    expect(updateArg).not.toHaveProperty('ownerUid');
+    expect(updateArg).not.toHaveProperty('ownerDeviceId');
+    // title, items, locations, updatedAt は含まれること
+    expect(updateArg.title).toBe('テストメモ');
+    expect(updateArg.items).toHaveLength(1);
+    expect(updateArg.locations).toHaveLength(1);
+    expect(updateArg.updatedAt).toBeDefined();
   });
 });
 

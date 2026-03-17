@@ -296,6 +296,7 @@ const en: Translation = {
     cooldownBtn: 'Sent (resend in {{seconds}}s)',
     sentTitle: 'Notification sent',
     sentMessage: 'Your collaborators have been notified.',
+    noTargetsMessage: 'No collaborators to notify. Make sure they have opened the shared memo in the app.',
     cooldownTitle: 'Please wait',
     cooldownMessage: 'Notifications can be sent every 1 minute.',
     errorMessage: 'Failed to send notification.',

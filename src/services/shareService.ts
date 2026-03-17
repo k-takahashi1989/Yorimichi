@@ -91,11 +91,34 @@ export async function uploadSharedMemo(
 ): Promise<string> {
   await ensureSignedIn();
   const uid = getCurrentUid();
+  if (memo.shareId) {
+    // 既存ドキュメントを更新 — collaboratorUids / collaborators / presences は
+    // 共有相手が joinSharedMemo で追加した値を保持する必要があるため上書きしない。
+    const updateData: Record<string, unknown> = {
+      title: memo.title,
+      items: memo.items.map(sanitizeItem),
+      locations: memo.locations.map(sanitizeLocation),
+      updatedAt: Date.now(),
+    };
+    if (memo.note) {
+      updateData.note = memo.note;
+    } else {
+      updateData.note = firestore.FieldValue.delete();
+    }
+    if (memo.dueDate != null) {
+      updateData.dueDate = memo.dueDate;
+    } else {
+      updateData.dueDate = firestore.FieldValue.delete();
+    }
+    await firestore().collection(COLLECTION).doc(memo.shareId).update(updateData);
+    return memo.shareId;
+  }
   const doc: SharedMemoDoc = {
     title: memo.title,
     items: memo.items.map(sanitizeItem),
     locations: memo.locations.map(sanitizeLocation),
     ...(memo.note ? { note: memo.note } : {}),
+    ...(memo.dueDate != null ? { dueDate: memo.dueDate } : {}),
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],
@@ -103,11 +126,6 @@ export async function uploadSharedMemo(
     collaboratorUids: [uid],
     presences: {},
   };
-  if (memo.shareId) {
-    // 既存ドキュメントを更新
-    await firestore().collection(COLLECTION).doc(memo.shareId).set(doc);
-    return memo.shareId;
-  }
   const ref = await firestore().collection(COLLECTION).add(doc);
   return ref.id;
 }
@@ -172,10 +190,14 @@ export async function joinSharedMemo(
   // exists は boolean property だが snap.data() が undefined の場合も守る
   const data = snap.data() as SharedMemoDoc | undefined;
   if (!snap.exists || !data) return null;
-  // collaborators への追記: Security Rules で弾かれても import 自体は続行する
-  if (Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId)) {
+  // collaborators / collaboratorUids への追記: Security Rules で弾かれても import 自体は続行する。
+  // deviceId と uid は独立して判定する。アプリ再インストール等で uid だけ変わるケースがあるため、
+  // deviceId が既存でも uid が未登録なら追記が必要。
+  const uid = getCurrentUid();
+  const needsDeviceId = Array.isArray(data.collaborators) && !data.collaborators.includes(deviceId);
+  const needsUid = Array.isArray(data.collaboratorUids) && !data.collaboratorUids.includes(uid);
+  if (needsDeviceId || needsUid) {
     try {
-      const uid = getCurrentUid();
       await ref.update({
         collaborators: firestore.FieldValue.arrayUnion(deviceId),
         collaboratorUids: firestore.FieldValue.arrayUnion(uid),

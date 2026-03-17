@@ -57,6 +57,7 @@ export interface SharedMemoDoc {
   items: ShoppingItem[];
   locations: MemoLocation[];
   note?: string;
+  dueDate?: number;
   updatedAt: number;
   ownerDeviceId: string;
   collaborators: string[];

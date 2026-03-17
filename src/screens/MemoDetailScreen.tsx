@@ -161,6 +161,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         memoSnapshotRef.current = getMemoFingerprint();
         startCooldownAnimation();
         Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.sentMessage'));
+      } else if (result.status === 'no_targets') {
+        Alert.alert(t('shareNotify.sentTitle'), t('shareNotify.noTargetsMessage'));
       } else if (result.status === 'cooldown') {
         Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
       } else {
@@ -186,8 +188,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
         ? { ...docItem, isChecked: localItem.isChecked, checkedAt: localItem.checkedAt }
         : docItem;
     });
-    // オーナーもコラボレーターも Firestore を真実源として locations, note を取得
-    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations, note: doc.note });
+    // オーナーもコラボレーターも Firestore を真実源として locations, note, dueDate を取得
+    updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations, note: doc.note, dueDate: doc.dueDate });
   }, [memoId, updateMemo]);
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視
