@@ -21,6 +21,8 @@ import { initCrashlytics, recordError } from './src/services/crashlyticsService'
 import { onAppLaunch } from './src/services/badgeService';
 import { showBadgeUnlock } from './src/components/BadgeUnlockModal';
 import BadgeUnlockModal from './src/components/BadgeUnlockModal';
+import { shouldShowPremiumPromo } from './src/utils/premiumPromoUtils';
+import { showPremiumPromo } from './src/components/PremiumPromoModal';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -75,6 +77,23 @@ function App(): React.JSX.Element {
       // バッジ: アプリ起動時の判定
       const newBadges = onAppLaunch();
       if (newBadges.length > 0) showBadgeUnlock(newBadges);
+
+      // プレミアムプロモ: 無料ユーザーに10日周期で提案
+      const promoSettings = useSettingsStore.getState();
+      const isEffectivePremiumForPromo = selectEffectivePremium(promoSettings);
+      if (!isEffectivePremiumForPromo) {
+        const promoDays = shouldShowPremiumPromo(
+          promoSettings.firstLaunchDate,
+          promoSettings.lastPremiumPromoAt,
+        );
+        if (promoDays != null) {
+          // バッジ演出と被らないよう少し遅延
+          setTimeout(() => {
+            showPremiumPromo(promoDays);
+            useSettingsStore.getState().setLastPremiumPromoAt(Date.now());
+          }, newBadges.length > 0 ? 2000 : 0);
+        }
+      }
     });
 
     // 位置情報権限チェック → 必要なら起動時にリクエスト

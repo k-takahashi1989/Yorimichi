@@ -47,6 +47,9 @@ export interface SettingsState {
   sharedItemsCompleted: number;       // 共有メモでのアイテム完了累計
   // クラウドバックアップ（プレミアム機能）
   lastCloudBackupAt: number | null;    // 最後にクラウドバックアップした日時 (Unix ms)
+  // プレミアムプロモ（10日周期表示）
+  lastPremiumPromoAt: number | null;   // 最後にプロモモーダルを表示した日時 (Unix ms)
+  setLastPremiumPromoAt: (ts: number) => void;
   // デバッグ専用（DEV ビルドのみ使用）
   debugForcePremium: boolean | null;   // null=実際の値を使用, true/false=強制上書き
   setDefaultRadius: (radius: number) => void;
@@ -98,6 +101,8 @@ export const useSettingsStore = create<SettingsState>()(
       weekendVisitCount: 0,
       sharedItemsCompleted: 0,
       lastCloudBackupAt: null,
+      lastPremiumPromoAt: null,
+      setLastPremiumPromoAt: (ts: number) => set({ lastPremiumPromoAt: ts }),
       setDefaultRadius: (radius: number) => set({ defaultRadius: radius }),
       incrementMemoRegistrations: () =>
         set(state => ({ totalMemoRegistrations: state.totalMemoRegistrations + 1 })),
@@ -179,7 +184,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'settings',
-      version: 12,
+      version: 13,
       storage: createJSONStorage(() => mmkvStorage),
       migrate: (persisted: any, version: number) => {
         if (!persisted) return persisted;
@@ -231,6 +236,9 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (version <= 11) {
           persisted = { ...persisted, debugForcePremium: null };
+        }
+        if (version <= 12) {
+          persisted = { ...persisted, lastPremiumPromoAt: null };
         }
         return persisted;
       },

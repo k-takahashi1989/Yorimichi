@@ -481,6 +481,13 @@ const ja = {
     hidden_visit_back: 'おかえりなさい',
     hidden_visit_back_desc: '30日以上ぶりにアプリを起動',
   },
+  // ── プレミアムプロモ（定期提案）──────────────────────────
+  premiumPromo: {
+    title: '{{days}}日間ご利用ありがとうございます！',
+    message: 'プレミアムプランで広告なし・クラウドバックアップなど、もっと快適にお使いいただけます。',
+    upgradeButton: 'プレミアムを見てみる',
+    later: 'あとで',
+  },
 } as const;
 
 export default ja;
