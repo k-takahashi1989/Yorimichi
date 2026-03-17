@@ -14,6 +14,7 @@ export { default as MagicSvg } from './magic.svg';
 export { default as MapSvg } from './map.svg';
 export { default as MuteSvg } from './mute.svg';
 export { default as NotificationSvg } from './notification.svg';
+export { default as PlaceholderBellSvg } from './placeholder-bell.svg';
 export { default as RegionPinSvg } from './region-pin.svg';
 export { default as StarSvg } from './star.svg';
 export { default as TodoListSvg } from './to-do-list.svg';

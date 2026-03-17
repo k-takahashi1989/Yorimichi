@@ -201,11 +201,11 @@ const en: Translation = {
 
   onboarding: {
     page1Title: 'Welcome to Yorimichi',
-    page1Desc: 'Get notified with your shopping list\nwhen you arrive at a location.',
+    page1Desc: 'Get notified with your to-do list\nwhen you arrive at a location.',
     page2Title: '3 Simple Steps',
-    page2Desc: '① Pick a location\n② Add shopping items\n③ Turn on notifications & go',
+    page2Desc: '① Register a location\n② Create your to-do list\n③ Get notified automatically nearby',
     page3Title: 'Do More',
-    page3Desc: 'Share memos to collaborate with family.\nGo Premium for cloud backup & more.',
+    page3Desc: 'Share memos to collaborate with\nfamily or your team.\nGo Premium for cloud backup, ad-free & more.',
     skip: 'Skip',
     start: 'Get Started',
   },
