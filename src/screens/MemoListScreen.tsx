@@ -99,7 +99,7 @@ export default function MemoListScreen(): React.JSX.Element {
             text: t('share.importConfirm'),
             onPress: () => {
               const memo = importSharedMemo(
-                { title: doc.title, items: doc.items, locations: doc.locations },
+                { title: doc.title, items: doc.items, locations: doc.locations, dueDate: doc.dueDate, note: doc.note },
                 code,
               );
               setImportModalVisible(false);

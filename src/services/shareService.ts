@@ -105,6 +105,11 @@ export async function uploadSharedMemo(
     } else {
       updateData.note = firestore.FieldValue.delete();
     }
+    if (memo.dueDate != null) {
+      updateData.dueDate = memo.dueDate;
+    } else {
+      updateData.dueDate = firestore.FieldValue.delete();
+    }
     await firestore().collection(COLLECTION).doc(memo.shareId).update(updateData);
     return memo.shareId;
   }
@@ -113,6 +118,7 @@ export async function uploadSharedMemo(
     items: memo.items.map(sanitizeItem),
     locations: memo.locations.map(sanitizeLocation),
     ...(memo.note ? { note: memo.note } : {}),
+    ...(memo.dueDate != null ? { dueDate: memo.dueDate } : {}),
     updatedAt: Date.now(),
     ownerDeviceId: deviceId,
     collaborators: [deviceId],

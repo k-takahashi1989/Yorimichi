@@ -293,7 +293,7 @@ interface MemoState {
 
   // 共有機能
   setMemoShareId: (memoId: string, shareId: string, isOwner: boolean) => void;
-  importSharedMemo: (data: Pick<Memo, 'title' | 'items' | 'locations'>, shareId: string) => Memo;
+  importSharedMemo: (data: Pick<Memo, 'title' | 'items' | 'locations'> & Partial<Pick<Memo, 'dueDate' | 'note'>>, shareId: string) => Memo;
 }
 
 export const useMemoStore = create<MemoState>()(
@@ -517,6 +517,8 @@ export const useMemoStore = create<MemoState>()(
           items: data.items.map(it => ({ ...it })),
           locations: data.locations.map(loc => ({ ...loc })),
           notificationEnabled: true,
+          ...(data.dueDate != null ? { dueDate: data.dueDate } : {}),
+          ...(data.note ? { note: data.note } : {}),
           createdAt: now,
           updatedAt: now,
           shareId,
