@@ -3,6 +3,7 @@ import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
+import { logger } from "firebase-functions/v2";
 
 initializeApp();
 
@@ -37,7 +38,7 @@ export const notifyCollaborators = onRequest(
       return;
     }
 
-    const { shareId, memoTitle } = req.body?.data ?? req.body ?? {};
+    const { shareId, memoTitle, deviceId } = req.body?.data ?? req.body ?? {};
 
     if (!shareId || !memoTitle) {
       res.status(400).json({ error: { status: "invalid-argument", message: "shareId and memoTitle are required" } });
@@ -58,11 +59,29 @@ export const notifyCollaborators = onRequest(
     // 呼び出し者がメモの共有者か検証
     const ownerUid: string | undefined = memoData.ownerUid;
     const collaboratorUids: string[] = memoData.collaboratorUids ?? [];
-    const allUids = [ownerUid, ...collaboratorUids].filter(Boolean) as string[];
+    let allUids = [ownerUid, ...collaboratorUids].filter(Boolean) as string[];
 
     if (!allUids.includes(callerUid)) {
-      res.status(403).json({ error: { status: "permission-denied", message: "You are not a collaborator of this memo" } });
-      return;
+      // UID が一致しない場合、deviceId ベースでフォールバック照合する。
+      // アプリ再インストール等で匿名 UID が変わった場合の救済措置。
+      const collaborators: string[] = memoData.collaborators ?? [];
+      if (deviceId && collaborators.includes(deviceId)) {
+        // deviceId が既知のコラボレーター → 新 UID を collaboratorUids に追加
+        const uidUpdate: Record<string, unknown> = {
+          collaboratorUids: FieldValue.arrayUnion(callerUid),
+        };
+        // deviceId がオーナーの場合は ownerUid も更新
+        if (memoData.ownerDeviceId === deviceId) {
+          uidUpdate.ownerUid = callerUid;
+        }
+        await memoRef.update(uidUpdate);
+        // allUids を更新して以降の処理で正しい送信先を使う
+        allUids = [...allUids, callerUid];
+        logger.info(`[notifyCollaborators] UID re-associated: deviceId=${deviceId}, newUid=${callerUid}`);
+      } else {
+        res.status(403).json({ error: { status: "permission-denied", message: "You are not a collaborator of this memo" } });
+        return;
+      }
     }
 
     // クールダウンチェック

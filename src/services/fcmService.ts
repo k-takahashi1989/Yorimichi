@@ -32,10 +32,10 @@ const CLOUD_FUNCTION_URL =
 export async function registerFcmToken(): Promise<void> {
   if (Platform.OS !== 'android') return;
   try {
-    // Firebase Auth のセッション復元を待ってから currentUser を取得する。
-    // これを待たないと起動直後は currentUser が null になり、
-    // FCM トークンが Firestore に保存されず通知が届かない問題が起きる。
-    await waitForAuthReady();
+    // Firebase Auth のセッション復元を待ち、未サインインなら匿名サインインする。
+    // waitForAuthReady() のみだと、匿名アカウント未作成時に currentUser が null のまま
+    // トークンが登録されず通知が届かない問題があった。
+    await ensureSignedIn();
     const user = auth().currentUser;
     if (!user) return;
     const token = await messaging().getToken();
@@ -112,13 +112,14 @@ export async function notifySharedMemoUpdate(
     }
     // ID トークンを取得して fetch で直接呼び出す
     const idToken = await user.getIdToken(true);
+    const deviceId = getDeviceId();
     const resp = await fetch(CLOUD_FUNCTION_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify({ data: { shareId, memoTitle } }),
+      body: JSON.stringify({ data: { shareId, memoTitle, deviceId } }),
     });
     const body = await resp.json();
     if (!resp.ok) {

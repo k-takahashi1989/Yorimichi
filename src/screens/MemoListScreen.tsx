@@ -22,6 +22,7 @@ import AdBanner from '../components/AdBanner';
 import Snackbar from '../components/Snackbar';
 import { LimitModal } from '../components/LimitModal';
 import { joinSharedMemo, syncAllSharedMemos } from '../services/shareService';
+import { registerFcmToken } from '../services/fcmService';
 import { getDeviceId } from '../utils/deviceId';
 import { LIMITS_ENABLED, FREE_LIMITS, getMemosLimit } from '../config/planLimits';
 import { recordError } from '../services/crashlyticsService';
@@ -90,6 +91,9 @@ export default function MemoListScreen(): React.JSX.Element {
         Alert.alert(t('common.error'), t('share.notFound'));
         return;
       }
+      // joinSharedMemo 内で ensureSignedIn() が呼ばれ匿名アカウントが確定するため、
+      // このタイミングで FCM トークンを再登録し通知を受け取れる状態にする。
+      registerFcmToken().catch(e => recordError(e, '[MemoListScreen] registerFcmToken after join'));
       Alert.alert(
         t('share.importTitle'),
         t('share.importMessage', { title: doc.title }),
