@@ -115,6 +115,9 @@ export function AppNavigator(): React.JSX.Element {
         Alert.alert(t('common.error'), t('share.notFound'));
         return;
       }
+      // joinSharedMemo 内で ensureSignedIn() が呼ばれ匿名アカウントが確定するため、
+      // このタイミングで FCM トークンを再登録し通知を受け取れる状態にする。
+      registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken after join'));
       Alert.alert(
         t('share.importTitle'),
         t('share.importMessage', { title: doc.title }),
