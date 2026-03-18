@@ -38,7 +38,6 @@ export async function registerFcmToken(): Promise<void> {
     // トークンが登録されず通知が届かない問題があった。
     await ensureSignedIn();
     const user = auth().currentUser;
-    console.log('[FCM_DEBUG] registerFcmToken: user=', user?.uid ?? 'null');
     if (!user) return;
     // 匿名サインイン直後は Firestore SDK に ID トークンが伝わっていないことがある。
     // 強制リフレッシュして permission denied を防ぐ。
