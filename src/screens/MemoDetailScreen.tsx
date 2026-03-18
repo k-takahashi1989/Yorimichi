@@ -13,6 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -50,6 +51,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { memoId } = route.params;
+  const { bottom: safeBottom } = useSafeAreaInsets();
 
   const memo = useMemoStore(useShallow(s => s.memos.find(m => m.id === memoId)));
   const toggleItem = useMemoStore(s => s.toggleItem);
@@ -706,7 +708,7 @@ export default function MemoDetailScreen(): React.JSX.Element {
 
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: safeBottom }]}>
         <AdBanner />
       </View>
       <Snackbar
