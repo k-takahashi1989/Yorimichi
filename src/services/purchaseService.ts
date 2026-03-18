@@ -91,7 +91,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
     const hasPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
     return { success: true, hasPremium };
   } catch (e: any) {
-    const code: number | undefined = e?.code;
+    const code = e?.code as PURCHASES_ERROR_CODE | undefined;
     const cancelled = code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR;
     return {
       success: false,
