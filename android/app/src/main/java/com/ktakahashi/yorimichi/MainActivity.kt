@@ -23,13 +23,14 @@ class MainActivity : ReactActivity() {
   /**
    * GeofenceTransitionReceiver が putExtra("memoId", ...) で渡した memoId を
    * yorimichi://open?memoId=xxx のディープリンクに変換し、intent.data にセットする。
-   * これにより React Native の Linking がそのまま受け取れる。
+   * ACTION_VIEW に変更することで React Native の Linking.getInitialURL() が正しく取得できる。
    */
   private fun rewriteMemoIdToDeepLink(intent: Intent?) {
     val memoId = intent?.getStringExtra("memoId") ?: return
     if (memoId.isBlank()) return
     // 既にディープリンクが設定されている場合は上書きしない
     if (intent.data != null) return
+    intent.action = Intent.ACTION_VIEW
     intent.data = Uri.parse("yorimichi://open?memoId=$memoId")
   }
 
