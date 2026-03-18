@@ -35,13 +35,10 @@ export async function registerFcmToken(): Promise<void> {
     // Firebase Auth のセッション復元を待ち、未サインインなら匿名サインインする。
     // waitForAuthReady() のみだと、匿名アカウント未作成時に currentUser が null のまま
     // トークンが登録されず通知が届かない問題があった。
-    console.log('[FCM_DEBUG] registerFcmToken: start');
     await ensureSignedIn();
     const user = auth().currentUser;
-    console.log('[FCM_DEBUG] registerFcmToken: user=', user?.uid ?? 'null');
     if (!user) return;
     const token = await messaging().getToken();
-    console.log('[FCM_DEBUG] registerFcmToken: token=', token ? `${token.slice(0, 20)}...` : 'null');
     if (!token) return;
     await firestore().collection('deviceTokens').doc(user.uid).set({
       token,
@@ -49,9 +46,7 @@ export async function registerFcmToken(): Promise<void> {
       updatedAt: Date.now(),
       platform: 'android',
     });
-    console.log('[FCM_DEBUG] registerFcmToken: saved to Firestore');
   } catch (e) {
-    console.error('[FCM_DEBUG] registerFcmToken: ERROR', e);
     recordError(e, '[fcmService] registerFcmToken');
   }
 }
