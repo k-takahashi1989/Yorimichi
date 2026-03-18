@@ -89,20 +89,16 @@ export function AppNavigator(): React.JSX.Element {
   const handleSharedUrl = async (url: string | null) => {
     if (!url) return;
     try {
-      // ウィジェットからのメモ詳細遷移
+      // ウィジェット / 通知タップからのメモ詳細遷移
       const memoIdMatch = url.match(/[?&]memoId=([^&]+)/);
       if (memoIdMatch) {
-        setTimeout(() => {
-          navigationRef.current?.navigate('MemoDetail', { memoId: memoIdMatch[1] });
-        }, 300);
+        navigationRef.current?.navigate('MemoDetail', { memoId: memoIdMatch[1] });
         return;
       }
 
       // ウィジェットからの新規メモ作成 → 場所選択フローへ
       if (url.includes('newMemo=true')) {
-        setTimeout(() => {
-          navigationRef.current?.navigate('LocationPicker', {});
-        }, 300);
+        navigationRef.current?.navigate('LocationPicker', {});
         return;
       }
 
@@ -181,8 +177,9 @@ export function AppNavigator(): React.JSX.Element {
   }, []);
 
   // アプリ起動時のディープリンク処理
+  // 注: getInitialURL は onReady 内でも呼ぶ（killed 状態からの通知タップ時、
+  // useEffect の setTimeout(300ms) ではナビゲーターが未準備の場合があるため）
   useEffect(() => {
-    Linking.getInitialURL().then(handleSharedUrl);
     const sub = Linking.addEventListener('url', ({ url }) => handleSharedUrl(url));
     return () => sub.remove();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,13 +197,20 @@ export function AppNavigator(): React.JSX.Element {
           navigationRef.current?.navigate('Premium');
         });
 
-        // killed 状態から通知タップで起動した場合: getInitialNotification で memoId を取得し遷移
+        // killed 状態から通知タップで起動した場合:
+        // 1. notifee 経由の通知（期限通知など）は getInitialNotification で取得
+        // 2. ネイティブ通知（ジオフェンス）は Linking.getInitialURL 経由でディープリンクから取得
+        // 3. MMKV 経由のフォールバック
         notifee.getInitialNotification().then(initial => {
           const memoId = initial?.notification?.data?.memoId as string | undefined;
           if (memoId) {
             navigationRef.current?.navigate('MemoDetail', { memoId });
           }
         }).catch(e => recordError(e, '[AppNavigator] getInitialNotification'));
+
+        // ネイティブ通知タップ → MainActivity でディープリンク化 → Linking で取得
+        Linking.getInitialURL().then(handleSharedUrl)
+          .catch(e => recordError(e, '[AppNavigator] getInitialURL'));
 
         // MMKV 経由のブックマーク（バックグラウンドからのフォールバック）
         const pending = storage.getString('pendingNotificationMemoId');
