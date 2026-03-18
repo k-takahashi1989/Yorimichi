@@ -30,19 +30,29 @@ const CLOUD_FUNCTION_URL =
  * アプリ起動時に呼ぶ。
  */
 export async function registerFcmToken(): Promise<void> {
+  console.log('[FCM_DEBUG] registerFcmToken: start');
   if (Platform.OS !== 'android') return;
   try {
     // Firebase Auth のセッション復元を待ち、未サインインなら匿名サインインする。
     // waitForAuthReady() のみだと、匿名アカウント未作成時に currentUser が null のまま
     // トークンが登録されず通知が届かない問題があった。
-    console.log('[FCM_DEBUG] registerFcmToken: start');
     await ensureSignedIn();
     const user = auth().currentUser;
     console.log('[FCM_DEBUG] registerFcmToken: user=', user?.uid ?? 'null');
     if (!user) return;
+    // 匿名サインイン直後は Firestore SDK に ID トークンが伝わっていないことがある。
+    // 強制リフレッシュして permission denied を防ぐ。
+    await user.getIdToken(true);
+    // Android 13+ で POST_NOTIFICATIONS 権限チェック。
+    // requestPermission() は Android では権限状態を返すだけで UI は出ない。
+    const authStatus = await messaging().requestPermission();
+    console.log('[FCM_DEBUG] registerFcmToken: authStatus=', authStatus);
     const token = await messaging().getToken();
     console.log('[FCM_DEBUG] registerFcmToken: token=', token ? `${token.slice(0, 20)}...` : 'null');
-    if (!token) return;
+    if (!token) {
+      console.warn('[FCM_DEBUG] registerFcmToken: token is null, skipping Firestore write');
+      return;
+    }
     await firestore().collection('deviceTokens').doc(user.uid).set({
       token,
       deviceId: getDeviceId(),
@@ -50,8 +60,8 @@ export async function registerFcmToken(): Promise<void> {
       platform: 'android',
     });
     console.log('[FCM_DEBUG] registerFcmToken: saved to Firestore');
-  } catch (e) {
-    console.error('[FCM_DEBUG] registerFcmToken: ERROR', e);
+  } catch (e: any) {
+    console.error('[FCM_DEBUG] registerFcmToken: ERROR code=', e?.code, 'msg=', e?.message, 'full=', JSON.stringify(e, Object.getOwnPropertyNames(e)));
     recordError(e, '[fcmService] registerFcmToken');
   }
 }
