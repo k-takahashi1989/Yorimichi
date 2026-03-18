@@ -25,7 +25,7 @@ import {
 } from 'react-native-permissions';
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { CheckCircleSvg, CrownSvg, MapSvg, NotificationSvg, StarSvg } from '../assets/icons';
+import { CheckCircleSvg, CustomizeSvg, MapSvg, MembershipSvg, NotificationSvg, StarSvg } from '../assets/icons';
 import AdBanner from '../components/AdBanner';
 import DeviceInfo from 'react-native-device-info';
 import { useTranslation } from 'react-i18next';
@@ -403,7 +403,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
       {/* ── カスタマイズ ── */}
       <View style={styles.sectionLabelRow}>
-        <StarSvg width={14} height={14} />
+        <CustomizeSvg width={14} height={14} />
         <Text style={styles.sectionLabel}>{t('settings.sectionPersonalization')}</Text>
       </View>
 
@@ -441,7 +441,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
       {/* ── プラン ── */}
       <View style={styles.sectionLabelRow}>
-        <CrownSvg width={14} height={14} />
+        <MembershipSvg width={14} height={14} />
         <Text style={styles.sectionLabel}>{t('settings.sectionPlan')}</Text>
       </View>
 
@@ -458,7 +458,7 @@ export default function SettingsScreen(): React.JSX.Element {
         onPress={() => navigation.navigate('Premium')}
         activeOpacity={0.85}>
         <View style={styles.premiumCardLeft}>
-          <CrownSvg width={28} height={28} />
+          <MembershipSvg width={28} height={28} />
           <View>
             <Text style={styles.premiumCardTitle}>
               {isPremium
