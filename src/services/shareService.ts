@@ -110,7 +110,28 @@ export async function uploadSharedMemo(
     } else {
       updateData.dueDate = firestore.FieldValue.delete();
     }
-    await firestore().collection(COLLECTION).doc(memo.shareId).update(updateData);
+
+    // UID 再紐付け: アプリ再インストール等で匿名 UID が変わった場合、
+    // deviceId の一致を元に ownerUid / collaboratorUids を更新する。
+    const ref = firestore().collection(COLLECTION).doc(memo.shareId);
+    const snap = await ref.get();
+    const existing = snap.data() as SharedMemoDoc | undefined;
+    if (existing) {
+      const isOwnerDevice = existing.ownerDeviceId === deviceId;
+      const uidKnown = existing.ownerUid === uid
+        || (Array.isArray(existing.collaboratorUids) && existing.collaboratorUids.includes(uid));
+      if (!uidKnown) {
+        // deviceId がオーナーの場合は ownerUid も更新
+        if (isOwnerDevice) {
+          updateData.ownerUid = uid;
+        }
+        // collaboratorUids に新 UID を追加（arrayUnion と merge ではなく直接追記）
+        updateData.collaboratorUids = firestore.FieldValue.arrayUnion(uid);
+        updateData.collaborators = firestore.FieldValue.arrayUnion(deviceId);
+      }
+    }
+
+    await ref.update(updateData);
     return memo.shareId;
   }
   const doc: SharedMemoDoc = {
