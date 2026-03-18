@@ -15,12 +15,11 @@ service cloud.firestore {
         return !('ownerUid' in resource.data);
       }
 
-      // 読み取り: オーナーまたは参加者（移行期間中は認証済みユーザー全員）
-      allow read: if request.auth != null
-        && (isLegacyDoc()
-            || resource.data.ownerUid == request.auth.uid
-            || (resource.data.collaboratorUids is list
-                && request.auth.uid in resource.data.collaboratorUids));
+      // 読み取り: 認証済みユーザーであれば誰でも可。
+      // 共有コード（= Firestore ドキュメント ID）を知っていること自体がアクセス権の証明。
+      // joinSharedMemo() で共有コードを入力した新規ユーザーが、まだ collaboratorUids に
+      // 登録される前にドキュメントを読み取る必要があるため、read は広く許可する。
+      allow read: if request.auth != null;
 
       // 新規作成: ownerUid が自分の UID と一致すること + 必須フィールド検証
       allow create: if request.auth != null
@@ -35,8 +34,10 @@ service cloud.firestore {
       // joinSharedMemo() で受信者が自分の UID を追加する際、まだ collaboratorUids に
       // 含まれていないためメインの update ルールに弾かれる問題を回避する。
       function isSelfJoin() {
-        return request.auth.uid in request.resource.data.collaboratorUids
-          && !(request.auth.uid in resource.data.collaboratorUids)
+        return request.resource.data.collaboratorUids is list
+          && request.auth.uid in request.resource.data.collaboratorUids
+          && (!('collaboratorUids' in resource.data)
+              || !(request.auth.uid in resource.data.collaboratorUids))
           && request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['collaborators', 'collaboratorUids']);
       }
