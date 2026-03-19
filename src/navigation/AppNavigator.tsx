@@ -161,6 +161,7 @@ export function AppNavigator(): React.JSX.Element {
 
   // FCM: トークン登録 + フォアグラウンドメッセージリスナー
   useEffect(() => {
+    console.log('[FCM_DEBUG] AppNavigator: calling registerFcmToken');
     registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken'));
     const unsubRefresh = listenTokenRefresh();
     const unsubMessage = onForegroundMessage((data) => {
