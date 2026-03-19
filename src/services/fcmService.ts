@@ -30,7 +30,6 @@ const CLOUD_FUNCTION_URL =
  * アプリ起動時に呼ぶ。
  */
 export async function registerFcmToken(): Promise<void> {
-  console.log('[FCM_DEBUG] registerFcmToken: start');
   if (Platform.OS !== 'android') return;
   try {
     // Firebase Auth のセッション復元を待ち、未サインインなら匿名サインインする。
@@ -45,11 +44,8 @@ export async function registerFcmToken(): Promise<void> {
     // Android 13+ で POST_NOTIFICATIONS 権限チェック。
     // requestPermission() は Android では権限状態を返すだけで UI は出ない。
     const authStatus = await messaging().requestPermission();
-    console.log('[FCM_DEBUG] registerFcmToken: authStatus=', authStatus);
     const token = await messaging().getToken();
-    console.log('[FCM_DEBUG] registerFcmToken: token=', token ? `${token.slice(0, 20)}...` : 'null');
     if (!token) {
-      console.warn('[FCM_DEBUG] registerFcmToken: token is null, skipping Firestore write');
       return;
     }
     await firestore().collection('deviceTokens').doc(user.uid).set({
@@ -58,9 +54,7 @@ export async function registerFcmToken(): Promise<void> {
       updatedAt: Date.now(),
       platform: 'android',
     });
-    console.log('[FCM_DEBUG] registerFcmToken: saved to Firestore');
   } catch (e: any) {
-    console.error('[FCM_DEBUG] registerFcmToken: ERROR code=', e?.code, 'msg=', e?.message, 'full=', JSON.stringify(e, Object.getOwnPropertyNames(e)));
     recordError(e, '[fcmService] registerFcmToken');
   }
 }
