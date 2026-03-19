@@ -185,9 +185,52 @@ export function onForegroundMessage(
  * バックグラウンド/killed 状態での FCM メッセージ受信ハンドラーを登録する。
  * index.js で呼ぶ。
  */
-export function setBackgroundMessageHandler(): void {
-  messaging().setBackgroundMessageHandler(async (_remoteMessage) => {
+export function setBackgroundMessageHandler(
+  onData?: (data: Record<string, string>) => void,
+): void {
+  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
     // Cloud Function が notification フィールド付きで送信するため、
-    // Android は自動的に通知を表示する。追加処理は不要。
+    // Android は自動的に通知を表示する。
+    // 通知タップ時の画面遷移用にデータをコールバックに渡す。
+    if (onData && remoteMessage.data) {
+      onData(remoteMessage.data as Record<string, string>);
+    }
+  });
+}
+
+// ============================================================
+// FCM 通知タップハンドラー
+// ============================================================
+
+/**
+ * FCM 通知タップからの shareId を抽出するヘルパー。
+ */
+function extractShareId(
+  remoteMessage: { data?: Record<string, string> } | null,
+): string | undefined {
+  if (!remoteMessage?.data) return undefined;
+  if (remoteMessage.data.type === 'memo_updated' && remoteMessage.data.shareId) {
+    return remoteMessage.data.shareId;
+  }
+  return undefined;
+}
+
+/**
+ * アプリが killed 状態から FCM 通知タップで起動した場合の通知データを取得する。
+ */
+export async function getFcmInitialNotification(): Promise<string | undefined> {
+  const remoteMessage = await messaging().getInitialNotification();
+  return extractShareId(remoteMessage);
+}
+
+/**
+ * アプリがバックグラウンドにある状態で FCM 通知がタップされたときのリスナーを登録する。
+ */
+export function onFcmNotificationOpened(
+  callback: (shareId: string) => void,
+): () => void {
+  return messaging().onNotificationOpenedApp((remoteMessage) => {
+    const shareId = extractShareId(remoteMessage);
+    if (shareId) callback(shareId);
   });
 }

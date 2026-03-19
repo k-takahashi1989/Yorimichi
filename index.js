@@ -19,6 +19,12 @@ registerBackgroundNotificationHandler((memoId) => {
 });
 
 // FCM バックグラウンドメッセージハンドラー（共有メモ更新通知用）
-setBackgroundMessageHandler();
+// notification フィールド付き FCM は Android が自動表示するが、
+// タップ時の画面遷移用に shareId を MMKV に保存しておく。
+setBackgroundMessageHandler((data) => {
+  if (data && data.type === 'memo_updated' && data.shareId) {
+    storage.set('pendingNotificationShareId', data.shareId);
+  }
+});
 
 AppRegistry.registerComponent(appName, () => App);
