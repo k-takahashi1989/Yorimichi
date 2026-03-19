@@ -10,7 +10,7 @@ import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { handleForegroundNotification } from '../services/notificationService';
-import { registerFcmToken, listenTokenRefresh, onForegroundMessage } from '../services/fcmService';
+import { registerFcmToken, listenTokenRefresh, onForegroundMessage, getFcmInitialNotification, onFcmNotificationOpened } from '../services/fcmService';
 import { onGeofenceVisit } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 import { joinSharedMemo } from '../services/shareService';
@@ -84,6 +84,14 @@ export function AppNavigator(): React.JSX.Element {
   const importSharedMemo = useMemoStore(s => s.importSharedMemo);
   const seenTutorials = useSettingsStore(s => s.seenTutorials);
   const hasSeenOnboarding = seenTutorials.includes('onboarding');
+
+  // shareId からローカルメモを検索して MemoDetail へ遷移するヘルパー
+  const navigateByShareId = (shareId: string) => {
+    const memo = useMemoStore.getState().memos.find(m => m.shareId === shareId);
+    if (memo) {
+      navigationRef.current?.navigate('MemoDetail', { memoId: memo.id });
+    }
+  };
 
   // ディープリンクを処理するハンドラ（共有 / ウィジェット）
   const handleSharedUrl = async (url: string | null) => {
@@ -159,7 +167,7 @@ export function AppNavigator(): React.JSX.Element {
     });
   }, []);
 
-  // FCM: トークン登録 + フォアグラウンドメッセージリスナー
+  // FCM: トークン登録 + フォアグラウンドメッセージリスナー + 通知タップリスナー
   useEffect(() => {
     console.log('[FCM_DEBUG] AppNavigator: calling registerFcmToken');
     registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken'));
@@ -174,9 +182,12 @@ export function AppNavigator(): React.JSX.Element {
         // 現在のメモ詳細画面を自動リフレッシュすることも将来的に検討
       }
     });
+    // バックグラウンドから FCM 通知タップでアプリが復帰した場合
+    const unsubOpened = onFcmNotificationOpened(navigateByShareId);
     return () => {
       unsubRefresh();
       unsubMessage();
+      unsubOpened();
     };
   }, []);
 
@@ -212,6 +223,11 @@ export function AppNavigator(): React.JSX.Element {
           }
         }).catch(e => recordError(e, '[AppNavigator] getInitialNotification'));
 
+        // FCM 通知タップ（共有メモ更新）→ killed 状態からの起動
+        getFcmInitialNotification().then(shareId => {
+          if (shareId) navigateByShareId(shareId);
+        }).catch(e => recordError(e, '[AppNavigator] getFcmInitialNotification'));
+
         // ネイティブ通知タップ → MainActivity でディープリンク化 → Linking で取得
         Linking.getInitialURL().then(handleSharedUrl)
           .catch(e => recordError(e, '[AppNavigator] getInitialURL'));
@@ -221,6 +237,12 @@ export function AppNavigator(): React.JSX.Element {
         if (pending) {
           storage.remove('pendingNotificationMemoId');
           navigationRef.current?.navigate('MemoDetail', { memoId: pending });
+        }
+        // MMKV 経由の共有メモ通知フォールバック
+        const pendingShareId = storage.getString('pendingNotificationShareId');
+        if (pendingShareId) {
+          storage.remove('pendingNotificationShareId');
+          navigateByShareId(pendingShareId);
         }
       }}>
       <Stack.Navigator
