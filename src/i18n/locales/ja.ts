@@ -298,8 +298,8 @@ const ja = {
     importByCodeInvalid: '無効な共有コードです',
     syncButton: '最新に更新',
     syncSuccess: 'メモを最新の状態に更新しました',
-    roleOwner: 'オーナー',
-    roleCollaborator: 'コラボレーター',
+    roleOwner: 'ホスト',
+    roleCollaborator: 'ゲスト',
   },
   // ── 共有メモ更新通知 ───────────────────────────────────
   shareNotify: {

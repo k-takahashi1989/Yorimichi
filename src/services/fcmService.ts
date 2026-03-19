@@ -41,15 +41,23 @@ export async function registerFcmToken(): Promise<void> {
     await ensureSignedIn();
     const user = auth().currentUser;
     if (!user) return;
+    // 匿名サインイン直後は Firestore SDK に ID トークンが伝わっていないことがある。
+    // 強制リフレッシュして permission denied を防ぐ。
+    await user.getIdToken(true);
+    // Android 13+ で POST_NOTIFICATIONS 権限チェック。
+    // requestPermission() は Android では権限状態を返すだけで UI は出ない。
+    const authStatus = await messaging().requestPermission();
     const token = await messaging().getToken();
-    if (!token) return;
+    if (!token) {
+      return;
+    }
     await firestore().collection('deviceTokens').doc(user.uid).set({
       token,
       deviceId: getDeviceId(),
       updatedAt: Date.now(),
       platform: 'android',
     });
-  } catch (e) {
+  } catch (e: any) {
     recordError(e, '[fcmService] registerFcmToken');
   }
 }
