@@ -14,12 +14,15 @@ import { Platform } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
+import Config from 'react-native-config';
 import { getDeviceId } from '../utils/deviceId';
 import { recordError } from './crashlyticsService';
 import { ensureSignedIn, waitForAuthReady } from './shareService';
 
-const CLOUD_FUNCTION_URL =
-  'https://asia-northeast1-yorimichi-app-dev.cloudfunctions.net/notifyCollaborators';
+const CLOUD_FUNCTIONS_BASE_URL =
+  Config.CLOUD_FUNCTIONS_BASE_URL ??
+  'https://asia-northeast1-yorimichi-app-dev.cloudfunctions.net';
+const CLOUD_FUNCTION_URL = `${CLOUD_FUNCTIONS_BASE_URL}/notifyCollaborators`;
 
 // ============================================================
 // FCM トークン登録
@@ -136,7 +139,6 @@ export async function notifySharedMemoUpdate(
   } catch (e: any) {
     const code: string = e?.code ?? '';
     const msg: string = e?.message ?? String(e);
-    console.error('[NOTIFY_DEBUG] code=', code, 'msg=', msg, 'raw=', JSON.stringify(e, Object.getOwnPropertyNames(e)));
     if (code === 'functions/resource-exhausted') {
       lastNotifiedMap.set(shareId, now);
       return { status: 'cooldown' };

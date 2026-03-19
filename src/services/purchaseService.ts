@@ -10,6 +10,7 @@ import Purchases, {
   PURCHASES_ERROR_CODE,
 } from 'react-native-purchases';
 import Config from 'react-native-config';
+import { recordError } from './crashlyticsService';
 
 /** RevenueCat のエンタイトルメント識別子（RCダッシュボードと一致させること） */
 const ENTITLEMENT_ID = 'premium';
@@ -24,19 +25,10 @@ const ENTITLEMENT_ID = 'premium';
  */
 export function initPurchases(): void {
   const apiKey = Config.REVENUECAT_ANDROID_API_KEY;
-  // DEBUG: リリースビルドで .env が読み込めているか確認用（問題解決後に削除）
-  console.log(
-    '[purchaseService] initPurchases called, apiKey exists:',
-    !!apiKey,
-    ', apiKey prefix:',
-    apiKey ? apiKey.substring(0, 8) + '...' : 'N/A',
-  );
   if (!apiKey) {
-    console.warn('[purchaseService] REVENUECAT_ANDROID_API_KEY が未設定です。.env を確認してください。');
     return;
   }
   Purchases.configure({ apiKey });
-  console.log('[purchaseService] RevenueCat configured successfully');
 }
 
 // ============================================================
@@ -56,9 +48,7 @@ export interface PremiumOffering {
  */
 export async function getPremiumOffering(): Promise<PremiumOffering | null> {
   try {
-    console.log('[purchaseService] getPremiumOffering called');
     const offerings = await Purchases.getOfferings();
-    console.log('[purchaseService] offerings received, current:', !!offerings.current);
     const current = offerings.current;
     if (!current) return null;
     return {
@@ -67,7 +57,7 @@ export async function getPremiumOffering(): Promise<PremiumOffering | null> {
       annual: current.annual ?? null,
     };
   } catch (e) {
-    console.error('[purchaseService] getOfferings エラー:', e);
+    recordError(e, '[purchaseService] getOfferings');
     return null;
   }
 }
