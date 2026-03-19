@@ -91,6 +91,14 @@
           android:permission="android.permission.BIND_REMOTEVIEWS"
           android:exported="false" />
 
+      <!-- FCM: デフォルト通知アイコン・色（Cloud Function からの通知に適用） -->
+      <meta-data
+          android:name="com.google.firebase.messaging.default_notification_icon"
+          android:resource="@drawable/ic_notification" />
+      <meta-data
+          android:name="com.google.firebase.messaging.default_notification_color"
+          android:resource="@color/notification_green" />
+
       <!-- AdMob: .env の ADMOB_APP_ID から注入（未設定時はテストID） -->
       <meta-data
           android:name="com.google.android.gms.ads.APPLICATION_ID"
