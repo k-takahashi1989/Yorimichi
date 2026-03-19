@@ -97,7 +97,8 @@
           android:resource="@drawable/ic_notification" />
       <meta-data
           android:name="com.google.firebase.messaging.default_notification_color"
-          android:resource="@color/notification_green" />
+          android:resource="@color/notification_green"
+          tools:replace="android:resource" />
 
       <!-- AdMob: .env の ADMOB_APP_ID から注入（未設定時はテストID） -->
       <meta-data
