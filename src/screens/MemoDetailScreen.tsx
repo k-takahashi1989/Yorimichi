@@ -167,10 +167,11 @@ export default function MemoDetailScreen(): React.JSX.Element {
       } else if (result.status === 'cooldown') {
         Alert.alert(t('shareNotify.cooldownTitle'), t('shareNotify.cooldownMessage'));
       } else {
-        Alert.alert(t('common.error'), `${t('shareNotify.errorMessage')}\n\n[DEBUG] ${result.detail}`);
+        Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
       }
     } catch (e: any) {
-      Alert.alert(t('common.error'), `${t('shareNotify.errorMessage')}\n\n[DEBUG] ${e?.code ?? ''} ${e?.message ?? String(e)}`);
+      recordError(e, '[MemoDetail] handleNotifyCollaborators');
+      Alert.alert(t('common.error'), t('shareNotify.errorMessage'));
     } finally {
       setIsNotifyLoading(false);
     }
@@ -414,7 +415,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
           onPress={handleToggleNotification}
           onLongPress={() => memo.notificationEnabled && setNotifModeModalVisible(true)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerIcon}>
+          style={styles.headerIcon}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.toggleNotification')}>
           <Icon
             name={
               !memo.notificationEnabled ? 'notifications-off'
@@ -434,7 +437,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
           onPress={handleShare}
           disabled={isSharingLoading}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerIcon}>
+          style={styles.headerIcon}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.shareMemo')}>
           {isSharingLoading ? (
             <ActivityIndicator size={22} color="#4CAF50" />
           ) : (
@@ -450,7 +455,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
             onPress={handleSyncSharedMemo}
             disabled={isSyncLoading}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.headerIcon}>
+            style={styles.headerIcon}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.syncSharedMemo')}>
             {isSyncLoading ? (
               <ActivityIndicator size={22} color="#2196F3" />
             ) : (
@@ -462,7 +469,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
           testID="memo-edit-button"
           onPress={() => navigation.navigate('MemoEdit', { memoId })}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.pencilBtn}>
+          style={styles.pencilBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.editMemoContent')}>
           <EditSvg width={22} height={22} />
         </TouchableOpacity>
       </View>
@@ -528,7 +537,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
           style={[styles.notifyBtn, (isNotifyLoading || notifyCooldown > 0 || !hasLocalChanges) && styles.notifyBtnDisabled]}
           disabled={isNotifyLoading || notifyCooldown > 0 || !hasLocalChanges}
           onPress={handleNotifyCollaborators}
-          activeOpacity={0.7}>
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.notifyCollaborators')}>
           {/* クールダウン中のプログレスバー */}
           {notifyCooldown > 0 && (
             <Animated.View
@@ -580,7 +591,9 @@ export default function MemoDetailScreen(): React.JSX.Element {
               <TouchableOpacity
                 testID="location-add-button"
                 onPress={() => navigation.navigate('LocationPicker', { memoId })}
-                style={styles.addLocBtn}>
+                style={styles.addLocBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t('a11y.addLocation')}>
                 <Icon name="add-location" size={18} color="#4CAF50" />
                 <Text style={styles.addLocText}>{t('memoDetail.addLocation')}</Text>
               </TouchableOpacity>
@@ -614,13 +627,17 @@ export default function MemoDetailScreen(): React.JSX.Element {
                     <TouchableOpacity
                       onPress={() => navigation.navigate('LocationPicker', { memoId, existingLocationId: loc.id })}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={styles.locChipAction}>
+                      style={styles.locChipAction}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('a11y.editLocation')}>
                       <Icon name="edit" size={18} color="#4CAF50" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleDeleteLocation(loc)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={styles.locChipAction}>
+                      style={styles.locChipAction}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('a11y.removeLocation')}>
                       <Icon name="close" size={18} color="#9E9E9E" />
                     </TouchableOpacity>
                   </>
@@ -674,14 +691,18 @@ export default function MemoDetailScreen(): React.JSX.Element {
                     testID="check-all-button"
                     onPress={handleCheckAllToggle}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={{ padding: 4 }}>
+                    style={{ padding: 4 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.checkAllItems')}>
                     <Icon name={allChecked ? 'clear-all' : 'done-all'} size={22} color="#9E9E9E" />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setHideChecked(v => !v)}
                     disabled={!hasChecked && !hideChecked}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}>
+                    style={[{ padding: 4 }, !hasChecked && !hideChecked && { opacity: 0.3 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.toggleCheckedVisibility')}>
                     <Icon name={hideChecked ? 'visibility-off' : 'visibility'} size={22} color="#9E9E9E" />
                   </TouchableOpacity>
                 </View>

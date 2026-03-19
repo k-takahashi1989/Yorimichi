@@ -102,6 +102,7 @@ const ja = {
     geocodingInProgress: '住所を取得中…',
     triggerEnter: '到着時に通知',
     triggerExit: '出発時に通知',
+    geocodeFailed: '住所を取得できませんでした',
   },
 
   // ── SettingsScreen ────────────────────────────────────────
@@ -504,6 +505,26 @@ const ja = {
     message: 'プレミアムプランで広告なし・クラウドバックアップなど、もっと快適にお使いいただけます。',
     upgradeButton: 'プレミアムを見てみる',
     later: 'あとで',
+  },
+  // ── アクセシビリティ ─────────────────────────────────────
+  a11y: {
+    addMemo: '新しいメモを追加',
+    importSharedMemo: '共有メモをインポート',
+    editMemo: 'メモを編集',
+    deleteMemo: 'メモを削除',
+    toggleNotification: '通知の切り替え',
+    shareMemo: 'メモを共有',
+    syncSharedMemo: '共有メモを同期',
+    editMemoContent: 'メモの内容を編集',
+    addLocation: '場所を追加',
+    editLocation: '場所を編集',
+    removeLocation: '場所を削除',
+    checkAllItems: '全アイテムをチェック',
+    toggleCheckedVisibility: 'チェック済みの表示切り替え',
+    currentLocation: '現在地に移動',
+    saveLocation: '場所を保存',
+    skipLocation: '場所の登録をスキップ',
+    notifyCollaborators: '共有相手に更新を通知',
   },
 } as const;
 
