@@ -99,6 +99,7 @@ const en: Translation = {
     geocodingInProgress: 'Getting address...',
     triggerEnter: 'Notify on arrival',
     triggerExit: 'Notify on departure',
+    geocodeFailed: 'Could not retrieve the address',
   },
 
   settings: {
@@ -486,6 +487,25 @@ const en: Translation = {
     message: 'Go ad-free with cloud backup and more on the Premium plan.',
     upgradeButton: 'Explore Premium',
     later: 'Later',
+  },
+  a11y: {
+    addMemo: 'Add new memo',
+    importSharedMemo: 'Import shared memo',
+    editMemo: 'Edit memo',
+    deleteMemo: 'Delete memo',
+    toggleNotification: 'Toggle notification',
+    shareMemo: 'Share memo',
+    syncSharedMemo: 'Sync shared memo',
+    editMemoContent: 'Edit memo content',
+    addLocation: 'Add location',
+    editLocation: 'Edit location',
+    removeLocation: 'Remove location',
+    checkAllItems: 'Check all items',
+    toggleCheckedVisibility: 'Toggle checked items visibility',
+    currentLocation: 'Go to current location',
+    saveLocation: 'Save location',
+    skipLocation: 'Skip location',
+    notifyCollaborators: 'Notify collaborators of updates',
   },
 };
 

@@ -202,14 +202,18 @@ export default function MemoListScreen(): React.JSX.Element {
             <TouchableOpacity
               testID={`memo-edit-icon-${item.id}`}
               onPress={() => navigation.navigate('MemoEdit', { memoId: item.id })}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.editMemo')}>
               <EditSvg width={22} height={22} />
             </TouchableOpacity>
             <TouchableOpacity
               testID={`memo-delete-icon-${item.id}`}
               onPress={() => handleDelete(item)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.deleteBtn}>
+              style={styles.deleteBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.deleteMemo')}>
               <Icon name="delete" size={22} color="#EF5350" />
             </TouchableOpacity>
           </View>
@@ -225,13 +229,17 @@ export default function MemoListScreen(): React.JSX.Element {
           <TouchableOpacity
             testID="share-import-button"
             style={styles.headerIconBtn}
-            onPress={() => { setImportCode(''); setImportModalVisible(true); }}>
+            onPress={() => { setImportCode(''); setImportModalVisible(true); }}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.importSharedMemo')}>
             <Icon name="group-add" size={26} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
             testID="memo-add-button"
             style={styles.addBtn}
-            onPress={handleAddNewMemo}>
+            onPress={handleAddNewMemo}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.addMemo')}>
             <Icon name="add" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
