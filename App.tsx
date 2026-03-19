@@ -21,6 +21,7 @@ import { initCrashlytics, recordError } from './src/services/crashlyticsService'
 import { onAppLaunch } from './src/services/badgeService';
 import { showBadgeUnlock } from './src/components/BadgeUnlockModal';
 import BadgeUnlockModal from './src/components/BadgeUnlockModal';
+import { seedDevMemos } from './src/utils/devSeed';
 import ReviewPromptModal from './src/components/ReviewPromptModal';
 import { shouldShowPremiumPromo } from './src/utils/premiumPromoUtils';
 import { showPremiumPromo } from './src/components/PremiumPromoModal';
@@ -31,6 +32,9 @@ function App(): React.JSX.Element {
   useEffect(() => {
     // Crashlytics 初期化（__DEV__ 時は収集無効）
     initCrashlytics();
+
+    // DEV: メモが空なら テストデータを自動投入
+    seedDevMemos();
 
     // RevenueCat 初期化 → 起動時にエンタイトルメントを同期
     initPurchases();
