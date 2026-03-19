@@ -10,6 +10,7 @@ import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { handleForegroundNotification } from '../services/notificationService';
+import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import { registerFcmToken, listenTokenRefresh, onForegroundMessage } from '../services/fcmService';
 import { onGeofenceVisit } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
@@ -144,6 +145,31 @@ export function AppNavigator(): React.JSX.Element {
     }
   };
 
+  // 共有メモ通知タップ: shareId からローカル memoId を解決して遷移
+  const handleSharedMemoNotificationTap = (
+    data: FirebaseMessagingTypes.RemoteMessage['data'],
+  ) => {
+    if (!data || data.type !== 'memo_updated' || !data.shareId) return;
+    const shareId = data.shareId as string;
+    const memos = useMemoStore.getState().memos;
+    const localMemo = memos.find(m => m.shareId === shareId);
+    if (localMemo) {
+      navigationRef.current?.navigate('MemoDetail', { memoId: localMemo.id });
+    } else {
+      // ローカルにメモがない場合は一覧画面を開く
+      navigationRef.current?.navigate('MainTabs');
+    }
+  };
+
+  // FCM 通知タップ（バックグラウンド状態）— 共有メモ更新通知
+  useEffect(() => {
+    const unsubscribe = messaging().onNotificationOpenedApp(remoteMessage => {
+      handleSharedMemoNotificationTap(remoteMessage.data);
+    });
+    return unsubscribe;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
     handleForegroundNotification((memoId: string) => {
@@ -201,9 +227,16 @@ export function AppNavigator(): React.JSX.Element {
         });
 
         // killed 状態から通知タップで起動した場合:
+        // 0. FCM 通知（共有メモ更新）は messaging().getInitialNotification で取得
         // 1. notifee 経由の通知（期限通知など）は getInitialNotification で取得
         // 2. ネイティブ通知（ジオフェンス）は Linking.getInitialURL 経由でディープリンクから取得
         // 3. MMKV 経由のフォールバック
+        messaging().getInitialNotification().then(remoteMessage => {
+          if (remoteMessage?.data) {
+            handleSharedMemoNotificationTap(remoteMessage.data);
+          }
+        }).catch(e => recordError(e, '[AppNavigator] FCM getInitialNotification'));
+
         notifee.getInitialNotification().then(initial => {
           const memoId = initial?.notification?.data?.memoId as string | undefined;
           if (memoId) {
