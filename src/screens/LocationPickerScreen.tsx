@@ -32,6 +32,7 @@ import { useSettingsStore } from '../store/memoStore';
 import { useShallow } from 'zustand/react/shallow';
 import { RootStackParamList, RecentPlace, TriggerType } from '../types';
 import { LimitModal } from '../components/LimitModal';
+import Snackbar from '../components/Snackbar';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'LocationPicker'>;
@@ -89,6 +90,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
   const [isSearching, setIsSearching] = useState(false);
   const [triggerType, setTriggerType] = useState<TriggerType>('enter');
   const [limitModal, setLimitModal] = useState<{title: string; message: string} | null>(null);
+  const [geocodeSnackbar, setGeocodeSnackbar] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapRef = useRef<MapView>(null);
@@ -149,7 +151,7 @@ export default function LocationPickerScreen(): React.JSX.Element {
           }
         }
       } catch {
-        // 住所取得失敗は無視
+        setGeocodeSnackbar(true);
       } finally {
         setIsGeocoding(false);
         if (geocodingSafetyRef.current) {
@@ -422,7 +424,11 @@ export default function LocationPickerScreen(): React.JSX.Element {
         </View>
 
         {/* 現在地ボタン（検索バー右端） */}
-        <TouchableOpacity style={styles.gpsBtn} onPress={handleGpsPress}>
+        <TouchableOpacity
+          style={styles.gpsBtn}
+          onPress={handleGpsPress}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.currentLocation')}>
           <Icon name="my-location" size={20} color="#4CAF50" />
         </TouchableOpacity>
 
@@ -546,14 +552,18 @@ export default function LocationPickerScreen(): React.JSX.Element {
             <TouchableOpacity
               testID="location-skip-button"
               style={styles.skipBtn}
-              onPress={handleSkip}>
+              onPress={handleSkip}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.skipLocation')}>
               <Text style={styles.skipBtnText}>{t('locationPicker.skipButton')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               testID="location-save-button"
               style={[styles.saveBtn, styles.saveBtnFlex, isGeocoding && !!picked && styles.saveBtnDisabled]}
               onPress={handleSave}
-              disabled={isGeocoding && !!picked}>
+              disabled={isGeocoding && !!picked}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.saveLocation')}>
               {isGeocoding && !!picked
                 ? <ActivityIndicator size="small" color="#fff" />
                 : <Icon name="check" size={20} color="#fff" />}
@@ -565,7 +575,9 @@ export default function LocationPickerScreen(): React.JSX.Element {
             testID="location-save-button"
             style={[styles.saveBtn, isGeocoding && !!picked && styles.saveBtnDisabled]}
             onPress={handleSave}
-            disabled={isGeocoding && !!picked}>
+            disabled={isGeocoding && !!picked}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.saveLocation')}>
             {isGeocoding && !!picked
               ? <ActivityIndicator size="small" color="#fff" />
               : <Icon name="check" size={20} color="#fff" />}
@@ -579,6 +591,11 @@ export default function LocationPickerScreen(): React.JSX.Element {
         message={limitModal?.message ?? ''}
         onClose={() => setLimitModal(null)}
         onUpgrade={() => { setLimitModal(null); navigation.navigate('Premium'); }}
+      />
+      <Snackbar
+        visible={geocodeSnackbar}
+        message={t('locationPicker.geocodeFailed')}
+        onDismiss={() => setGeocodeSnackbar(false)}
       />
     </KeyboardAvoidingView>
   );
