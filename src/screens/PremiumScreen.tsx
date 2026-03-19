@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { StarSvg } from '../assets/icons';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore, useMemoStore, selectEffectivePremium } from '../store/memoStore';
+import { recordError } from '../services/crashlyticsService';
 import { isTrialActive, trialDaysRemaining } from '../utils/trialUtils';
 import {
   getPremiumOffering,
@@ -76,7 +77,7 @@ export default function PremiumScreen(): React.JSX.Element {
         setOffering(o);
       })
       .catch(e => {
-        console.error('[PremiumScreen] Failed to load offering:', e);
+        recordError(e, '[PremiumScreen] Failed to load offering');
         setOffering(null);
       })
       .finally(() => {
