@@ -9,7 +9,7 @@ import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
-import { handleForegroundNotification } from '../services/notificationService';
+import { handleForegroundNotification, showSharedMemoUpdateNotification } from '../services/notificationService';
 import { registerFcmToken, listenTokenRefresh, onForegroundMessage, getFcmInitialNotification, onFcmNotificationOpened } from '../services/fcmService';
 import { onGeofenceVisit } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
@@ -173,13 +173,11 @@ export function AppNavigator(): React.JSX.Element {
     registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken'));
     const unsubRefresh = listenTokenRefresh();
     const unsubMessage = onForegroundMessage((data) => {
-      // フォアグラウンドで共有メモ更新通知を受信した場合
-      // notification フィールド付きで送信しているため、Android は自動的にヘッドアップ通知を表示する。
-      // 追加のローカル通知生成は不要。
-      // 必要に応じて shareId を使って画面リフレッシュも可能。
       if (data.type === 'memo_updated' && data.shareId) {
-        // オプトアウトチェックはAndroid通知チャンネル側で制御
-        // 現在のメモ詳細画面を自動リフレッシュすることも将来的に検討
+        showSharedMemoUpdateNotification({
+          shareId: data.shareId,
+          memoTitle: data.memoTitle ?? '',
+        }).catch(e => recordError(e, '[AppNavigator] showSharedMemoUpdateNotification'));
       }
     });
     // バックグラウンドから FCM 通知タップでアプリが復帰した場合
