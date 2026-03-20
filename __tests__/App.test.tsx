@@ -56,6 +56,8 @@ jest.mock('../src/services/fcmService', () => ({
   registerFcmToken: jest.fn().mockResolvedValue(undefined),
   listenTokenRefresh: jest.fn(() => jest.fn()),
   onForegroundMessage: jest.fn(() => jest.fn()),
+  onFcmNotificationOpened: jest.fn(() => jest.fn()),
+  getFcmInitialNotification: jest.fn().mockResolvedValue(undefined),
   setBackgroundMessageHandler: jest.fn(),
 }));
 jest.mock('../src/services/purchaseService', () => ({
