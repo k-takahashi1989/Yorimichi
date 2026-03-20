@@ -98,7 +98,7 @@ export const notifyCollaborators = onRequest(
       ? allUids
       : allUids.filter((uid) => uid !== callerUid);
     if (targetUids.length === 0) {
-      res.json({ result: { sent: 0 } });
+      res.json({ result: { sent: 0, ...(debugIncludeSelf ? { debug: { reason: "no_target_uids", callerUid, allUids } } : {}) } });
       return;
     }
 
@@ -116,7 +116,7 @@ export const notifyCollaborators = onRequest(
 
     if (tokens.length === 0) {
       // トークンなし → lastNotifiedAt は更新しない
-      res.json({ result: { sent: 0 } });
+      res.json({ result: { sent: 0, ...(debugIncludeSelf ? { debug: { reason: "no_tokens", targetUids, tokenDocsExist: tokenSnaps.map(s => s.exists) } } : {}) } });
       return;
     }
 
