@@ -126,7 +126,7 @@ public class GeofenceTransitionReceiver extends BroadcastReceiver {
         // タップ時にアプリを開き、ディープリンクでメモ詳細画面へ遷移する
         // ACTION_VIEW + URI にすることで React Native の Linking API が正しく受け取れる
         Intent launchIntent = new Intent(Intent.ACTION_VIEW,
-                android.net.Uri.parse("yorimichi://open?memoId=" + memoId));
+                android.net.Uri.parse("yorimichi://open?memoId=" + memoId + "&source=geofence"));
         launchIntent.setClass(context, MainActivity.class);
         launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 

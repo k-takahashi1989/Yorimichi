@@ -100,7 +100,17 @@ export function AppNavigator(): React.JSX.Element {
       // ウィジェット / 通知タップからのメモ詳細遷移
       const memoIdMatch = url.match(/[?&]memoId=([^&]+)/);
       if (memoIdMatch) {
-        navigationRef.current?.navigate('MemoDetail', { memoId: memoIdMatch[1] });
+        const memoId = memoIdMatch[1];
+        // ジオフェンス通知タップの場合はバッジ判定を実行
+        if (url.includes('source=geofence')) {
+          const newBadges = onGeofenceVisit(memoId);
+          if (newBadges.length > 0) showBadgeUnlock(newBadges);
+          const settings = useSettingsStore.getState();
+          if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
+            setTimeout(() => showReviewPrompt(), 1500);
+          }
+        }
+        navigationRef.current?.navigate('MemoDetail', { memoId });
         return;
       }
 
