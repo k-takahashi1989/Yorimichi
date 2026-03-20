@@ -58,16 +58,47 @@ export async function showArrivalNotification(params: {
 }
 
 /**
+ * 共有メモ更新のローカル通知を表示する（フォアグラウンド受信時用）
+ */
+export async function showSharedMemoUpdateNotification(params: {
+  shareId: string;
+  memoTitle: string;
+}): Promise<void> {
+  const { shareId, memoTitle } = params;
+  await notifee.displayNotification({
+    id: `memo-updated-${shareId}`,
+    title: `「${memoTitle}」`,
+    body: i18n.t('notification.sharedMemoUpdated', { defaultValue: '共有メモが更新されました。タップして確認' }),
+    data: { shareId, type: 'memo_updated' },
+    android: {
+      channelId: CHANNEL_ID,
+      importance: AndroidImportance.HIGH,
+      pressAction: {
+        id: 'open_shared_memo',
+        launchActivity: 'com.ktakahashi.yorimichi.MainActivity',
+      },
+      smallIcon: 'ic_notification',
+      color: '#2196F3',
+    },
+  });
+}
+
+/**
  * バックグラウンドの通知イベントリスナーを登録する
  * (index.js で呼び出す)
  */
 export function registerBackgroundNotificationHandler(
   onOpenMemo: (memoId: string) => void,
+  onOpenSharedMemo?: (shareId: string) => void,
 ): void {
   notifee.onBackgroundEvent(async ({ type, detail }) => {
     if (type === EventType.PRESS && detail.notification?.data) {
-      const memoId = detail.notification.data.memoId as string;
-      if (memoId) onOpenMemo(memoId);
+      const data = detail.notification.data;
+      if (data.type === 'memo_updated' && data.shareId && onOpenSharedMemo) {
+        onOpenSharedMemo(data.shareId as string);
+      } else if (data.memoId) {
+        onOpenMemo(data.memoId as string);
+      }
     }
   });
 }
@@ -78,11 +109,16 @@ export function registerBackgroundNotificationHandler(
  */
 export function handleForegroundNotification(
   onOpenMemo: (memoId: string) => void,
+  onOpenSharedMemo?: (shareId: string) => void,
 ): void {
   notifee.onForegroundEvent(({ type, detail }) => {
     if (type === EventType.PRESS && detail.notification?.data) {
-      const memoId = detail.notification.data.memoId as string;
-      if (memoId) onOpenMemo(memoId);
+      const data = detail.notification.data;
+      if (data.type === 'memo_updated' && data.shareId && onOpenSharedMemo) {
+        onOpenSharedMemo(data.shareId as string);
+      } else if (data.memoId) {
+        onOpenMemo(data.memoId as string);
+      }
     }
   });
 }

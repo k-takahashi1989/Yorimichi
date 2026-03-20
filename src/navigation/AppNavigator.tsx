@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { Alert, Linking } from 'react-native';
+import React, { useRef, useEffect, useCallback } from 'react';
+import { Alert, AppState, Linking } from 'react-native';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -9,7 +9,7 @@ import { useInterstitialAd } from '../hooks/useInterstitialAd';
 import { useSettingsStore, selectEffectivePremium } from '../store/memoStore';
 import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
-import { handleForegroundNotification } from '../services/notificationService';
+import { handleForegroundNotification, showSharedMemoUpdateNotification } from '../services/notificationService';
 import { registerFcmToken, listenTokenRefresh, onForegroundMessage, getFcmInitialNotification, onFcmNotificationOpened } from '../services/fcmService';
 import { onGeofenceVisit } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
@@ -154,17 +154,20 @@ export function AppNavigator(): React.JSX.Element {
 
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
-    handleForegroundNotification((memoId: string) => {
-      // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
-      const newBadges = onGeofenceVisit(memoId);
-      if (newBadges.length > 0) showBadgeUnlock(newBadges);
-      // レビュー依頼: 通知タップ3回目で条件を満たしていれば表示
-      const settings = useSettingsStore.getState();
-      if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
-        setTimeout(() => showReviewPrompt(), 1500);
-      }
-      navigationRef.current?.navigate('MemoDetail', { memoId });
-    });
+    handleForegroundNotification(
+      (memoId: string) => {
+        // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
+        const newBadges = onGeofenceVisit(memoId);
+        if (newBadges.length > 0) showBadgeUnlock(newBadges);
+        // レビュー依頼: 通知タップ3回目で条件を満たしていれば表示
+        const settings = useSettingsStore.getState();
+        if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
+          setTimeout(() => showReviewPrompt(), 1500);
+        }
+        navigationRef.current?.navigate('MemoDetail', { memoId });
+      },
+      navigateByShareId,
+    );
   }, []);
 
   // FCM: トークン登録 + フォアグラウンドメッセージリスナー + 通知タップリスナー
@@ -172,13 +175,11 @@ export function AppNavigator(): React.JSX.Element {
     registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken'));
     const unsubRefresh = listenTokenRefresh();
     const unsubMessage = onForegroundMessage((data) => {
-      // フォアグラウンドで共有メモ更新通知を受信した場合
-      // notification フィールド付きで送信しているため、Android は自動的にヘッドアップ通知を表示する。
-      // 追加のローカル通知生成は不要。
-      // 必要に応じて shareId を使って画面リフレッシュも可能。
       if (data.type === 'memo_updated' && data.shareId) {
-        // オプトアウトチェックはAndroid通知チャンネル側で制御
-        // 現在のメモ詳細画面を自動リフレッシュすることも将来的に検討
+        showSharedMemoUpdateNotification({
+          shareId: data.shareId,
+          memoTitle: data.memoTitle ?? '',
+        }).catch(e => recordError(e, '[AppNavigator] showSharedMemoUpdateNotification'));
       }
     });
     // バックグラウンドから FCM 通知タップでアプリが復帰した場合
@@ -189,6 +190,31 @@ export function AppNavigator(): React.JSX.Element {
       unsubOpened();
     };
   }, []);
+
+  // バックグラウンドから復帰時にMMKVに保存された通知先をチェック
+  const checkPendingNotifications = useCallback(() => {
+    const pendingMemoId = storage.getString('pendingNotificationMemoId');
+    if (pendingMemoId) {
+      storage.remove('pendingNotificationMemoId');
+      navigationRef.current?.navigate('MemoDetail', { memoId: pendingMemoId });
+      return;
+    }
+    const pendingShareId = storage.getString('pendingNotificationShareId');
+    if (pendingShareId) {
+      storage.remove('pendingNotificationShareId');
+      navigateByShareId(pendingShareId);
+    }
+  }, []);
+
+  // AppState監視: バックグラウンドから復帰時にMMKVの保留通知をチェック
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        checkPendingNotifications();
+      }
+    });
+    return () => sub.remove();
+  }, [checkPendingNotifications]);
 
   // アプリ起動時のディープリンク処理
   // 注: getInitialURL は onReady 内でも呼ぶ（killed 状態からの通知タップ時、
@@ -216,9 +242,11 @@ export function AppNavigator(): React.JSX.Element {
         // 2. ネイティブ通知（ジオフェンス）は Linking.getInitialURL 経由でディープリンクから取得
         // 3. MMKV 経由のフォールバック
         notifee.getInitialNotification().then(initial => {
-          const memoId = initial?.notification?.data?.memoId as string | undefined;
-          if (memoId) {
-            navigationRef.current?.navigate('MemoDetail', { memoId });
+          const data = initial?.notification?.data;
+          if (data?.type === 'memo_updated' && data?.shareId) {
+            navigateByShareId(data.shareId as string);
+          } else if (data?.memoId) {
+            navigationRef.current?.navigate('MemoDetail', { memoId: data.memoId as string });
           }
         }).catch(e => recordError(e, '[AppNavigator] getInitialNotification'));
 

@@ -233,7 +233,7 @@ export default function SettingsScreen(): React.JSX.Element {
     <ScrollView style={styles.container}>
       <Text style={styles.pageTitle}>{t('settings.screenTitle')}</Text>
 
-      <DebugPremiumCard />
+      {__DEV__ && <DebugPremiumCard />}
 
       {/* ── ジオフェンス設定 ── */}
       <View style={styles.sectionLabelRow}>
