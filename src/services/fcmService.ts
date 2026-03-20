@@ -145,9 +145,10 @@ export async function notifySharedMemoUpdate(
       throw { code: errCode, message: errMsg };
     }
     const sent: number = body?.result?.sent ?? 0;
+    const debug = body?.result?.debug;
     lastNotifiedMap.set(shareId, now);
     if (sent === 0) {
-      return { status: 'no_targets' };
+      return { status: 'no_targets', ...(debug ? { debug } : {}) } as NotifyResult;
     }
     return { status: 'ok' };
   } catch (e: any) {
