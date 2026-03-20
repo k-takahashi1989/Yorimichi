@@ -233,7 +233,7 @@ export default function SettingsScreen(): React.JSX.Element {
     <ScrollView style={styles.container}>
       <Text style={styles.pageTitle}>{t('settings.screenTitle')}</Text>
 
-      <DebugPremiumCard />
+      {__DEV__ && <DebugPremiumCard />}
 
       {/* ── ジオフェンス設定 ── */}
       <View style={styles.sectionLabelRow}>
@@ -492,7 +492,7 @@ export default function SettingsScreen(): React.JSX.Element {
         <Text style={styles.infoText}>{t('settings.appInfo.name')}</Text>
         <TouchableOpacity
           style={styles.privacyPolicyRow}
-          onPress={() => Linking.openURL('https://example.com/yorimichi-guide')}>
+          onPress={() => Linking.openURL('https://weak-nose-94e.notion.site/Yorimichi-32634b367d7d80638ee7eae3e23b4fd8')}>
           <Icon name="menu-book" size={16} color="#4CAF50" />
           <Text style={styles.privacyPolicyText}>{t('settings.appInfo.usageGuide')}</Text>
           <Icon name="open-in-new" size={14} color="#9E9E9E" />
