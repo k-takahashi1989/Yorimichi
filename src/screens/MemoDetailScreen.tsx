@@ -576,7 +576,8 @@ export default function MemoDetailScreen(): React.JSX.Element {
           onPress={async () => {
             try {
               const result = await notifySharedMemoUpdate(memo.shareId!, memo.title, { debugIncludeSelf: true });
-              Alert.alert('Debug', `status: ${result.status}${result.status === 'error' ? `\n${(result as any).detail}` : ''}`);
+              const debugInfo = (result as any).debug ? `\n\n${JSON.stringify((result as any).debug, null, 2)}` : '';
+              Alert.alert('Debug', `status: ${result.status}${result.status === 'error' ? `\n${(result as any).detail}` : ''}${debugInfo}`);
             } catch (e: any) {
               Alert.alert('Debug Error', String(e));
             }
