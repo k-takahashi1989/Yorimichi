@@ -89,11 +89,16 @@ export async function showSharedMemoUpdateNotification(params: {
  */
 export function registerBackgroundNotificationHandler(
   onOpenMemo: (memoId: string) => void,
+  onOpenSharedMemo?: (shareId: string) => void,
 ): void {
   notifee.onBackgroundEvent(async ({ type, detail }) => {
     if (type === EventType.PRESS && detail.notification?.data) {
-      const memoId = detail.notification.data.memoId as string;
-      if (memoId) onOpenMemo(memoId);
+      const data = detail.notification.data;
+      if (data.type === 'memo_updated' && data.shareId && onOpenSharedMemo) {
+        onOpenSharedMemo(data.shareId as string);
+      } else if (data.memoId) {
+        onOpenMemo(data.memoId as string);
+      }
     }
   });
 }
@@ -104,11 +109,16 @@ export function registerBackgroundNotificationHandler(
  */
 export function handleForegroundNotification(
   onOpenMemo: (memoId: string) => void,
+  onOpenSharedMemo?: (shareId: string) => void,
 ): void {
   notifee.onForegroundEvent(({ type, detail }) => {
     if (type === EventType.PRESS && detail.notification?.data) {
-      const memoId = detail.notification.data.memoId as string;
-      if (memoId) onOpenMemo(memoId);
+      const data = detail.notification.data;
+      if (data.type === 'memo_updated' && data.shareId && onOpenSharedMemo) {
+        onOpenSharedMemo(data.shareId as string);
+      } else if (data.memoId) {
+        onOpenMemo(data.memoId as string);
+      }
     }
   });
 }
