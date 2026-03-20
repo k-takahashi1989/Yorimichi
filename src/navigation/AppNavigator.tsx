@@ -11,7 +11,7 @@ import { useMemoStore } from '../store/memoStore';
 import { useTranslation } from 'react-i18next';
 import { handleForegroundNotification, showSharedMemoUpdateNotification } from '../services/notificationService';
 import { registerFcmToken, listenTokenRefresh, onForegroundMessage, getFcmInitialNotification, onFcmNotificationOpened } from '../services/fcmService';
-import { onGeofenceVisit } from '../services/badgeService';
+import { onGeofenceVisit, checkCollaboratorBadge } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 import { joinSharedMemo } from '../services/shareService';
 import { getDeviceId } from '../utils/deviceId';
@@ -136,6 +136,10 @@ export function AppNavigator(): React.JSX.Element {
       // joinSharedMemo 内で ensureSignedIn() が呼ばれ匿名アカウントが確定するため、
       // このタイミングで FCM トークンを再登録し通知を受け取れる状態にする。
       registerFcmToken().catch(e => recordError(e, '[AppNavigator] registerFcmToken after join'));
+      // コラボレーターバッジ判定（自分の参加分 +1）
+      const collabCount = (doc.collaborators?.length ?? 0) + 1;
+      const collabBadges = checkCollaboratorBadge(collabCount);
+      if (collabBadges.length > 0) showBadgeUnlock(collabBadges);
       Alert.alert(
         t('share.importTitle'),
         t('share.importMessage', { title: doc.title }),

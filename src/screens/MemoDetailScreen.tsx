@@ -38,7 +38,7 @@ import {
 import { notifySharedMemoUpdate, getCooldownRemaining } from '../services/fcmService';
 import { recordError } from '../services/crashlyticsService';
 import { getDueDateInfo } from '../utils/helpers';
-import { onItemComplete, onShareMemo } from '../services/badgeService';
+import { onItemComplete, onShareMemo, checkCollaboratorBadge } from '../services/badgeService';
 import { showBadgeUnlock } from '../components/BadgeUnlockModal';
 import { shouldTriggerOnAllItemsCompleted } from '../utils/reviewPromptUtils';
 import { showReviewPrompt } from '../components/ReviewPromptModal';
@@ -192,6 +192,10 @@ export default function MemoDetailScreen(): React.JSX.Element {
     });
     // オーナーもコラボレーターも Firestore を真実源として locations, note, dueDate を取得
     updateMemo(memoId, { title: doc.title, items: mergedItems, locations: doc.locations, note: doc.note, dueDate: doc.dueDate });
+    // コラボレーターバッジ判定
+    const collabCount = doc.collaborators?.length ?? 0;
+    const collabBadges = checkCollaboratorBadge(collabCount);
+    if (collabBadges.length > 0) showBadgeUnlock(collabBadges);
   }, [memoId, updateMemo]);
 
   // 共有メモの場合: 画面マウント時に同期＋プレゼンス監視

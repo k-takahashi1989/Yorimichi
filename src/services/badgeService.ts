@@ -108,6 +108,17 @@ export function checkAndUnlockBadges(context: CheckContext): string[] {
       }
       tryUnlock('hidden_streak', consecutive);
     }
+
+    // hidden_visit_back: 30日以上ぶりにアプリを起動
+    // recordLaunchDate() が先に呼ばれているため、lastLaunchDates の末尾は今日。
+    // 直前（末尾から2番目）の起動日との差が30日以上なら解除。
+    if (dates.length >= 2) {
+      const sorted = [...dates].sort((a, b) => a - b);
+      const previousLaunch = sorted[sorted.length - 2];
+      const latestLaunch = sorted[sorted.length - 1];
+      const gapDays = (latestLaunch - previousLaunch) / (1000 * 60 * 60 * 24);
+      tryUnlock('hidden_visit_back', gapDays >= 30);
+    }
   }
 
   return newlyUnlocked;
@@ -158,6 +169,21 @@ export function onShareMemo(): string[] {
   const settings = useSettingsStore.getState();
   settings.incrementSharedMemos();
   return checkAndUnlockBadges({ trigger: 'share' });
+}
+
+/**
+ * 共有メモのコラボレーター数チェック。
+ * Firestore からの同期・参加時に collaborators 配列の長さを渡して呼ぶ。
+ * share_collab_3 の解除判定を行い、新たに解除されたバッジIDリストを返す。
+ */
+export function checkCollaboratorBadge(collaboratorCount: number): string[] {
+  const settings = useSettingsStore.getState();
+  const newlyUnlocked: string[] = [];
+  if (collaboratorCount >= 3 && !settings.unlockedBadges.includes('share_collab_3')) {
+    settings.unlockBadge('share_collab_3');
+    newlyUnlocked.push('share_collab_3');
+  }
+  return newlyUnlocked;
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   onGeofenceVisit,
   onShareMemo,
   onAppLaunch,
+  checkCollaboratorBadge,
 } from '../src/services/badgeService';
 
 // ============================================================
@@ -163,6 +164,63 @@ describe('onAppLaunch', () => {
     useSettingsStore.setState({ lastLaunchDates: dates } as any);
     const unlocked = onAppLaunch();
     expect(unlocked).toContain('hidden_streak');
+  });
+});
+
+// ============================================================
+// hidden_visit_back: 30日以上ぶりにアプリを起動
+// ============================================================
+describe('hidden_visit_back', () => {
+  it('30日以上ぶりの起動で hidden_visit_back が解除される', () => {
+    const oneDay = 24 * 60 * 60 * 1000;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+    // 31日前の起動履歴をセット
+    useSettingsStore.setState({
+      lastLaunchDates: [todayMs - 31 * oneDay],
+    } as any);
+    const unlocked = onAppLaunch();
+    expect(unlocked).toContain('hidden_visit_back');
+  });
+
+  it('29日前の起動では hidden_visit_back が解除されない', () => {
+    const oneDay = 24 * 60 * 60 * 1000;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+    useSettingsStore.setState({
+      lastLaunchDates: [todayMs - 29 * oneDay],
+    } as any);
+    const unlocked = onAppLaunch();
+    expect(unlocked).not.toContain('hidden_visit_back');
+  });
+
+  it('初回起動（履歴なし）では hidden_visit_back が解除されない', () => {
+    useSettingsStore.setState({ lastLaunchDates: [] } as any);
+    const unlocked = onAppLaunch();
+    expect(unlocked).not.toContain('hidden_visit_back');
+  });
+});
+
+// ============================================================
+// checkCollaboratorBadge: 3人以上の共有
+// ============================================================
+describe('checkCollaboratorBadge', () => {
+  it('コラボレーター3人以上で share_collab_3 が解除される', () => {
+    const unlocked = checkCollaboratorBadge(3);
+    expect(unlocked).toContain('share_collab_3');
+  });
+
+  it('コラボレーター2人では share_collab_3 が解除されない', () => {
+    const unlocked = checkCollaboratorBadge(2);
+    expect(unlocked).not.toContain('share_collab_3');
+  });
+
+  it('既に解除済みの場合は再度返されない', () => {
+    checkCollaboratorBadge(3); // 1回目で解除
+    const unlocked = checkCollaboratorBadge(5); // 2回目
+    expect(unlocked).not.toContain('share_collab_3');
   });
 });
 
