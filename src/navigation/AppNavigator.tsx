@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { Alert, Linking } from 'react-native';
+import React, { useRef, useEffect, useCallback } from 'react';
+import { Alert, AppState, Linking } from 'react-native';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -190,6 +190,31 @@ export function AppNavigator(): React.JSX.Element {
       unsubOpened();
     };
   }, []);
+
+  // バックグラウンドから復帰時にMMKVに保存された通知先をチェック
+  const checkPendingNotifications = useCallback(() => {
+    const pendingMemoId = storage.getString('pendingNotificationMemoId');
+    if (pendingMemoId) {
+      storage.remove('pendingNotificationMemoId');
+      navigationRef.current?.navigate('MemoDetail', { memoId: pendingMemoId });
+      return;
+    }
+    const pendingShareId = storage.getString('pendingNotificationShareId');
+    if (pendingShareId) {
+      storage.remove('pendingNotificationShareId');
+      navigateByShareId(pendingShareId);
+    }
+  }, []);
+
+  // AppState監視: バックグラウンドから復帰時にMMKVの保留通知をチェック
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        checkPendingNotifications();
+      }
+    });
+    return () => sub.remove();
+  }, [checkPendingNotifications]);
 
   // アプリ起動時のディープリンク処理
   // 注: getInitialURL は onReady 内でも呼ぶ（killed 状態からの通知タップ時、
