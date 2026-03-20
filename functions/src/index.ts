@@ -38,7 +38,7 @@ export const notifyCollaborators = onRequest(
       return;
     }
 
-    const { shareId, memoTitle, deviceId } = req.body?.data ?? req.body ?? {};
+    const { shareId, memoTitle, deviceId, debugIncludeSelf } = req.body?.data ?? req.body ?? {};
 
     if (!shareId || !memoTitle) {
       res.status(400).json({ error: { status: "invalid-argument", message: "shareId and memoTitle are required" } });
@@ -93,8 +93,10 @@ export const notifyCollaborators = onRequest(
       return;
     }
 
-    // 送信先: 呼び出し者以外の全 UID
-    const targetUids = allUids.filter((uid) => uid !== callerUid);
+    // 送信先: 呼び出し者以外の全 UID（debugIncludeSelf の場合は自分も含む）
+    const targetUids = debugIncludeSelf
+      ? allUids
+      : allUids.filter((uid) => uid !== callerUid);
     if (targetUids.length === 0) {
       res.json({ result: { sent: 0 } });
       return;
