@@ -154,17 +154,20 @@ export function AppNavigator(): React.JSX.Element {
 
   // フォアグラウンドで通知をタップしたとき MemoDetail へ遷移
   useEffect(() => {
-    handleForegroundNotification((memoId: string) => {
-      // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
-      const newBadges = onGeofenceVisit(memoId);
-      if (newBadges.length > 0) showBadgeUnlock(newBadges);
-      // レビュー依頼: 通知タップ3回目で条件を満たしていれば表示
-      const settings = useSettingsStore.getState();
-      if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
-        setTimeout(() => showReviewPrompt(), 1500);
-      }
-      navigationRef.current?.navigate('MemoDetail', { memoId });
-    });
+    handleForegroundNotification(
+      (memoId: string) => {
+        // ジオフェンス通知タップ = 訪問とみなしてバッジ判定
+        const newBadges = onGeofenceVisit(memoId);
+        if (newBadges.length > 0) showBadgeUnlock(newBadges);
+        // レビュー依頼: 通知タップ3回目で条件を満たしていれば表示
+        const settings = useSettingsStore.getState();
+        if (shouldTriggerOnVisit(settings.totalVisitCount, settings.lastReviewPromptAt)) {
+          setTimeout(() => showReviewPrompt(), 1500);
+        }
+        navigationRef.current?.navigate('MemoDetail', { memoId });
+      },
+      navigateByShareId,
+    );
   }, []);
 
   // FCM: トークン登録 + フォアグラウンドメッセージリスナー + 通知タップリスナー
@@ -215,9 +218,11 @@ export function AppNavigator(): React.JSX.Element {
         // 2. ネイティブ通知（ジオフェンス）は Linking.getInitialURL 経由でディープリンクから取得
         // 3. MMKV 経由のフォールバック
         notifee.getInitialNotification().then(initial => {
-          const memoId = initial?.notification?.data?.memoId as string | undefined;
-          if (memoId) {
-            navigationRef.current?.navigate('MemoDetail', { memoId });
+          const data = initial?.notification?.data;
+          if (data?.type === 'memo_updated' && data?.shareId) {
+            navigateByShareId(data.shareId as string);
+          } else if (data?.memoId) {
+            navigationRef.current?.navigate('MemoDetail', { memoId: data.memoId as string });
           }
         }).catch(e => recordError(e, '[AppNavigator] getInitialNotification'));
 
