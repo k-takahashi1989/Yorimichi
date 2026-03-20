@@ -107,11 +107,15 @@ export type NotifyResult =
 export async function notifySharedMemoUpdate(
   shareId: string,
   memoTitle: string,
+  options?: { debugIncludeSelf?: boolean },
 ): Promise<NotifyResult> {
+  // デバッグ自己通知の場合はクールダウンをスキップ
+  const skipCooldown = options?.debugIncludeSelf === true;
+
   // クライアント側クールダウン
   const lastTime = lastNotifiedMap.get(shareId) ?? 0;
   const now = Date.now();
-  if (now - lastTime < COOLDOWN_MS) {
+  if (!skipCooldown && now - lastTime < COOLDOWN_MS) {
     return { status: 'cooldown' };
   }
 
@@ -130,7 +134,9 @@ export async function notifySharedMemoUpdate(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify({ data: { shareId, memoTitle, deviceId } }),
+      body: JSON.stringify({
+        data: { shareId, memoTitle, deviceId, ...(options?.debugIncludeSelf ? { debugIncludeSelf: true } : {}) },
+      }),
     });
     const body = await resp.json();
     if (!resp.ok) {

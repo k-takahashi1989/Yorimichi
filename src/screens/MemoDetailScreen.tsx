@@ -569,6 +569,24 @@ export default function MemoDetailScreen(): React.JSX.Element {
         </TouchableOpacity>
       )}
 
+      {/* デバッグ: 自分に共有メモ通知を送信するボタン */}
+      {__DEV__ && memo.shareId && (
+        <TouchableOpacity
+          style={[styles.notifyBtn, { backgroundColor: '#FF9800' }]}
+          onPress={async () => {
+            try {
+              const result = await notifySharedMemoUpdate(memo.shareId!, memo.title, { debugIncludeSelf: true });
+              Alert.alert('Debug', `status: ${result.status}${result.status === 'error' ? `\n${(result as any).detail}` : ''}`);
+            } catch (e: any) {
+              Alert.alert('Debug Error', String(e));
+            }
+          }}
+          activeOpacity={0.7}>
+          <Icon name="bug-report" size={18} color="#fff" />
+          <Text style={styles.notifyBtnText}>DEBUG: 自分に通知を送信</Text>
+        </TouchableOpacity>
+      )}
+
       {/* 場所セクション */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
