@@ -57,13 +57,14 @@
 
 ### 1-1. RevenueCat サブスク接続 ⭐ 最優先
 
+> **アプリ側コードは実装済み。** `purchaseService.ts`（初期化・購入・復元・エンタイトルメント確認）と `PremiumScreen.tsx`（購入フロー・復元UI）は完成している。残りは管理画面の設定作業のみ。
+
 | タスク | 詳細 |
 |--------|------|
 | Google Play Console で定期購入商品を作成 | `yorimichi_premium_monthly`（¥300/月）、`yorimichi_premium_yearly`（¥2,400/年 = 月¥200相当） |
-| RevenueCat ダッシュボードで Entitlement 設定 | `premium` entitlement に上記2商品を紐付け |
-| `PremiumScreen.tsx` に購入フローを実装 | RevenueCat SDK の `purchasePackage()` で購入、`customerInfo` で状態管理 |
-| `memoStore.ts` の `isPremium` を RevenueCat 連動に変更 | アプリ起動時に `Purchases.getCustomerInfo()` で復元 |
-| レシート検証 | RevenueCat サーバーサイドで自動処理（追加実装不要） |
+| RevenueCat ダッシュボードで Entitlement 設定 | `premium` entitlement に上記2商品を紐付け、default Offering に月額/年額パッケージを設定 |
+| `.env` に本番 API キーを設定 | `REVENUECAT_ANDROID_API_KEY` に本番キーをセット |
+| 実機テスト | Google Play のライセンステスターでサンドボックス購入を検証 |
 
 **想定価格:**
 | プラン | 価格 | 年間割引率 |
