@@ -135,7 +135,6 @@ export const notifyCollaborators = onRequest(
         priority: "high",
         notification: {
           channelId: "shopping-reminder",
-          clickAction: "OPEN_MEMO",
         },
       },
     });

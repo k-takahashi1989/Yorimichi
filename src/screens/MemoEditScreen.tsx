@@ -63,6 +63,10 @@ export default function MemoEditScreen(): React.JSX.Element {
   const scrollRef = useRef<ScrollView>(null);
   /** handleDone 実行中フラグ。onBlur の handleSaveTitle との二重保存を防ぐ */
   const isSavingRef = useRef(false);
+  /** savedMemoId の同期コピー。React state は非同期更新のため、
+   *  onBlur(handleSaveTitle) → onPress(handleDone) の連続実行で
+   *  state がまだ反映されず二重作成されるのを防ぐ。 */
+  const savedMemoIdRef = useRef<string | undefined>(memoId);
   // タイトル自動生成: 場所名ベース or 連番
   const generateAutoTitle = () => {
     if (existingMemo) return existingMemo.title;
@@ -134,13 +138,15 @@ export default function MemoEditScreen(): React.JSX.Element {
       Alert.alert(t('memoEdit.errorTitle'), t('memoEdit.errorEmptyTitle'));
       return;
     }
-    if (savedMemoId) {
-      updateMemo(savedMemoId, { title: title.trim() });
+    const currentId = savedMemoIdRef.current;
+    if (currentId) {
+      updateMemo(currentId, { title: title.trim() });
     } else {
       const memo = addMemo(title.trim());
       setSavedMemoId(memo.id);
+      savedMemoIdRef.current = memo.id;
     }
-  }, [title, savedMemoId, addMemo, updateMemo]);
+  }, [title, addMemo, updateMemo]);
 
   const handleAddItem = useCallback(() => {
     if (!newItemName.trim()) return;
@@ -152,7 +158,8 @@ export default function MemoEditScreen(): React.JSX.Element {
       });
       return;
     }
-    if (!savedMemoId) {
+    const currentId = savedMemoIdRef.current;
+    if (!currentId) {
       // メモ未保存なら先に保存する
       if (!title.trim()) {
         Alert.alert(t('memoEdit.errorNeedTitleFirst'), t('memoEdit.errorNeedTitleFirstMsg'));
@@ -160,12 +167,13 @@ export default function MemoEditScreen(): React.JSX.Element {
       }
       const memo = addMemo(title.trim());
       setSavedMemoId(memo.id);
+      savedMemoIdRef.current = memo.id;
       addItem(memo.id, newItemName.trim());
     } else {
-      addItem(savedMemoId, newItemName.trim());
+      addItem(currentId, newItemName.trim());
     }
     setNewItemName('');
-  }, [newItemName, savedMemoId, title, addMemo, addItem, isPremium, currentItems.length, t]);
+  }, [newItemName, title, addMemo, addItem, isPremium, currentItems.length, t]);
 
   const handleMoveItem = useCallback((index: number, direction: 'up' | 'down') => {
     if (!savedMemoId) return;
@@ -218,13 +226,15 @@ export default function MemoEditScreen(): React.JSX.Element {
       handleAddItem();
     }
     const isNew = !memoId; // ルートパラメータがない → 新規作成
-    let targetId: string | undefined = savedMemoId;
+    const currentId = savedMemoIdRef.current;
+    let targetId: string | undefined = currentId;
     const trimmedNote = note.trim() || undefined;
-    if (savedMemoId) {
-      updateMemo(savedMemoId, { title: title.trim(), dueDate, note: trimmedNote });
+    if (currentId) {
+      updateMemo(currentId, { title: title.trim(), dueDate, note: trimmedNote });
     } else {
       const newMemo = addMemo(title.trim(), dueDate);
       targetId = newMemo.id;
+      savedMemoIdRef.current = newMemo.id;
       if (trimmedNote) updateMemo(newMemo.id, { note: trimmedNote });
     }
     if (!targetId) {
