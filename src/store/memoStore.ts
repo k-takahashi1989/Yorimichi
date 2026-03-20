@@ -256,7 +256,7 @@ export const useSettingsStore = create<SettingsState>()(
  * 課金プレミアム OR 7日間トライアル中 OR クーポン有効期限内 のどれかが true なら true を返す。
  */
 export const selectEffectivePremium = (s: SettingsState): boolean => {
-  if (s.debugForcePremium !== null) return s.debugForcePremium;
+  if (__DEV__ && s.debugForcePremium !== null) return s.debugForcePremium;
   return (
     s.isPremium ||
     isTrialActive(s.trialStartDate) ||
