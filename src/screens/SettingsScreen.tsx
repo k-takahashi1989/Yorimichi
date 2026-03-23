@@ -532,7 +532,7 @@ export default function SettingsScreen(): React.JSX.Element {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.privacyPolicyRow}
-          onPress={() => Linking.openURL('https://k-takahashi1989.github.io/Yorimichi/privacy.html')}>
+          onPress={() => Linking.openURL('https://weak-nose-94e.notion.site/32c34b367d7d8040b8a4da575ababdb1')}>
           <Icon name="privacy-tip" size={16} color="#4CAF50" />
           <Text style={styles.privacyPolicyText}>{t('settings.appInfo.privacyPolicy')}</Text>
           <Icon name="open-in-new" size={14} color="#9E9E9E" />
