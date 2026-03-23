@@ -389,6 +389,12 @@ const en: Translation = {
     lastBackup: 'Last backup: {{date}}',
     noBackupYet: 'Not backed up yet',
   },
+  backgroundDisclosure: {
+    title: 'Background Location Access',
+    body: 'Yorimichi collects your location data in the background to send reminder notifications when you approach registered locations (geofences).\n\nThis feature works even when the app is closed or not in use.\n\n[Data collected]\nDevice location (latitude & longitude)\n\n[Purpose]\nUsed solely to detect proximity to your registered locations and deliver checklist reminders. Your location data is never used for advertising or tracking.\n\nPlease select "Allow all the time" on the next screen.',
+    accept: 'Agree and continue',
+    decline: 'Not now',
+  },
   appPermission: {
     fineLocationTitle: '📍 Location permission required',
     fineLocationMessage:
