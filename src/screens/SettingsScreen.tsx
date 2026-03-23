@@ -38,6 +38,7 @@ import {
   stopGeofenceMonitoring,
   isGeofencingActive,
 } from '../services/geofenceService';
+import BackgroundLocationDisclosure from '../components/BackgroundLocationDisclosure';
 
 type PermStatus = 'granted' | 'denied' | 'blocked' | 'unavailable' | 'limited' | 'unknown';
 
@@ -96,6 +97,29 @@ export default function SettingsScreen(): React.JSX.Element {
   const [currentLang, setCurrentLang] = useState(i18n.language);
   const [notifPickerTarget, setNotifPickerTarget] = useState<'start' | 'end' | null>(null);
 
+  // バックグラウンド位置情報 認識しやすい開示モーダル
+  const [bgDisclosureVisible, setBgDisclosureVisible] = useState(false);
+  const bgDisclosureResolve = React.useRef<((accepted: boolean) => void) | null>(null);
+
+  const showBgDisclosure = (): Promise<boolean> => {
+    return new Promise(resolve => {
+      bgDisclosureResolve.current = resolve;
+      setBgDisclosureVisible(true);
+    });
+  };
+
+  const handleBgDisclosureAccept = () => {
+    setBgDisclosureVisible(false);
+    bgDisclosureResolve.current?.(true);
+    bgDisclosureResolve.current = null;
+  };
+
+  const handleBgDisclosureDecline = () => {
+    setBgDisclosureVisible(false);
+    bgDisclosureResolve.current?.(false);
+    bgDisclosureResolve.current = null;
+  };
+
   const handleChangeLang = (lang: string) => {
     changeAndPersistLanguage(lang);
     setCurrentLang(lang);
@@ -144,20 +168,28 @@ export default function SettingsScreen(): React.JSX.Element {
       return;
     }
 
-    // 2. バックグラウンド位置情報
+    // 2. バックグラウンド位置情報（認識しやすい開示を表示してからリクエスト）
     if (needsBg) {
-      const bgResult = await request(PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION);
-      if (bgResult !== RESULTS.GRANTED) {
-        Alert.alert(
-          t('settings.alertBackground.title'),
-          t('settings.alertBackground.message'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: t('settings.alertFineLocation.openSettings'), onPress: () => openSettings() },
-          ],
-        );
-        await refreshPerms();
-        return;
+      const currentBg = await check(PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION);
+      if (currentBg !== RESULTS.GRANTED) {
+        const accepted = await showBgDisclosure();
+        if (!accepted) {
+          await refreshPerms();
+          return;
+        }
+        const bgResult = await request(PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION);
+        if (bgResult !== RESULTS.GRANTED) {
+          Alert.alert(
+            t('settings.alertBackground.title'),
+            t('settings.alertBackground.message'),
+            [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('settings.alertFineLocation.openSettings'), onPress: () => openSettings() },
+            ],
+          );
+          await refreshPerms();
+          return;
+        }
       }
     }
 
@@ -230,6 +262,7 @@ export default function SettingsScreen(): React.JSX.Element {
     (androidVersion < 33 || perms.notification === 'granted');
 
   return (
+    <>
     <ScrollView style={styles.container}>
       <Text style={styles.pageTitle}>{t('settings.screenTitle')}</Text>
 
@@ -581,6 +614,12 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
       </Modal>
     </ScrollView>
+    <BackgroundLocationDisclosure
+      visible={bgDisclosureVisible}
+      onAccept={handleBgDisclosureAccept}
+      onDecline={handleBgDisclosureDecline}
+    />
+    </>
   );
 }
 

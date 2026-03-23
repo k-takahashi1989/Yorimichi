@@ -3,7 +3,7 @@
  * @format
  */
 
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, PermissionsAndroid, Platform, StatusBar, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -21,6 +21,7 @@ import { initCrashlytics, recordError } from './src/services/crashlyticsService'
 import { onAppLaunch } from './src/services/badgeService';
 import { showBadgeUnlock } from './src/components/BadgeUnlockModal';
 import BadgeUnlockModal from './src/components/BadgeUnlockModal';
+import BackgroundLocationDisclosure from './src/components/BackgroundLocationDisclosure';
 import { seedDevMemos } from './src/utils/devSeed';
 import ReviewPromptModal from './src/components/ReviewPromptModal';
 import { shouldShowPremiumPromo } from './src/utils/premiumPromoUtils';
@@ -28,6 +29,29 @@ import { showPremiumPromo } from './src/components/PremiumPromoModal';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+
+  // バックグラウンド位置情報の認識しやすい開示モーダル
+  const [bgDisclosureVisible, setBgDisclosureVisible] = useState(false);
+  const bgDisclosureResolve = useRef<((accepted: boolean) => void) | null>(null);
+
+  const showBgDisclosure = useCallback((): Promise<boolean> => {
+    return new Promise(resolve => {
+      bgDisclosureResolve.current = resolve;
+      setBgDisclosureVisible(true);
+    });
+  }, []);
+
+  const handleBgDisclosureAccept = useCallback(() => {
+    setBgDisclosureVisible(false);
+    bgDisclosureResolve.current?.(true);
+    bgDisclosureResolve.current = null;
+  }, []);
+
+  const handleBgDisclosureDecline = useCallback(() => {
+    setBgDisclosureVisible(false);
+    bgDisclosureResolve.current?.(false);
+    bgDisclosureResolve.current = null;
+  }, []);
 
   useEffect(() => {
     // Crashlytics 初期化（__DEV__ 時は収集無効）
@@ -127,10 +151,14 @@ function App(): React.JSX.Element {
       startGeofenceMonitoring();
 
       // 2. バックグラウンド位置情報 (Android 10+ / API 29+)
+      //    Google Play ポリシー: 認識しやすい開示を表示してからリクエスト
       if (androidVersion >= 29) {
         const bgStatus = await check(PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION);
         if (bgStatus === RESULTS.DENIED) {
-          await request(PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION);
+          const accepted = await showBgDisclosure();
+          if (accepted) {
+            await request(PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION);
+          }
         }
       }
 
@@ -171,6 +199,11 @@ function App(): React.JSX.Element {
         <AppNavigator />
         <BadgeUnlockModal />
         <ReviewPromptModal />
+        <BackgroundLocationDisclosure
+          visible={bgDisclosureVisible}
+          onAccept={handleBgDisclosureAccept}
+          onDecline={handleBgDisclosureDecline}
+        />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
