@@ -8,9 +8,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import {
   useNavigation,
   useRoute,
@@ -60,7 +60,6 @@ export default function MemoEditScreen(): React.JSX.Element {
   const { showIfReady } = useInterstitialAd();
 
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
   /** handleDone 実行中フラグ。onBlur の handleSaveTitle との二重保存を防ぐ */
   const isSavingRef = useRef(false);
   /** savedMemoId の同期コピー。React state は非同期更新のため、
@@ -175,45 +174,31 @@ export default function MemoEditScreen(): React.JSX.Element {
     setNewItemName('');
   }, [newItemName, title, addMemo, addItem, isPremium, currentItems.length, t]);
 
-  const handleMoveItem = useCallback((index: number, direction: 'up' | 'down') => {
-    if (!savedMemoId) return;
-    const newItems = [...currentItems];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newItems.length) return;
-    [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
-    reorderItems(savedMemoId, newItems);
-  }, [savedMemoId, currentItems, reorderItems]);
-
-  const renderItem = useCallback((item: ShoppingItem, index: number) => (
-    <View key={item.id} style={styles.itemRow}>
-      <View style={styles.reorderButtons}>
+  const renderDraggableItem = useCallback(({ item, drag, isActive }: RenderItemParams<ShoppingItem>) => (
+    <ScaleDecorator>
+      <View style={[styles.itemRow, isActive && styles.itemRowDragging]}>
         <TouchableOpacity
-          onPress={() => handleMoveItem(index, 'up')}
-          disabled={index === 0}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
-          <Icon name="keyboard-arrow-up" size={18} color={index === 0 ? '#E0E0E0' : '#BDBDBD'} />
+          onLongPress={drag}
+          delayLongPress={150}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.dragHandle}>
+          <Icon name="drag-indicator" size={20} color={isActive ? '#4CAF50' : '#BDBDBD'} />
         </TouchableOpacity>
+        <TextInput
+          style={styles.itemInput}
+          value={item.name}
+          onChangeText={text => updateItem(savedMemoId!, item.id, { name: text })}
+          multiline={false}
+          maxLength={50}
+        />
         <TouchableOpacity
-          onPress={() => handleMoveItem(index, 'down')}
-          disabled={index === currentItems.length - 1}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
-          <Icon name="keyboard-arrow-down" size={18} color={index === currentItems.length - 1 ? '#E0E0E0' : '#BDBDBD'} />
+          onPress={() => deleteItem(savedMemoId!, item.id)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Icon name="close" size={20} color="#EF5350" />
         </TouchableOpacity>
       </View>
-      <TextInput
-        style={styles.itemInput}
-        value={item.name}
-        onChangeText={text => updateItem(savedMemoId!, item.id, { name: text })}
-        multiline={false}
-        maxLength={50}
-      />
-      <TouchableOpacity
-        onPress={() => deleteItem(savedMemoId!, item.id)}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Icon name="close" size={20} color="#EF5350" />
-      </TouchableOpacity>
-    </View>
-  ), [savedMemoId, currentItems.length, handleMoveItem, updateItem, deleteItem]);
+    </ScaleDecorator>
+  ), [savedMemoId, updateItem, deleteItem]);
 
   const handleDone = () => {
     isSavingRef.current = true;
@@ -276,121 +261,123 @@ export default function MemoEditScreen(): React.JSX.Element {
     doNavigate();
   };
 
+  const listHeader = (
+    <>
+      <Text style={styles.label}>{t('memoEdit.titleLabel')}</Text>
+      <TextInput
+        testID="memo-title-input"
+        style={styles.titleInput}
+        value={title}
+        onChangeText={setTitle}
+        placeholder={t('memoEdit.titlePlaceholder')}
+        placeholderTextColor="#BDBDBD"
+        onBlur={handleSaveTitle}
+        returnKeyType="done"
+      />
+
+      {/* 期限設定 */}
+      <View style={styles.dueDateRow}>
+        <TouchableOpacity
+          style={styles.dueDateBtn}
+          onPress={() => setShowDatePicker(true)}>
+          <CalendarSvg width={18} height={18} />
+          <Text style={[styles.dueDateText, dueDate != null && styles.dueDateTextSet]}>
+            {dueDate
+              ? `${new Date(dueDate).getFullYear()}/${new Date(dueDate).getMonth() + 1}/${new Date(dueDate).getDate()}`
+              : t('memoEdit.dueDateLabel')}
+          </Text>
+        </TouchableOpacity>
+        {dueDate != null && (
+          <TouchableOpacity onPress={() => setDueDate(undefined)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Icon name="close" size={18} color="#9E9E9E" />
+          </TouchableOpacity>
+        )}
+      </View>
+      {showDatePicker && (
+        <DateTimePicker
+          value={dueDate ? new Date(dueDate) : new Date()}
+          mode="date"
+          minimumDate={new Date()}
+          onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+            setShowDatePicker(false);
+            if (event.type === 'set' && selectedDate) {
+              setDueDate(selectedDate.getTime());
+            }
+          }}
+        />
+      )}
+
+      {/* ノート欄 */}
+      <Text style={styles.label}>{t('memoEdit.noteLabel')}</Text>
+      <TextInput
+        testID="memo-note-input"
+        style={styles.noteInput}
+        value={note}
+        onChangeText={setNote}
+        placeholder={t('memoEdit.notePlaceholder')}
+        placeholderTextColor="#BDBDBD"
+        multiline
+        maxLength={500}
+        textAlignVertical="top"
+      />
+
+      <View style={styles.labelRow}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <ChecklistSvg width={16} height={16} />
+          <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
+        </View>
+        {LIMITS_ENABLED && !isPremium && savedMemoId && (
+          <Text style={[
+            styles.limitCounter,
+            currentItems.length >= FREE_LIMITS.itemsPerMemo && styles.limitCounterFull,
+          ]}>
+            {currentItems.length} / {FREE_LIMITS.itemsPerMemo}
+          </Text>
+        )}
+      </View>
+    </>
+  );
+
+  const listFooter = (
+    <View style={styles.addRow}>
+      <TextInput
+        testID="memo-item-input"
+        style={styles.addInput}
+        value={newItemName}
+        onChangeText={setNewItemName}
+        placeholder={t('memoEdit.addItemPlaceholder')}
+        placeholderTextColor="#9E9E9E"
+        onSubmitEditing={handleAddItem}
+        returnKeyType="done"
+        blurOnSubmit={false}
+        maxLength={50}
+      />
+      {newItemName.trim().length > 0 && (
+        <TouchableOpacity testID="memo-item-add-button" onPress={handleAddItem} style={styles.addButton}>
+          <Icon name="add" size={20} color="#4CAF50" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'android' ? 80 : 0}>
-      <ScrollView
-        ref={scrollRef}
+      <DraggableFlatList
+        data={currentItems}
+        keyExtractor={item => item.id}
+        renderItem={renderDraggableItem}
+        onDragEnd={({ data }) => {
+          if (savedMemoId) reorderItems(savedMemoId, data);
+        }}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => {
-          // アイテム追加でリストが伸びたら最下部へ追従
-          if (newItemName === '') {
-            scrollRef.current?.scrollToEnd({ animated: true });
-          }
-        }}>
-        <Text style={styles.label}>{t('memoEdit.titleLabel')}</Text>
-        <TextInput
-          testID="memo-title-input"
-          style={styles.titleInput}
-          value={title}
-          onChangeText={setTitle}
-          placeholder={t('memoEdit.titlePlaceholder')}
-          placeholderTextColor="#BDBDBD"
-          onBlur={handleSaveTitle}
-          returnKeyType="done"
-        />
-
-        {/* 期限設定 */}
-        <View style={styles.dueDateRow}>
-          <TouchableOpacity
-            style={styles.dueDateBtn}
-            onPress={() => setShowDatePicker(true)}>
-            <CalendarSvg width={18} height={18} />
-            <Text style={[styles.dueDateText, dueDate != null && styles.dueDateTextSet]}>
-              {dueDate
-                ? `${new Date(dueDate).getFullYear()}/${new Date(dueDate).getMonth() + 1}/${new Date(dueDate).getDate()}`
-                : t('memoEdit.dueDateLabel')}
-            </Text>
-          </TouchableOpacity>
-          {dueDate != null && (
-            <TouchableOpacity onPress={() => setDueDate(undefined)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Icon name="close" size={18} color="#9E9E9E" />
-            </TouchableOpacity>
-          )}
-        </View>
-        {showDatePicker && (
-          <DateTimePicker
-            value={dueDate ? new Date(dueDate) : new Date()}
-            mode="date"
-            minimumDate={new Date()}
-            onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
-              setShowDatePicker(false);
-              if (event.type === 'set' && selectedDate) {
-                setDueDate(selectedDate.getTime());
-              }
-            }}
-          />
-        )}
-
-        {/* ノート欄 */}
-        <Text style={styles.label}>{t('memoEdit.noteLabel')}</Text>
-        <TextInput
-          testID="memo-note-input"
-          style={styles.noteInput}
-          value={note}
-          onChangeText={setNote}
-          placeholder={t('memoEdit.notePlaceholder')}
-          placeholderTextColor="#BDBDBD"
-          multiline
-          maxLength={500}
-          textAlignVertical="top"
-        />
-
-        <View style={styles.labelRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <ChecklistSvg width={16} height={16} />
-              <Text style={styles.label}>{t('memoEdit.itemsLabel')}</Text>
-            </View>
-            {LIMITS_ENABLED && !isPremium && savedMemoId && (
-              <Text style={[
-                styles.limitCounter,
-                currentItems.length >= FREE_LIMITS.itemsPerMemo && styles.limitCounterFull,
-              ]}>
-                {currentItems.length} / {FREE_LIMITS.itemsPerMemo}
-              </Text>
-            )}
-          </View>
-          {currentItems.map((item, index) => renderItem(item, index))}
-
-          {/* アイテム入力 */}
-          <View style={styles.addRow}>
-          <TextInput
-            testID="memo-item-input"
-            style={styles.addInput}
-            value={newItemName}
-            onChangeText={setNewItemName}
-            placeholder={t('memoEdit.addItemPlaceholder')}
-            placeholderTextColor="#9E9E9E"
-            onSubmitEditing={handleAddItem}
-            returnKeyType="done"
-            blurOnSubmit={false}
-            maxLength={50}
-            onFocus={() => {
-              // キーボードが開ききってから末尾にスクロール
-              setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 400);
-            }}
-          />
-          {newItemName.trim().length > 0 && (
-            <TouchableOpacity testID="memo-item-add-button" onPress={handleAddItem} style={styles.addButton}>
-              <Icon name="add" size={20} color="#4CAF50" />
-            </TouchableOpacity>
-          )}
-        </View>{/* /addRow */}
-      </ScrollView>
+      />
 
       {/* 確認する */}
       <TouchableOpacity testID="memo-done-button" style={[styles.doneBtn, { marginBottom: Math.max(insets.bottom, 16) }]} onPress={handleDone}>
@@ -459,10 +446,16 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 4,
   },
-  reorderButtons: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 0,
+  itemRowDragging: {
+    backgroundColor: '#E8F5E9',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  dragHandle: {
+    padding: 4,
   },
   itemInput: {
     flex: 1,
